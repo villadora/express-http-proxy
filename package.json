@@ -1,0 +1,31 @@
+{
+  "name": "express-http-proxy",
+  "version": "0.0.1",
+  "description": "http proxy middleware for express",
+  "main": "index.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/villadora/express-http-proxy.git"
+  },
+  "keywords": [
+    "express-http-proxy"
+  ],
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "author": {
+    "name": "villadora",
+    "email": "jky239@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/villadora/express-http-proxy/issues"
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "mocha": "^1.19.0"
+  }
+}
