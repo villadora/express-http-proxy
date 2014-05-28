@@ -1,6 +1,6 @@
 {
   "name": "express-http-proxy",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
@@ -24,8 +24,13 @@
   "bugs": {
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "supertest": "^0.13.0",
+    "express": "^4.3.1"
+  },
   "dependencies": {
-    "mocha": "^1.19.0"
+    "mocha": "^1.19.0",
+    "type-is": "^1.2.0",
+    "raw-body": "^1.1.6"
   }
 }
