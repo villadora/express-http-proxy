@@ -43,14 +43,13 @@ module.exports = function proxy(host, options) {
 
     path = forwardPath ? forwardPath(req, res) : url.parse(req.url).path;
 
-
     var hds = extend(headers, req.headers, ['connection', 'host', 'content-length']);
     hds.connection = 'close';
 
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     getRawBody(req, {
       length: req.headers['content-length'],
-      limit: '1mb',
+      limit: '1mb', // let options do here?
     }, function(err, bodyContent) {
       if (err) return next(err)
 
