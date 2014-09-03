@@ -1,10 +1,11 @@
 {
   "name": "express-http-proxy",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
-    "test": "make test"
+    "test": "npm run lint && ./node_modules/.bin/mocha -R spec test/test.js",
+    "lint": "./node_modules/.bin/jshint index.js test/*.js"
   },
   "repository": {
     "type": "git",
@@ -25,12 +26,30 @@
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
   "devDependencies": {
-    "supertest": "^0.13.0",
     "express": "^4.3.1",
-    "mocha": "^1.19.0"
+    "jshint": "^2.5.5",
+    "mocha": "^1.19.0",
+    "supertest": "^0.13.0"
   },
   "dependencies": {
     "type-is": "^1.2.0",
     "raw-body": "^1.1.6"
-  }
+  },
+  "contributors": [
+    {
+      "name": "Wei Gao",
+      "email": "jky239@gmail.com",
+      "url": "https://github.com/villadora"
+    },
+    {
+      "name": "Jérémy Lal",
+      "email": "kapouer@melix.org",
+      "url": "https://github.com/kapouer"
+    },
+    {
+      "name": "Saulius Menkevičius",
+      "email": null,
+      "url": "https://github.com/razzmatazz"
+    }
+  ]
 }

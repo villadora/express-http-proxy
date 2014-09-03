@@ -40,7 +40,7 @@ app.use('/proxy', proxy('www.google.com', {
 
 
 
-You can also intercept the response get by proxy before send it back to the client:
+You can also intercept the response get by proxy before send it back to the client, or change the request options before it get sent to target:
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -49,7 +49,13 @@ app.use('/proxy', proxy('www.google.com', {
   },
   intercept: function(data, req, res, callback) {
        data = JSON.parse(data.toString('utf8'));
-       callback(null, JSON.stringify(data.obj));
+       callback(null, JSON.stringify(data));
+  },
+  decorateRequest: function(req) {
+       req.headers['Content-Type'] = '';
+       req.method = 'GET";
+       req.bodyContent = wrap(req.bodyContent);
+       return req;
   }
 }));
 

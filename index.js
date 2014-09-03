@@ -32,7 +32,7 @@ module.exports = function proxy(host, options) {
    * intercept(data, res, req, function(err, json));
    */
   var intercept = options.intercept;
-  var decorateProxyRequest = options.decorateProxyRequest || function () { return arguments; };
+  var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath;
   var filter = options.filter;
 
@@ -50,28 +50,33 @@ module.exports = function proxy(host, options) {
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     getRawBody(req, {
       length: req.headers['content-length'],
-      limit: '1mb', // let options do here?
+      limit: '1mb' // TODO let options do here?
     }, function(err, bodyContent) {
-      var decoratedRequest;
+      if (err) return next(err);
 
-      if (err) return next(err)
-
-      decoratedRequest = decorateProxyRequest(hds, bodyContent);
-      hds = decoratedRequest.headers;
-      bodyContent = decoratedRequest.body;
-
-      if (bodyContent.length)
-        hds['content-length'] = bodyContent.length
-
-      var chunks = [];
-      var realRequest = http.request({
+      var reqOpt = {
         hostname: (typeof host == 'function') ? host(req) : host.toString(),
         port: port,
         headers: hds,
         method: req.method,
-        path: path
-      }, function(rsp) {
+        path: path,
+        bodyContent: bodyContent
+      };
 
+
+      if (decorateRequest)
+        reqOpt = decorateRequest(reqOpt) || reqOpt;
+
+      bodyContent = reqOpt.bodyContent;
+      delete reqOpt.bodyContent;
+
+      if (typeof bodyContent == 'string')
+        reqOpt.headers['content-length'] = Buffer.byteLength(bodyContent);
+      else if (Buffer.isBuffer(bodyContent)) // Buffer
+        reqOpt.headers['content-length'] = bodyContent.length;
+
+      var chunks = [];
+      var realRequest = http.request(reqOpt, function(rsp) {
         var rspData = null;
         rsp.on('data', function(chunk) {
           chunks.push(chunk);
@@ -89,6 +94,20 @@ module.exports = function proxy(host, options) {
               if (err) {
                 return next(err);
               }
+              
+              if (typeof rsp == 'string') 
+                rsp = new Buffer(rsp, 'utf8');
+              
+              if (!Buffer.isBuffer(rsp)) {
+                next(new Error("intercept should return string or buffer as data"));
+              }
+              
+              if (!res.headersSent)
+                res.set('content-length', rsp.length);
+              else if (rsp.length != rspData.length) {
+                next(new Error("'Content-Length' is already sent, the length of response data can not be changed"));
+              }
+
               if (!sent)
                 res.send(rsp);
             });
@@ -107,6 +126,7 @@ module.exports = function proxy(host, options) {
             res.set(p, rsp.headers[p]);
           }
         }
+
       });
 
       realRequest.on('error', function(e) {
@@ -132,4 +152,4 @@ function extend(obj, source, skips) {
   }
 
   return obj;
-};
+}
