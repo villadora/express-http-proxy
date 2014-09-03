@@ -32,6 +32,7 @@ module.exports = function proxy(host, options) {
    * intercept(data, res, req, function(err, json));
    */
   var intercept = options.intercept;
+  var decorateProxyRequest = options.decorateProxyRequest || function () { return arguments; };
   var forwardPath = options.forwardPath;
   var filter = options.filter;
 
@@ -51,7 +52,13 @@ module.exports = function proxy(host, options) {
       length: req.headers['content-length'],
       limit: '1mb', // let options do here?
     }, function(err, bodyContent) {
+      var decoratedRequest;
+
       if (err) return next(err)
+
+      decoratedRequest = decorateProxyRequest(hds, bodyContent);
+      hds = decoratedRequest.headers;
+      bodyContent = decoratedRequest.body;
 
       if (bodyContent.length)
         hds['content-length'] = bodyContent.length
