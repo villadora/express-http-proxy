@@ -53,7 +53,7 @@ app.use('/proxy', proxy('www.google.com', {
   },
   decorateRequest: function(req) {
        req.headers['Content-Type'] = '';
-       req.method = 'GET";
+       req.method = 'GET';
        req.bodyContent = wrap(req.bodyContent);
        return req;
   }
