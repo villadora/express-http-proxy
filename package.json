@@ -1,6 +1,6 @@
 {
   "name": "express-http-proxy",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
@@ -38,18 +38,17 @@
   "contributors": [
     {
       "name": "Wei Gao",
-      "email": "jky239@gmail.com",
-      "url": "https://github.com/villadora"
+      "email": "jky239@gmail.com"
+    },
+    {
+      "name": "Liam Bennett"
+    },
+    {
+      "name": "Saulius Menkevičius"
     },
     {
       "name": "Jérémy Lal",
-      "email": "kapouer@melix.org",
-      "url": "https://github.com/kapouer"
-    },
-    {
-      "name": "Saulius Menkevičius",
-      "email": null,
-      "url": "https://github.com/razzmatazz"
+      "email": "kapouer@melix.org"
     }
   ]
 }
