@@ -35,6 +35,7 @@ module.exports = function proxy(host, options) {
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath;
   var filter = options.filter;
+  var limit = options.limit || '1mb';
 
   return function handleProxy(req, res, next) {
     if (filter && !filter(req, res)) next();
@@ -50,7 +51,7 @@ module.exports = function proxy(host, options) {
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     getRawBody(req, {
       length: req.headers['content-length'],
-      limit: '1mb' // TODO let options do here?
+      limit: limit
     }, function(err, bodyContent) {
       if (err) return next(err);
 
