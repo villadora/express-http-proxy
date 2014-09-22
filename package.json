@@ -37,18 +37,24 @@
   },
   "contributors": [
     {
-      "name": "Wei Gao",
-      "email": "jky239@gmail.com"
+      "name": "Liam Bennett",
     },
     {
-      "name": "Liam Bennett"
+      "name": "eldereal",
+      "url": "https://github.com/eldereal"
     },
     {
-      "name": "Saulius Menkevičius"
+      "name": "Saulius Menkevičius",
+      "email": null,
+      "url": "https://github.com/razzmatazz"
     },
     {
       "name": "Jérémy Lal",
       "email": "kapouer@melix.org"
+    },
+    {
+      "name": "Wei Gao",
+      "email": "jky239@gmail.com"
     }
   ]
 }
