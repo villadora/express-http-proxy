@@ -12,6 +12,20 @@ describe('http-proxy', function() {
     app.use(proxy('httpbin.org'));
   });
   
+  describe('test https', function() {
+    it('https', function(done) {
+      var https = express();
+      https.use(proxy('https://httpbin.org'));
+      request(https)
+        .get('/user-agent')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.body);
+          done();
+        });
+    });
+  });
+
   describe('test intercept & decorateRequest', function() {
     it('decorateRequest', function(done) {
       var app = express();

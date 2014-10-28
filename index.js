@@ -2,9 +2,9 @@ var assert = require('assert');
 var util = require('util');
 var url = require('url');
 var http = require('http');
+var https = require('https');
 var is = require('type-is');
 var getRawBody = require('raw-body');
-
 
 require('buffer');
 
@@ -16,15 +16,17 @@ module.exports = function proxy(host, options) {
 
   var port = 80;
 
+  var ishttps = /^https/.test(host);
+
   if (typeof host == 'string') {
     var mc = host.match(/^(https?:\/\/)/);
     if (mc) {
       host = host.substring(mc[1].length);
     }
-
+    
     var h = host.split(':');
     host = h[0];
-    port = h[1] || 80;
+    port = h[1] || (ishttps ? 443 : 80);
   }
 
 
@@ -77,7 +79,7 @@ module.exports = function proxy(host, options) {
         reqOpt.headers['content-length'] = bodyContent.length;
 
       var chunks = [];
-      var realRequest = http.request(reqOpt, function(rsp) {
+      var realRequest = (ishttps ? https : http).request(reqOpt, function(rsp) {
         var rspData = null;
         rsp.on('data', function(chunk) {
           chunks.push(chunk);
@@ -112,8 +114,9 @@ module.exports = function proxy(host, options) {
               if (!sent)
                 res.send(rsp);
             });
-          } else
+          } else {
             res.send(rspData);
+          }
         });
 
         rsp.on('error', function(e) {
@@ -148,7 +151,7 @@ function extend(obj, source, skips) {
   if (!source) return obj;
 
   for (var prop in source) {
-    if (skips.indexOf(prop) == -1)
+    if (!skips || skips.indexOf(prop) == -1)
       obj[prop] = source[prop];
   }
 

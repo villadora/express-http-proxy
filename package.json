@@ -1,6 +1,6 @@
 {
   "name": "express-http-proxy",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
@@ -35,26 +35,19 @@
     "type-is": "^1.2.0",
     "raw-body": "^1.1.6"
   },
-  "contributors": [
-    {
-      "name": "Liam Bennett",
-    },
-    {
+  "contributors": [{
+      "name": "Liam Bennett"
+    }, {
       "name": "eldereal",
       "url": "https://github.com/eldereal"
-    },
-    {
+    }, {
       "name": "Saulius Menkevičius",
-      "email": null,
       "url": "https://github.com/razzmatazz"
-    },
-    {
+    }, {
       "name": "Jérémy Lal",
       "email": "kapouer@melix.org"
-    },
-    {
+    }, {
       "name": "Wei Gao",
       "email": "jky239@gmail.com"
-    }
-  ]
+    }]
 }
