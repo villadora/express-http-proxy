@@ -65,7 +65,43 @@ describe('http-proxy', function() {
         });
     });
 
+    it('test intercept on html response',function(done) {
+      var app = express();
+      app.use(proxy('httpbin.org', {
+        intercept: function(data, req, res, cb) {
+          data = data.toString().replace('Oh','<strong>Hey</strong>');
+          assert(data !== "");
+          cb(null, data);
+        }
+      }));
+      
+      request(app)
+        .get('/html')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.text.indexOf('<strong>Hey</strong>') > -1);
+          done();
+        });
+    });
 
+    it('test github api', function(done) {
+      var app = express();
+      app.use(proxy('https://api.github.com',  {
+        intercept: function(data, req, res, cb) {
+          var Iconv = require('iconv').Iconv;
+          var iconv = new Iconv('UTF-8', 'utf8');
+          cb(null, data);
+        }
+      }));
+
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+
+    });
   });
 
 

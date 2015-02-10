@@ -40,7 +40,7 @@ module.exports = function proxy(host, options) {
   var limit = options.limit || '1mb';
 
   return function handleProxy(req, res, next) {
-    if (filter && !filter(req, res)) next();
+    if (filter && !filter(req, res)) return next();
 
     var headers = options.headers || {};
     var path;
@@ -93,26 +93,42 @@ module.exports = function proxy(host, options) {
           var rspData = Buffer.concat(chunks, totalLength);
 
           if (intercept) {
-            intercept(rspData, req, res, function(err, rsp, sent) {
+            intercept(rspData, req, res, function(err, rspd, sent) {
               if (err) {
                 return next(err);
               }
+
+	      var encode = 'utf8';
+              if (rsp.headers && rsp.headers['content-type']) {
+                var contentType = rsp.headers['content-type'];
+                if (/charset=/.test(contentType)) {
+                  var attrs = contentType.split(';').map(function(str) { return str.trim(); });
+                  for(var i = 0, len = attrs.length; i < len; i++) {
+                      var attr = attrs[i];
+                    if (/charset=/.test(attr)) {
+		      // encode = attr.split('=')[1];
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (typeof rspd == 'string') 
+                rspd = new Buffer(rspd, encode);
               
-              if (typeof rsp == 'string') 
-                rsp = new Buffer(rsp, 'utf8');
-              
-              if (!Buffer.isBuffer(rsp)) {
+              if (!Buffer.isBuffer(rspd)) {
                 next(new Error("intercept should return string or buffer as data"));
               }
               
               if (!res.headersSent)
-                res.set('content-length', rsp.length);
-              else if (rsp.length != rspData.length) {
+                res.set('content-length', rspd.length);
+              else if (rspd.length != rspData.length) {
                 next(new Error("'Content-Length' is already sent, the length of response data can not be changed"));
               }
 
-              if (!sent)
-                res.send(rsp);
+              if (!sent) {
+                res.send(rspd);
+              }
             });
           } else {
             res.send(rspData);
