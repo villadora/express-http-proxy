@@ -31,7 +31,7 @@ module.exports = function proxy(host, options) {
 
 
   /** 
-   * intercept(data, res, req, function(err, json));
+   * intercept(targetResponse, data, res, req, function(err, json));
    */
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
@@ -93,7 +93,7 @@ module.exports = function proxy(host, options) {
           var rspData = Buffer.concat(chunks, totalLength);
 
           if (intercept) {
-            intercept(rspData, req, res, function(err, rspd, sent) {
+            intercept(rsp, rspData, req, res, function(err, rspd, sent) {
               if (err) {
                 return next(err);
               }
