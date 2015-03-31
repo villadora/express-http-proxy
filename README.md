@@ -40,14 +40,15 @@ app.use('/proxy', proxy('www.google.com', {
 
 
 
-You can also intercept the response get by proxy before send it back to the client, or change the request options before it get sent to target:
+You can also intercept the response before sending it back to the client, or change the request options before it is sent to the target:
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
   forwardPath: function(req, res) {
     return require('url').parse(req.url).path;
   },
-  intercept: function(data, req, res, callback) {
+  intercept: function(rsp, data, req, res, callback) {
+       // rsp - original response from the target
        data = JSON.parse(data.toString('utf8'));
        callback(null, JSON.stringify(data));
   },
@@ -61,7 +62,11 @@ app.use('/proxy', proxy('www.google.com', {
 
 ```
 
+## Release Notes
 
+| Release | Notes |
+| --- | --- |
+| 0.4.0 | Signature of `intercept` callback changed from `function(data, req, res, callback)` to `function(rsp, data, req, res, callback)` where `rsp` is the original response from the target |
 
 ## Licence
 

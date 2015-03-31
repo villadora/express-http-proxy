@@ -49,7 +49,7 @@ describe('http-proxy', function() {
     it('intercept', function(done) {
       var app = express();
       app.use(proxy('httpbin.org', {
-        intercept: function(data, req, res, cb) {
+        intercept: function(rsp, data, req, res, cb) {
           data = JSON.parse(data.toString('utf8'));
           data.intercepted = true;
           cb(null, JSON.stringify(data));
@@ -65,10 +65,25 @@ describe('http-proxy', function() {
         });
     });
 
+    it('test intercept original response', function(done) {
+      var app = express();
+      app.use(proxy('httpbin.org', {
+        intercept: function(rsp, data, req, res, cb) {
+          assert(rsp.connection);
+          assert(rsp.socket);
+          assert(rsp.headers);
+          assert(rsp.headers['content-type']);
+          done();
+        }
+      }));
+
+      request(app).get('/').end();
+    });
+
     it('test intercept on html response',function(done) {
       var app = express();
       app.use(proxy('httpbin.org', {
-        intercept: function(data, req, res, cb) {
+        intercept: function(rsp, data, req, res, cb) {
           data = data.toString().replace('Oh','<strong>Hey</strong>');
           assert(data !== "");
           cb(null, data);
@@ -87,7 +102,7 @@ describe('http-proxy', function() {
     it('test github api', function(done) {
       var app = express();
       app.use(proxy('https://api.github.com',  {
-        intercept: function(data, req, res, cb) {
+        intercept: function(rsp, data, req, res, cb) {
           var Iconv = require('iconv').Iconv;
           var iconv = new Iconv('UTF-8', 'utf8');
           cb(null, data);
