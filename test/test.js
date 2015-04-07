@@ -26,6 +26,27 @@ describe('http-proxy', function() {
     });
   });
 
+  describe('test different port', function() {
+    it('port', function(done) {
+      var http = express();
+      var other = express();
+      other.get('/', function(req, res) {
+        res.send('Hello World!');
+      });
+      other.listen(8080);
+      http.use(proxy('http://localhost', {
+        port: 8080
+      }));
+      request(http)
+        .get('/')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.body);
+          done();
+        });
+    });
+  });
+
   describe('test intercept & decorateRequest', function() {
     it('decorateRequest', function(done) {
       var app = express();
