@@ -20,7 +20,17 @@ describe('http-proxy', function() {
         .get('/user-agent')
         .end(function(err, res) {
           if (err) return done(err);
-          assert(res.body);
+          assert(res.body['user-agent']);
+          done();
+        });
+    });
+    it('https port 443', function(done) {
+      var https = express();
+      https.use(proxy('httpbin.org:443'));
+      request(https)
+        .get('/user-agent')
+        .end(function(err, res) {
+          if (err) return done(err);
           done();
         });
     });

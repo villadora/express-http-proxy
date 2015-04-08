@@ -25,6 +25,10 @@ module.exports = function proxy(host, options) {
     }
     
     var h = host.split(':');
+    if (h[1] === '443') {
+      ishttps = true;
+    }
+
     host = h[0];
     port = h[1] || (ishttps ? 443 : 80);
   }
