@@ -70,12 +70,17 @@ module.exports = function proxy(host, options) {
         method: req.method,
         path: path,
         bodyContent: bodyContent,
-        originalUrl: req.originalUrl
+        originalUrl: req.originalUrl,
+        calleeState: null // Initialise to null to indicate that data can be placed here
       };
 
 
       if (decorateRequest)
         reqOpt = decorateRequest(reqOpt) || reqOpt;
+
+      // Copy the state parameter onto the request so the implementer of the
+      // decorateRequest and intercept callbacks can retain state between them
+      req.calleeState = reqOpt.calleeState;
 
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
