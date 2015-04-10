@@ -1,6 +1,6 @@
 {
   "name": "express-http-proxy",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
