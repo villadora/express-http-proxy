@@ -69,7 +69,8 @@ module.exports = function proxy(host, options) {
         headers: hds,
         method: req.method,
         path: path,
-        bodyContent: bodyContent
+        bodyContent: bodyContent,
+        originalUrl: req.originalUrl
       };
 
 
