@@ -29,6 +29,8 @@ module.exports = function proxy(host, options) {
     port = h[1] || (ishttps ? 443 : 80);
   }
 
+  port = options.port || port;
+
 
   /** 
    * intercept(targetResponse, data, res, req, function(err, json));
