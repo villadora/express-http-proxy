@@ -69,7 +69,8 @@ module.exports = function proxy(host, options) {
         headers: hds,
         method: req.method,
         path: path,
-        bodyContent: bodyContent
+        bodyContent: bodyContent,
+        params: req.params
       };
 
 
@@ -78,6 +79,7 @@ module.exports = function proxy(host, options) {
 
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
+      delete reqOpt.params;
 
       if (typeof bodyContent == 'string')
         reqOpt.headers['content-length'] = Buffer.byteLength(bodyContent);
