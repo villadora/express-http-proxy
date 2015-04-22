@@ -31,6 +31,7 @@ module.exports = function proxy(host, options) {
 
     host = h[0];
     port = h[1] || (ishttps ? 443 : 80);
+    port = String.prototype.replace.call(port, '/', '');
   }
 
   port = options.port || port;

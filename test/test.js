@@ -11,7 +11,7 @@ describe('http-proxy', function() {
     app = express();
     app.use(proxy('httpbin.org'));
   });
-  
+
   describe('test https', function() {
     it('https', function(done) {
       var https = express();
@@ -120,7 +120,7 @@ describe('http-proxy', function() {
           cb(null, data);
         }
       }));
-      
+
       request(app)
         .get('/html')
         .end(function(err, res) {
@@ -235,6 +235,33 @@ describe('http-proxy', function() {
         done(err);
       });
 
+  });
+
+  describe('test url parsing', function() {
+
+    it('can parse a url with a port', function(done) {
+      var app = express();
+      app.use(proxy('http://localhost:9786'));
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(true);
+          done();
+        });
+    });
+
+    it('does not throw `Uncaught RangeError` if you have both a port and a trailing slash', function(done) {
+      var app = express();
+      app.use(proxy('http://localhost:9786/'));
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(true);
+          done();
+        });
+    });
   });
 
 });
