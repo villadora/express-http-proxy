@@ -45,6 +45,7 @@ module.exports = function proxy(host, options) {
   var forwardPath = options.forwardPath;
   var filter = options.filter;
   var limit = options.limit || '1mb';
+  var preserveHostHdr = options.preserveHostHdr;
 
   return function handleProxy(req, res, next) {
     if (filter && !filter(req, res)) return next();
@@ -54,7 +55,11 @@ module.exports = function proxy(host, options) {
 
     path = forwardPath ? forwardPath(req, res) : url.parse(req.url).path;
 
-    var hds = extend(headers, req.headers, ['connection', 'host', 'content-length']);
+    var skipHdrs = [ 'connection', 'content-length' ];
+    if (!preserveHostHdr) {
+      skipHdrs.push('host');
+    }
+    var hds = extend(headers, req.headers, skipHdrs);
     hds.connection = 'close';
 
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
