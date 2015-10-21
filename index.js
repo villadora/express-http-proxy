@@ -43,13 +43,11 @@ module.exports = function proxy(host, options) {
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath;
-  var filter = options.filter;
+  var filter = options.filter || function() { return true; };
   var limit = options.limit || '1mb';
   var preserveHostHdr = options.preserveHostHdr;
 
-  return function handleProxy(req, res, next) {
-    if (filter && !filter(req, res)) return next();
-
+  function handleProxy(req, res, next) {
     var headers = options.headers || {};
     var path;
 
@@ -172,6 +170,13 @@ module.exports = function proxy(host, options) {
       }
 
       realRequest.end();
+    });
+  }
+
+  return function(req, res, next) {
+    Promise.resolve(filter(req, res)).then(function(accept) {
+      if (!accept) return next();
+      handleProxy(req, res, next);
     });
   };
 };
