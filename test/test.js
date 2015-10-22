@@ -76,6 +76,49 @@ describe('http-proxy', function() {
         });
     });
 
+    it('filter with value', function(done) {
+      var other = express();
+      other.get('/', function(req, res) {
+        assert(false, "Filter let a request trough!");
+      });
+      var server = other.listen(8181);
+
+      var app = express();
+      app.use(proxy('http://localhost:8181', {
+        filter: function() { return false; }
+      }));
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          server.close();
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('filter with promise', function(done) {
+      var other = express();
+      other.get('/', function(req, res) {
+        assert(false, "Filter let a request trough!");
+      });
+      var server = other.listen(8181);
+
+      var app = express();
+      app.use(proxy('http://localhost:8181', {
+        filter: function() {
+          return new Promise(function(resolve, reject) {
+            setTimeout(function() { resolve(false); }, 250);
+          });
+        }
+      }));
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          server.close();
+          if (err) return done(err);
+          done();
+        });
+    });
 
     it('intercept', function(done) {
       var app = express();
