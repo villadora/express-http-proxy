@@ -33,8 +33,9 @@
     "supertest": "^0.13.0"
   },
   "dependencies": {
-    "type-is": "^1.2.0",
-    "raw-body": "^1.1.6"
+    "es6-promise": "^3.0.2",
+    "raw-body": "^1.1.6",
+    "type-is": "^1.2.0"
   },
   "contributors": [
     {

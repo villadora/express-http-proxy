@@ -7,6 +7,7 @@ var is = require('type-is');
 var getRawBody = require('raw-body');
 
 require('buffer');
+require('es6-promise').polyfill();
 
 module.exports = function proxy(host, options) {
 
