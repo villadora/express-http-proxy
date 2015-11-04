@@ -63,12 +63,18 @@ module.exports = function proxy(host, options) {
     hds.connection = 'close';
 
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
-    getRawBody(req, {
-      length: req.headers['content-length'],
-      limit: limit
-    }, function(err, bodyContent) {
-      if (err) return next(err);
+    // Support for body-parser or other modules which already consume the req and store the result in req.body
+    if (req.body) {
+      runProxy(null, req.body);
+    } else {
+      getRawBody(req, {
+        length: req.headers['content-length'],
+        limit: limit,
+        encoding: 'utf-8'
+      }, runProxy);
+    }
 
+    function runProxy(err, bodyContent) {
       var reqOpt = {
         hostname: (typeof host == 'function') ? host(req) : host.toString(),
         port: port,
@@ -86,6 +92,8 @@ module.exports = function proxy(host, options) {
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
       delete reqOpt.params;
+      
+      if (err && !bodyContent) return next(err);
 
       if (typeof bodyContent == 'string')
         reqOpt.headers['content-length'] = Buffer.byteLength(bodyContent);
@@ -172,7 +180,7 @@ module.exports = function proxy(host, options) {
       }
 
       realRequest.end();
-    });
+    }
   };
 };
 
