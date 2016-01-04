@@ -16,14 +16,14 @@ module.exports = function proxy(host, options) {
 
   var port = 80;
 
-  var ishttps = /^https/.test(host);
+  var ishttps = /^https/.test(host) || !!options.https;
 
   if (typeof host == 'string') {
     var mc = host.match(/^(https?:\/\/)/);
     if (mc) {
       host = host.substring(mc[1].length);
     }
-    
+
     var h = host.split(':');
     if (h[1] === '443') {
       ishttps = true;
@@ -32,12 +32,14 @@ module.exports = function proxy(host, options) {
     host = h[0];
     port = h[1] || (ishttps ? 443 : 80);
     port = String.prototype.replace.call(port, '/', '');
-  }
+    } else {
+      port = ishttps ? 443 : 80;
+    }
 
   port = options.port || port;
 
 
-  /** 
+  /**
    * intercept(targetResponse, data, res, req, function(err, json));
    */
   var intercept = options.intercept;
@@ -127,13 +129,13 @@ module.exports = function proxy(host, options) {
                 }
               }
 
-              if (typeof rspd == 'string') 
+              if (typeof rspd == 'string')
                 rspd = new Buffer(rspd, encode);
-              
+
               if (!Buffer.isBuffer(rspd)) {
                 next(new Error("intercept should return string or buffer as data"));
               }
-              
+
               if (!res.headersSent)
                 res.set('content-length', rspd.length);
               else if (rspd.length != rspData.length) {

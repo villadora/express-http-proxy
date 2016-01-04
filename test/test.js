@@ -34,6 +34,16 @@ describe('http-proxy', function() {
           done();
         });
     });
+    it('https with function for URL', function(done) {
+      var https = express();
+      https.use( proxy(function() { return 'httpbin.org'; }, {https: true}) );
+      request(https)
+        .get('/user-agent')
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
   });
 
   describe('test different port', function() {
