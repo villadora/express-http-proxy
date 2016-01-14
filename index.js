@@ -81,7 +81,7 @@ module.exports = function proxy(host, options) {
 
 
       if (decorateRequest)
-        reqOpt = decorateRequest(reqOpt) || reqOpt;
+        reqOpt = decorateRequest(reqOpt, req) || reqOpt;
 
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
