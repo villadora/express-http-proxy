@@ -13,7 +13,7 @@ function parseUrl(hostUrl, options) {
   'use strict';
   var port;
   var host = hostUrl;
-  var isHttps = false;
+  var isHttps = /^https/.test(host);
 
   var mc = host.match(/^(https?:\/\/)/);
 
@@ -53,7 +53,7 @@ function extend(obj, source, skips) {
 
 module.exports = function proxy(host, options) {
   'use strict';
-  
+
   assert(host, 'Host should not be empty');
 
   options = options || {};
@@ -83,7 +83,6 @@ module.exports = function proxy(host, options) {
     var hds = extend(headers, req.headers, skipHdrs);
     hds.connection = 'close';
 
-    // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     getRawBody(req, {
       length: req.headers['content-length'],
       limit: limit
