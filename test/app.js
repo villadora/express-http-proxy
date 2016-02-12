@@ -4,7 +4,8 @@ var express = require('express'),
 
 app.use(proxy('www.google.com'));
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
+  'use strict';
   throw new Error();
 });
 

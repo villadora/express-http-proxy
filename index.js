@@ -8,36 +8,57 @@ var getRawBody = require('raw-body');
 
 require('buffer');
 
-module.exports = function proxy(host, options) {
 
+function parseUrl(hostUrl, options) {
+  'use strict';
+  var port;
+  var host = hostUrl;
+  var isHttps = false;
+
+  var mc = host.match(/^(https?:\/\/)/);
+
+  if (mc) {
+    host = host.substring(mc[1].length);
+  }
+
+  var h = host.split(':');
+  if (h[1] === '443') {
+    isHttps = true;
+  }
+
+  host = h[0];
+  port = h[1] || (isHttps ? 443 : 80);
+  port = String.prototype.replace.call(port, '/', '');
+
+  port = options.port || port;
+
+  return {
+    host: host,
+    isHttps: isHttps,
+    port: port
+  };
+}
+
+function extend(obj, source, skips) {
+  'use strict';
+  if (!source) return obj;
+
+  for (var prop in source) {
+    if (!skips || skips.indexOf(prop) === -1)
+      obj[prop] = source[prop];
+  }
+
+  return obj;
+}
+
+module.exports = function proxy(host, options) {
+  'use strict';
+  
   assert(host, 'Host should not be empty');
 
   options = options || {};
 
-  var port = 80;
-
-  var ishttps = /^https/.test(host);
-
-  if (typeof host == 'string') {
-    var mc = host.match(/^(https?:\/\/)/);
-    if (mc) {
-      host = host.substring(mc[1].length);
-    }
-    
-    var h = host.split(':');
-    if (h[1] === '443') {
-      ishttps = true;
-    }
-
-    host = h[0];
-    port = h[1] || (ishttps ? 443 : 80);
-    port = String.prototype.replace.call(port, '/', '');
-  }
-
-  port = options.port || port;
-
-
-  /** 
+  /**
    * intercept(targetResponse, data, res, req, function(err, json));
    */
   var intercept = options.intercept;
@@ -55,7 +76,7 @@ module.exports = function proxy(host, options) {
 
     path = forwardPath ? forwardPath(req, res) : url.parse(req.url).path;
 
-    var skipHdrs = [ 'connection', 'content-length' ];
+    var skipHdrs = ['connection', 'content-length'];
     if (!preserveHostHdr) {
       skipHdrs.push('host');
     }
@@ -66,19 +87,24 @@ module.exports = function proxy(host, options) {
     getRawBody(req, {
       length: req.headers['content-length'],
       limit: limit
-    }, function(err, bodyContent) {
+    }, function (err, bodyContent) {
       if (err) return next(err);
 
+      var hostUrl = (typeof host === 'function') ? host(req) : host.toString();
+
+      var parseResult = parseUrl(hostUrl, options);
+
+      var isHttps = parseResult.isHttps;
+
       var reqOpt = {
-        hostname: (typeof host == 'function') ? host(req) : host.toString(),
-        port: port,
+        hostname: parseResult.host,
+        port: parseResult.port,
         headers: hds,
         method: req.method,
         path: path,
         bodyContent: bodyContent,
         params: req.params
       };
-
 
       if (decorateRequest)
         reqOpt = decorateRequest(reqOpt) || reqOpt;
@@ -87,57 +113,57 @@ module.exports = function proxy(host, options) {
       delete reqOpt.bodyContent;
       delete reqOpt.params;
 
-      if (typeof bodyContent == 'string')
+      if (typeof bodyContent === 'string')
         reqOpt.headers['content-length'] = Buffer.byteLength(bodyContent);
       else if (Buffer.isBuffer(bodyContent)) // Buffer
         reqOpt.headers['content-length'] = bodyContent.length;
 
       var chunks = [];
-      var realRequest = (ishttps ? https : http).request(reqOpt, function(rsp) {
-        var rspData = null;
-        rsp.on('data', function(chunk) {
+      var realRequest = (isHttps ? https : http).request(reqOpt, function (rsp) {
+        rsp.on('data', function (chunk) {
           chunks.push(chunk);
         });
 
-        rsp.on('end', function() {
-          var totalLength = chunks.reduce(function(len, buf) {
+        rsp.on('end', function () {
+          var totalLength = chunks.reduce(function (len, buf) {
             return len + buf.length;
           }, 0);
 
           var rspData = Buffer.concat(chunks, totalLength);
 
           if (intercept) {
-            intercept(rsp, rspData, req, res, function(err, rspd, sent) {
+            intercept(rsp, rspData, req, res, function (err, rspd, sent) {
               if (err) {
                 return next(err);
               }
 
-	      var encode = 'utf8';
+              var encode = 'utf8';
               if (rsp.headers && rsp.headers['content-type']) {
                 var contentType = rsp.headers['content-type'];
                 if (/charset=/.test(contentType)) {
-                  var attrs = contentType.split(';').map(function(str) { return str.trim(); });
-                  for(var i = 0, len = attrs.length; i < len; i++) {
-                      var attr = attrs[i];
+                  var attrs = contentType.split(';').map(function (str) {
+                    return str.trim();
+                  });
+                  for (var i = 0, len = attrs.length; i < len; i++) {
+                    var attr = attrs[i];
                     if (/charset=/.test(attr)) {
-		      // encode = attr.split('=')[1];
                       break;
                     }
                   }
                 }
               }
 
-              if (typeof rspd == 'string') 
+              if (typeof rspd === 'string')
                 rspd = new Buffer(rspd, encode);
-              
+
               if (!Buffer.isBuffer(rspd)) {
-                next(new Error("intercept should return string or buffer as data"));
+                next(new Error('intercept should return string or buffer as data'));
               }
-              
+
               if (!res.headersSent)
                 res.set('content-length', rspd.length);
-              else if (rspd.length != rspData.length) {
-                next(new Error("'Content-Length' is already sent, the length of response data can not be changed"));
+              else if (rspd.length !== rspData.length) {
+                next(new Error('\'Content-Length\' is already sent, the length of response data can not be changed'));
               }
 
               if (!sent) {
@@ -149,10 +175,9 @@ module.exports = function proxy(host, options) {
           }
         });
 
-        rsp.on('error', function(e) {
+        rsp.on('error', function (e) {
           next(e);
         });
-
 
         if (!res.headersSent) { // if header is not set yet
           res.status(rsp.statusCode);
@@ -160,10 +185,9 @@ module.exports = function proxy(host, options) {
             res.set(p, rsp.headers[p]);
           }
         }
-
       });
 
-      realRequest.on('error', function(e) {
+      realRequest.on('error', function (e) {
         next(e);
       });
 
@@ -175,15 +199,3 @@ module.exports = function proxy(host, options) {
     });
   };
 };
-
-
-function extend(obj, source, skips) {
-  if (!source) return obj;
-
-  for (var prop in source) {
-    if (!skips || skips.indexOf(prop) == -1)
-      obj[prop] = source[prop];
-  }
-
-  return obj;
-}
