@@ -157,6 +157,8 @@ module.exports = function proxy(host, options) {
         if (!res.headersSent) { // if header is not set yet
           res.status(rsp.statusCode);
           for (var p in rsp.headers) {
+            if (p == 'transfer-encoding')
+              continue;
             res.set(p, rsp.headers[p]);
           }
         }
