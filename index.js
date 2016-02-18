@@ -3,8 +3,8 @@ var util = require('util');
 var url = require('url');
 var http = require('http');
 var https = require('https');
-var is = require('type-is');
 var getRawBody = require('raw-body');
+var isError = require('lodash.iserror');
 
 require('buffer');
 
@@ -14,30 +14,7 @@ module.exports = function proxy(host, options) {
 
   options = options || {};
 
-  var port = 80;
-
-  var ishttps = /^https/.test(host);
-
-  if (typeof host == 'string') {
-    var mc = host.match(/^(https?:\/\/)/);
-    if (mc) {
-      host = host.substring(mc[1].length);
-    }
-    
-    var h = host.split(':');
-    if (h[1] === '443') {
-      ishttps = true;
-    }
-
-    host = h[0];
-    port = h[1] || (ishttps ? 443 : 80);
-    port = String.prototype.replace.call(port, '/', '');
-  }
-
-  port = options.port || port;
-
-
-  /** 
+  /**
    * intercept(targetResponse, data, res, req, function(err, json));
    */
   var intercept = options.intercept;
@@ -62,6 +39,10 @@ module.exports = function proxy(host, options) {
     var hds = extend(headers, req.headers, skipHdrs);
     hds.connection = 'close';
 
+    var parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
+    if (isError(parsedHost))
+      next(parsedHost);
+
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     getRawBody(req, {
       length: req.headers['content-length'],
@@ -70,8 +51,8 @@ module.exports = function proxy(host, options) {
       if (err) return next(err);
 
       var reqOpt = {
-        hostname: (typeof host == 'function') ? host(req) : host.toString(),
-        port: port,
+        hostname: parsedHost.host,
+        port: options.port || parsedHost.port,
         headers: hds,
         method: req.method,
         path: path,
@@ -93,7 +74,7 @@ module.exports = function proxy(host, options) {
         reqOpt.headers['content-length'] = bodyContent.length;
 
       var chunks = [];
-      var realRequest = (ishttps ? https : http).request(reqOpt, function(rsp) {
+      var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
         var rspData = null;
         rsp.on('data', function(chunk) {
           chunks.push(chunk);
@@ -112,7 +93,7 @@ module.exports = function proxy(host, options) {
                 return next(err);
               }
 
-	      var encode = 'utf8';
+              var encode = 'utf8';
               if (rsp.headers && rsp.headers['content-type']) {
                 var contentType = rsp.headers['content-type'];
                 if (/charset=/.test(contentType)) {
@@ -120,20 +101,20 @@ module.exports = function proxy(host, options) {
                   for(var i = 0, len = attrs.length; i < len; i++) {
                       var attr = attrs[i];
                     if (/charset=/.test(attr)) {
-		      // encode = attr.split('=')[1];
+                      // encode = attr.split('=')[1];
                       break;
                     }
                   }
                 }
               }
 
-              if (typeof rspd == 'string') 
+              if (typeof rspd == 'string')
                 rspd = new Buffer(rspd, encode);
-              
+
               if (!Buffer.isBuffer(rspd)) {
                 next(new Error("intercept should return string or buffer as data"));
               }
-              
+
               if (!res.headersSent)
                 res.set('content-length', rspd.length);
               else if (rspd.length != rspData.length) {
@@ -186,4 +167,19 @@ function extend(obj, source, skips) {
   }
 
   return obj;
+}
+
+function parseHost(host) {
+  var parsed = url.parse(host);
+  if (! parsed.hostname) {
+    return new Error("Unable to parse hostname, possibly missing protocol://?");
+  }
+
+  var ishttps = parsed.protocol === 'https:';
+
+  return {
+    host: parsed.hostname,
+    port: parsed.port || (ishttps ? 443 : 80),
+    module: ishttps ? https : http,
+  };
 }
