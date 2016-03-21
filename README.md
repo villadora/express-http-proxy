@@ -62,6 +62,17 @@ app.use('/proxy', proxy('www.google.com', {
 
 ```
 
+You can copy the host HTTP header to the proxied express server using the `preserveHostHdr` option.
+
+```
+app.use('/proxy', proxy('www.google.com', {
+  forwardPath: function(req, res) {
+    return require('url').parse(req.url).path;
+  },
+  preserveHostHdr: true
+}));
+```
+
 ## Release Notes
 
 | Release | Notes |
