@@ -40,6 +40,7 @@ module.exports = function proxy(host, options) {
   /** 
    * intercept(targetResponse, data, res, req, function(err, json));
    */
+  var preIntercept = options.preIntercept;
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath;
@@ -94,6 +95,7 @@ module.exports = function proxy(host, options) {
 
       var chunks = [];
       var realRequest = (ishttps ? https : http).request(reqOpt, function(rsp) {
+      	if (preIntercept) preIntercept(rsp);
         var rspData = null;
         rsp.on('data', function(chunk) {
           chunks.push(chunk);
