@@ -10,7 +10,7 @@ $ npm install express-http-proxy --save
 ```
 
 ## Usage
-
+If you want to set up proxy for URL starting with `/proxy` 
 ```js
 var proxy = require('express-http-proxy');
 
