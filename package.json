@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "type-is": "^1.2.0",
-    "raw-body": "^1.1.6"
+    "raw-body": "^2.1.4"
   },
   "contributors": [
     {

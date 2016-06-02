@@ -111,11 +111,11 @@ describe('http-proxy', function() {
       request(app).get('/').end();
     });
 
-    it('test intercept on html response',function(done) {
+    it('test intercept on html response', function(done) {
       var app = express();
       app.use(proxy('httpbin.org', {
         intercept: function(rsp, data, req, res, cb) {
-          data = data.toString().replace('Oh','<strong>Hey</strong>');
+          data = data.toString().replace('Oh', '<strong>Hey</strong>');
           assert(data !== "");
           cb(null, data);
         }
@@ -132,7 +132,7 @@ describe('http-proxy', function() {
 
     it('test github api', function(done) {
       var app = express();
-      app.use(proxy('https://api.github.com',  {
+      app.use(proxy('https://api.github.com', {
         intercept: function(rsp, data, req, res, cb) {
           var Iconv = require('iconv').Iconv;
           var iconv = new Iconv('UTF-8', 'utf8');
@@ -150,6 +150,44 @@ describe('http-proxy', function() {
     });
   });
 
+  describe('test proxy middleware compatibility', function() {
+    it('should use req.body if defined', function(done) {
+      var app = express();
+
+      // Simulate another middleware that puts req stream into the body
+      app.use(function(req, res, next) {
+        var received = [];
+        req.on('data', function onData(chunk) {
+          if (!chunk) return;
+          received.push(chunk);
+        });
+        req.on('end', function onEnd(err) {
+          received = Buffer.concat(received).toString('utf8');
+          req.body = JSON.parse(received);
+          req.body.foo = 1;
+          next();
+        });
+      });
+
+      app.use(proxy('example.com', {
+        intercept: function(rsp, data, req, res, cb) {
+          assert(req.body);
+          assert.equal(req.body.foo, 1);
+          assert.equal(req.body.mypost, 'hello');
+          cb(null, data);
+        }
+      }));
+
+      request(app)
+        .post('/post')
+        .send({
+          mypost: 'hello'
+        })
+        .end(function(err, res) {
+          done(err);
+        });
+    });
+  });
 
   describe('test proxy cookie', function() {
     it('set cookie', function(done) {
