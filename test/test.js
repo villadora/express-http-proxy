@@ -312,4 +312,27 @@ describe('http-proxy', function() {
     });
   });
 
+  describe('test preserveReqSession', function() {
+    it('preserveReqSession', function(done) {
+      var app = express();
+      app.use(function (req, res, next) {
+        req.session = 'hola';
+        next();
+      });
+      app.use(proxy('httpbin.org', {
+        preserveReqSession: true,
+        decorateRequest: function(req) {
+          assert(req.session, 'hola');
+        }
+      }));
+
+      request(app)
+        .get('/user-agent')
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+  });
+
 });

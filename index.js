@@ -48,6 +48,7 @@ module.exports = function proxy(host, options) {
   var filter = options.filter;
   var limit = options.limit || '1mb';
   var preserveHostHdr = options.preserveHostHdr;
+  var preserveReqSession = options.preserveReqSession;
 
   return function handleProxy(req, res, next) {
     if (filter && !filter(req, res)) return next();
@@ -87,6 +88,9 @@ module.exports = function proxy(host, options) {
         params: req.params
       };
 
+      if (preserveReqSession) {
+        reqOpt.session = req.session;
+      }
 
       if (decorateRequest)
         reqOpt = decorateRequest(reqOpt, req) || reqOpt;
