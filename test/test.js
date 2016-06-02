@@ -199,6 +199,7 @@ describe('http-proxy', function() {
     });
   });
 
+
   describe('test proxy cookie', function() {
     it('set cookie', function(done) {
       request(app)
@@ -220,76 +221,71 @@ describe('http-proxy', function() {
     });
   });
 
-  it('test proxy get', function(done) {
-    request(app)
-      .get('/get')
-      .end(function(err, res) {
-        if (err) return done(err);
-        assert(/node-superagent/.test(res.body.headers['User-Agent']));
-        assert.equal(res.body.url, 'http://httpbin.org/get');
-        done(err);
-      });
-  });
+  describe('test http verbs', function() {
+    it('test proxy get', function(done) {
+      request(app)
+        .get('/get')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(/node-superagent/.test(res.body.headers['User-Agent']));
+          assert.equal(res.body.url, 'http://httpbin.org/get');
+          done(err);
+        });
+    });
 
-  it('test proxy post', function(done) {
-    request(app)
-      .post('/post')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.body.data, '{"mypost":"hello"}');
-        done(err);
-      });
-  });
+    it('test proxy post', function(done) {
+      request(app)
+        .post('/post')
+        .send({
+          mypost: 'hello'
+        })
+        .end(function(err, res) {
+          assert.equal(res.body.data, '{"mypost":"hello"}');
+          done(err);
+        });
+    });
 
+    it('test proxy put', function(done) {
+      request(app)
+        .put('/put')
+        .send({
+          mypost: 'hello'
+        })
+        .end(function(err, res) {
+          assert.equal(res.body.data, '{"mypost":"hello"}');
+          done(err);
+        });
+    });
 
+    it('test proxy patch', function(done) {
+      request(app)
+        .patch('/patch')
+        .send({
+          mypost: 'hello'
+        })
+        .end(function(err, res) {
+          assert.equal(res.body.data, '{"mypost":"hello"}');
+          done(err);
+        });
+    });
 
-  it('test proxy put', function(done) {
-    request(app)
-      .put('/put')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.body.data, '{"mypost":"hello"}');
-        done(err);
-      });
-
-  });
-
-
-  it('test proxy patch', function(done) {
-    request(app)
-      .patch('/patch')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.body.data, '{"mypost":"hello"}');
-        done(err);
-      });
-
-  });
-
-  it('test proxy delete', function(done) {
-    request(app)
-      .del('/delete')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.body.data, '{"mypost":"hello"}');
-        done(err);
-      });
-
+    it('test proxy delete', function(done) {
+      request(app)
+        .del('/delete')
+        .send({
+          mypost: 'hello'
+        })
+        .end(function(err, res) {
+          assert.equal(res.body.data, '{"mypost":"hello"}');
+          done(err);
+        });
+    });
   });
 
   describe('test url parsing', function() {
-
     it('can parse a url with a port', function(done) {
       var app = express();
-      app.use(proxy('http://localhost:9786'));
+      app.use(proxy('http://httpbin.org:80'));
       request(app)
         .get('/')
         .end(function(err, res) {
@@ -301,7 +297,7 @@ describe('http-proxy', function() {
 
     it('does not throw `Uncaught RangeError` if you have both a port and a trailing slash', function(done) {
       var app = express();
-      app.use(proxy('http://localhost:9786/'));
+      app.use(proxy('http://httpbin.org:80/'));
       request(app)
         .get('/')
         .end(function(err, res) {
@@ -311,6 +307,7 @@ describe('http-proxy', function() {
         });
     });
   });
+
 
   describe('test preserveReqSession', function() {
     it('preserveReqSession', function(done) {
@@ -336,3 +333,4 @@ describe('http-proxy', function() {
   });
 
 });
+
