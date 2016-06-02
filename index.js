@@ -3,8 +3,8 @@ var util = require('util');
 var url = require('url');
 var http = require('http');
 var https = require('https');
-var is = require('type-is');
 var getRawBody = require('raw-body');
+var isError = require('lodash.iserror');
 
 require('buffer');
 
@@ -38,7 +38,6 @@ module.exports = function proxy(host, options) {
 
   port = options.port || port;
 
-
   /**
    * intercept(targetResponse, data, res, req, function(err, json));
    */
@@ -65,6 +64,10 @@ module.exports = function proxy(host, options) {
     var hds = extend(headers, req.headers, skipHdrs);
     hds.connection = 'close';
 
+    var parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
+    if (isError(parsedHost))
+      next(parsedHost);
+
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     // Support for body-parser or other modules which already consume the req and store the result in req.body
     if (req.body) {
@@ -79,8 +82,8 @@ module.exports = function proxy(host, options) {
 
     function runProxy(err, bodyContent) {
       var reqOpt = {
-        hostname: (typeof host == 'function') ? host(req) : host.toString(),
-        port: port,
+        hostname: parsedHost.host,
+        port: options.port || parsedHost.port,
         headers: hds,
         method: req.method,
         path: path,
@@ -107,7 +110,7 @@ module.exports = function proxy(host, options) {
         reqOpt.headers['content-length'] = bodyContent.length;
 
       var chunks = [];
-      var realRequest = (ishttps ? https : http).request(reqOpt, function(rsp) {
+      var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
         var rspData = null;
         rsp.on('data', function(chunk) {
           chunks.push(chunk);
@@ -126,7 +129,7 @@ module.exports = function proxy(host, options) {
                 return next(err);
               }
 
-	      var encode = 'utf8';
+              var encode = 'utf8';
               if (rsp.headers && rsp.headers['content-type']) {
                 var contentType = rsp.headers['content-type'];
                 if (/charset=/.test(contentType)) {
@@ -134,7 +137,7 @@ module.exports = function proxy(host, options) {
                   for(var i = 0, len = attrs.length; i < len; i++) {
                       var attr = attrs[i];
                     if (/charset=/.test(attr)) {
-		      // encode = attr.split('=')[1];
+                      // encode = attr.split('=')[1];
                       break;
                     }
                   }
@@ -202,4 +205,27 @@ function extend(obj, source, skips) {
   }
 
   return obj;
+}
+
+function parseHost(host) {
+  if (!host) {
+    return new Error("Empty host parameter");
+  }
+
+  if (!/http(s)?:\/\//.test(host)) {
+    host = "http://" + host;
+  }
+
+  var parsed = url.parse(host);
+  if (! parsed.hostname) {
+    return new Error("Unable to parse hostname, possibly missing protocol://?");
+  }
+
+  var ishttps = parsed.protocol === 'https:';
+
+  return {
+    host: parsed.hostname,
+    port: parsed.port || (ishttps ? 443 : 80),
+    module: ishttps ? https : http
+  };
 }
