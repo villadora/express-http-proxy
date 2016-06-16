@@ -36,7 +36,7 @@ describe('http-proxy', function() {
     });
     it('https with function for URL', function(done) {
       var https = express();
-      https.use( proxy(function() { return 'httpbin.org'; }, {https: true}) );
+      https.use(proxy(function() { return 'httpbin.org'; }, {https: true}) );
       request(https)
         .get('/user-agent')
         .end(function(err, res) {

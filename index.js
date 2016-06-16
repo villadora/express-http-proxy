@@ -18,25 +18,12 @@ module.exports = function proxy(host, options) {
 
   var ishttps = /^https/.test(host) || !!options.https;
 
-  if (typeof host == 'string') {
-    var mc = host.match(/^(https?:\/\/)/);
-    if (mc) {
-      host = host.substring(mc[1].length);
-    }
-
-    var h = host.split(':');
-    if (h[1] === '443') {
-      ishttps = true;
-    }
-
-    host = h[0];
-    port = h[1] || (ishttps ? 443 : 80);
-    port = String.prototype.replace.call(port, '/', '');
-    } else {
-      port = ishttps ? 443 : 80;
-    }
-
-  port = options.port || port;
+  var parsedHost = null;
+  if (typeof host != 'function') {
+    parsedHost = parseHost(host.toString());
+    if (isError(parsedHost))
+      throw parsedHost;
+  }
 
   /**
    * intercept(targetResponse, data, res, req, function(err, json));
@@ -64,9 +51,11 @@ module.exports = function proxy(host, options) {
     var hds = extend(headers, req.headers, skipHdrs);
     hds.connection = 'close';
 
-    var parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
-    if (isError(parsedHost))
-      next(parsedHost);
+    if (!parsedHost) {
+        parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
+        if (isError(parsedHost))
+            throw parsedHost;
+    }
 
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
     // Support for body-parser or other modules which already consume the req and store the result in req.body
@@ -101,7 +90,7 @@ module.exports = function proxy(host, options) {
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
       delete reqOpt.params;
-      
+
       if (err && !bodyContent) return next(err);
 
       if (typeof bodyContent == 'string')
