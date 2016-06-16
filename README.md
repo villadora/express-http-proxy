@@ -13,7 +13,27 @@ $ npm install express-http-proxy --save
 ```
 
 ## Usage
-If you want to set up proxy for URL starting with `/proxy` 
+```js
+proxy(host, options);
+```
+
+To proxy URLS starting with '/proxy' to the host 'www.google.com':
+
+```js
+var proxy = require('express-http-proxy');
+
+var app = require('express')();
+
+app.use('/proxy', proxy('www.google.com'));
+```
+
+### Options
+
+
+#### forwardPath
+
+The ```forwardPath``` option allows you to modify the path prior to proxying the request.
+
 ```js
 var proxy = require('express-http-proxy');
 
@@ -24,11 +44,10 @@ app.use('/proxy', proxy('www.google.com', {
     return require('url').parse(req.url).path;
   }
 }));
-
 ```
 
-If you only want to proxy get request
-
+#### filter
+The ```filter``` option can be used to limit what requests are proxied. For example, if you only want to proxy get request
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -41,37 +60,41 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
-
-
-You can also intercept the response before sending it back to the client, or change the request options before it is sent to the target:
+#### intercept
+You can intercept the response before sending it back to the client.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  forwardPath: function(req, res) {
-    return require('url').parse(req.url).path;
-  },
   intercept: function(rsp, data, req, res, callback) {
-       // rsp - original response from the target
-       data = JSON.parse(data.toString('utf8'));
-       callback(null, JSON.stringify(data));
-  },
+    // rsp - original response from the target
+    data = JSON.parse(data.toString('utf8'));
+    callback(null, JSON.stringify(data));
+  }
+}));
+```
+
+#### decorateRequest
+
+You can change the request options before it is sent to the target.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
   decorateRequest: function(req) {
-       req.headers['Content-Type'] = '';
-       req.method = 'GET';
-       req.bodyContent = wrap(req.bodyContent);
-       return req;
+    req.headers['Content-Type'] = '';
+    req.method = 'GET';
+    req.bodyContent = wrap(req.bodyContent);
+    return req;
   }
 }));
 
 ```
 
+#### preserveHostHdr
+
 You can copy the host HTTP header to the proxied express server using the `preserveHostHdr` option.
 
 ```
 app.use('/proxy', proxy('www.google.com', {
-  forwardPath: function(req, res) {
-    return require('url').parse(req.url).path;
-  },
   preserveHostHdr: true
 }));
 ```
