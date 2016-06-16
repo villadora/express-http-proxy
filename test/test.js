@@ -86,6 +86,25 @@ describe('http-proxy', function() {
         });
     });
 
+    it('test decorateRequest has access to calling ip', function (done) {
+      var app = express();
+      app.use(proxy('httpbin.org', {
+        decorateRequest: function(reqOpts, req) {
+          assert(req.ip);
+          return reqOpts;
+        }
+      }));
+
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+
+    });
+
+
 
     it('intercept', function(done) {
       var app = express();
@@ -158,6 +177,23 @@ describe('http-proxy', function() {
         });
 
     });
+
+    it('test intercept has access to calling ip', function (done) {
+      var app = express();
+      app.use(proxy('https://api.github.com', {
+        intercept: function(rsp, data, req, res, cb) {
+          cb(null, data);
+        }
+      }));
+
+      request(app)
+        .get('/')
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+
+    });
   });
 
   describe('test proxy middleware compatibility', function() {
@@ -211,6 +247,8 @@ describe('http-proxy', function() {
     });
   });
 
+
+  // This looks like it tests if httpbin returns the expected status codes.
   describe('test proxy status', function() {
     [304, 404, 200, 401, 500].forEach(function(status) {
       it(status, function(done) {

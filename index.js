@@ -77,7 +77,8 @@ module.exports = function proxy(host, options) {
         method: req.method,
         path: path,
         bodyContent: bodyContent,
-        params: req.params
+        params: req.params,
+        ip: req.ip
       };
 
       if (preserveReqSession) {
