@@ -79,11 +79,11 @@ You can change the request options before it is sent to the target.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateRequest: function(req) {
-    req.headers['Content-Type'] = '';
-    req.method = 'GET';
-    req.bodyContent = wrap(req.bodyContent);
-    return req;
+  decorateRequest: function(reqOpt, req) {
+    reqOpt.headers['Content-Type'] = '';
+    reqOpt.method = 'GET';
+    reqOpt.bodyContent = wrap(req.bodyContent);
+    return reqOpt;
   }
 }));
 
