@@ -1,6 +1,7 @@
 var assert = require('assert');
 var util = require('util');
 var url = require('url');
+var queryString = require('querystring');
 var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
@@ -70,6 +71,9 @@ module.exports = function proxy(host, options) {
     }
 
     function runProxy(err, bodyContent) {
+        if (toString.call(bodyContent) === '[object Object]') {
+            bodyContent = queryString.stringify(bodyContent);
+        }
       var reqOpt = {
         hostname: parsedHost.host,
         port: options.port || parsedHost.port,
