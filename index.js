@@ -64,8 +64,7 @@ module.exports = function proxy(host, options) {
     } else {
       getRawBody(req, {
         length: req.headers['content-length'],
-        limit: limit,
-        encoding: 'utf-8'
+        limit: limit
       }, runProxy);
     }
 
