@@ -3,16 +3,27 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
+
+function proxyTarget(port) {
+  var other = express();
+  other.get('/', function(req, res) {
+    res.send('Success');
+  });
+  return other.listen(port);
+}
+
 describe('http-proxy', function() {
   this.timeout(10000);
 
   var app;
+
   beforeEach(function() {
     app = express();
     app.use(proxy('httpbin.org'));
   });
 
-  describe('test https', function() {
+  describe('https supports', function() {
+
     it('https', function(done) {
       var https = express();
       https.use(proxy('https://httpbin.org'));
@@ -46,22 +57,44 @@ describe('http-proxy', function() {
     });
   });
 
-  describe('test different port', function() {
-    it('port', function(done) {
+  describe('proxying port', function() {
+    var other;
+    beforeEach(function () {
+      other = proxyTarget(8080);
+    });
+
+    afterEach(function () {
+      other.close();
+    });
+
+    it('when passed as an option', function(done) {
       var http = express();
-      var other = express();
-      other.get('/', function(req, res) {
-        res.send('Hello World!');
-      });
-      other.listen(8080);
+
       http.use(proxy('http://localhost', {
         port: 8080
       }));
+
       request(http)
         .get('/')
+        .expect(200)
         .end(function(err, res) {
           if (err) return done(err);
-          assert(res.body);
+          assert(res.text === "Success");
+          done();
+        });
+    });
+
+    it('when passed on the host string', function(done) {
+      var http = express();
+
+      http.use(proxy('http://localhost:8080'));
+
+      request(http)
+        .get('/')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.text === "Success");
           done();
         });
     });
