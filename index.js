@@ -16,8 +16,6 @@ module.exports = function proxy(host, options) {
 
   var port = 80;
 
-  var ishttps = /^https/.test(host) || !!options.https;
-
   var parsedHost = null;
   if (typeof host != 'function') {
     parsedHost = parseHost(host.toString());
