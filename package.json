@@ -4,8 +4,9 @@
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint && ./node_modules/.bin/mocha -R spec test/test.js",
-    "lint": "./node_modules/.bin/jshint index.js test/*.js"
+    "test": "npm run lint && npm run mocha",
+    "mocha": "mocha -R spec test/test.js",
+    "lint": "jshint index.js test/*.js"
   },
   "repository": {
     "type": "git",
@@ -55,6 +56,10 @@
     {
       "name": "Wei Gao",
       "email": "jky239@gmail.com"
+    },
+    {
+      "name": "Nik Krimm",
+      "url": "https://github.com/monkpow"
     }
   ]
 }
