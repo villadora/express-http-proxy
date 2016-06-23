@@ -18,7 +18,7 @@ module.exports = function proxy(host, options) {
 
   var parsedHost = null;
   if (typeof host != 'function') {
-    parsedHost = parseHost(host.toString());
+    parsedHost = parseHost(host.toString(), options);
     if (isError(parsedHost))
       throw parsedHost;
   }
@@ -42,7 +42,7 @@ module.exports = function proxy(host, options) {
     path = forwardPath ? forwardPath(req, res) : url.parse(req.url).path;
 
     if (!parsedHost) {
-        parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
+        parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString(), options);
         if (isError(parsedHost))
             throw parsedHost;
     }
@@ -186,7 +186,8 @@ function extend(obj, source, skips) {
   return obj;
 }
 
-function parseHost(host) {
+function parseHost(host, options) {
+  options = options || {};
   if (!host) {
     return new Error("Empty host parameter");
   }
@@ -200,7 +201,7 @@ function parseHost(host) {
     return new Error("Unable to parse hostname, possibly missing protocol://?");
   }
 
-  var ishttps = parsed.protocol === 'https:';
+  var ishttps =  (parsed.protocol === 'https:' || parsed.port === '443' || options.https);
 
   return {
     host: parsed.hostname,

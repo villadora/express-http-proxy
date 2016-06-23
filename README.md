@@ -82,7 +82,6 @@ app.use('/proxy', proxy('www.google.com', {
     return reqOpt;
   }
 }));
-
 ```
 
 #### preserveHostHdr
@@ -107,6 +106,18 @@ app.use('/post', proxy('httpbin.org', {
   reqBodyEncoding: null
 }));
 ```
+
+#### https
+
+Force request to be over https.  Request will also be https if:
+* host is a String (or a function that returns a String) that has 'https:' as the protocol.
+* host is a String (or a function that returns a String) that has '443' as the port.  (legacy, may be deprecated)
+
+```
+app.use('/post', proxy('httpbin.org', {
+  https: true
+}));
+
 
 ## Questions
 
