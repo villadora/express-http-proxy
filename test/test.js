@@ -357,6 +357,7 @@ describe('http-proxy', function() {
       var filename = os.tmpdir() + '/express-http-proxy-test-' + Math.floor((Math.random() * 1000) + 1) + '-png-transparent.png';
       var app = express();
       app.use(proxy('httpbin.org', {
+        reqBodyEncoding: null,
         decorateRequest: function(reqOpts, req) {
           assert((new Buffer(reqOpts.bodyContent).toString('hex')).indexOf(png_data.toString('hex')) >= 0, 'body should contain same data');
           return reqOpts;

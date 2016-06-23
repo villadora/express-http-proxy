@@ -99,6 +99,19 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
+#### reqBodyEncoding
+
+Encoding used to decode request body. Default to ```utf-8```.
+
+Use ```null``` to avoid decoding and pass the body as is.
+Accept any values supported by [raw-body](https://www.npmjs.com/package/raw-body#readme).
+
+```
+app.use('/post', proxy('httpbin.org', {
+  reqBodyEncoding: null
+}));
+```
+
 ## Release Notes
 
 | Release | Notes |
