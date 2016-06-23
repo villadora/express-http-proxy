@@ -33,6 +33,7 @@ module.exports = function proxy(host, options) {
   var limit = options.limit || '1mb';
   var preserveHostHdr = options.preserveHostHdr;
   var preserveReqSession = options.preserveReqSession;
+  var reqBodyEncoding = options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
 
   return function handleProxy(req, res, next) {
     if (filter && !filter(req, res)) return next();
@@ -63,7 +64,7 @@ module.exports = function proxy(host, options) {
       getRawBody(req, {
         length: req.headers['content-length'],
         limit: limit,
-        encoding: 'utf-8'
+        encoding: reqBodyEncoding
       }, runProxy);
     }
 
