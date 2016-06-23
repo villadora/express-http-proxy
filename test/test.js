@@ -59,16 +59,17 @@ describe('http-proxy', function() {
 
   });
 
-  describe('https supports', function() {
+  describe('proxies https', function() {
 
-    it('https', function(done) {
+    it('when host is a String and includes \'https\' protocol', function(done) {
       var https = express();
       https.use(proxy('https://httpbin.org'));
       request(https)
-        .get('/user-agent')
+        .get('/get?show_env=1')
         .end(function(err, res) {
           if (err) return done(err);
-          assert(res.body['user-agent']);
+          assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
+          assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
           done();
         });
     });
@@ -82,6 +83,21 @@ describe('http-proxy', function() {
           done();
         });
     });
+
+    it('protocol is resolved correctly if host is function', function (done) {
+      var https = express();
+      https.use(proxy(function() { return 'https://httpbin.org'; }) );
+      request(https)
+        .get('/get?show_env=1')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
+          assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
+          done();
+        });
+    });
+
+
     it('https with function for URL', function(done) {
       var https = express();
       https.use(proxy(function() { return 'httpbin.org'; }, {https: true}) );
