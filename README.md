@@ -108,6 +108,26 @@ app.use('/post', proxy('httpbin.org', {
 }));
 ```
 
+## Questions
+
+### Q: Can it support https proxy?
+
+A:  Yes, you can use the 'https-proxy-agent' package. Something like this:
+
+```js
+var corporateProxyServer = process.env.HTTP_PROXY || process.env.http_proxy || process.env.HTTPS_PROXY || process.env.https_proxy;
+
+if (corporateProxyServer) {
+  corporateProxyAgent = new HttpsProxyAgent(corporateProxyServer);
+}
+```
+
+Then inside the decorateRequest method, add the agent to the request:
+
+```js
+  req.agent = corporateProxyAgent;
+```
+
 ## Release Notes
 
 | Release | Notes |
