@@ -22,6 +22,42 @@ describe('http-proxy', function() {
     app.use(proxy('httpbin.org'));
   });
 
+  describe('proxies headers', function () {
+    var other, http;
+    beforeEach(function () {
+      http = express();
+      http.use(proxy('https://httpbin.org', {
+        'headers': {
+            'X-Current-president': 'taft'
+        }
+      }));
+    });
+
+    it('passed as options', function (done) {
+      request(http)
+       .get('/headers')
+       .expect(200)
+       .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.body.headers['X-Current-President'] === 'taft');
+          done();
+       });
+    });
+
+    it('passed as on request', function (done) {
+      request(http)
+       .get('/headers')
+       .set('X-Powerererer', 'XTYORG')
+       .expect(200)
+       .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.body.headers['X-Powerererer']);
+          done();
+       });
+    });
+
+  });
+
   describe('https supports', function() {
 
     it('https', function(done) {
@@ -58,8 +94,9 @@ describe('http-proxy', function() {
   });
 
   describe('proxying port', function() {
-    var other;
+    var other, http;
     beforeEach(function () {
+      http = express();
       other = proxyTarget(8080);
     });
 
@@ -68,7 +105,6 @@ describe('http-proxy', function() {
     });
 
     it('when passed as an option', function(done) {
-      var http = express();
 
       http.use(proxy('http://localhost', {
         port: 8080
@@ -85,7 +121,6 @@ describe('http-proxy', function() {
     });
 
     it('when passed on the host string', function(done) {
-      var http = express();
 
       http.use(proxy('http://localhost:8080'));
 
