@@ -155,6 +155,8 @@ describe('http-proxy', function() {
         });
     });
 
+
+
     it('test decorateRequest has access to calling ip', function (done) {
       var app = express();
       app.use(proxy('httpbin.org', {
@@ -224,6 +226,39 @@ describe('http-proxy', function() {
           assert(res.text.indexOf('<strong>Hey</strong>') > -1);
           done();
         });
+    });
+
+    describe('intercepting a redirect', function () {
+      it('allows you to change details of the redirect', function (done) {
+        var proxyApp = express();
+        var proxiedApp = express();
+        var proxiedAppPort = 8012;
+        var preferredPort = 3000;
+        var proxiedAppHost = ['http://localhost', proxiedAppPort].join(':');
+
+        proxiedApp.get('/', function(req, res) {
+          res.status(302);
+          res.location(proxiedAppHost + '/proxied/redirect/url');
+          res.send();
+        });
+
+        proxiedApp.listen(proxiedAppPort);
+
+        proxyApp.use(proxy(proxiedAppHost, {
+          intercept: function (rsp, data, req, res, cb) {
+            var proxyReturnedLocation = res._headers.location;
+            res.location(proxyReturnedLocation.replace(proxiedAppPort, preferredPort));
+            cb(null, data);
+          }
+        }));
+
+        request(proxyApp)
+          .get('/')
+          .expect(function (res) {
+            res.headers.location.match(/localhost:3000/);
+          })
+          .end(done);
+      });
     });
 
     it('test github api', function(done) {
