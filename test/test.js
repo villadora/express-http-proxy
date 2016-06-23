@@ -5,7 +5,6 @@ var fs = require('fs');
 var os = require('os');
 var proxy = require('../');
 
-
 function proxyTarget(port) {
   var other = express();
   other.get('/', function(req, res) {
@@ -295,16 +294,6 @@ describe('http-proxy', function() {
           assert(res.headers['set-cookie']);
           done(err);
         });
-    });
-  });
-
-  describe('test proxy status', function() {
-    [304, 404, 200, 401, 500].forEach(function(status) {
-      it(status, function(done) {
-        request(app)
-          .get('/status/' + status)
-          .expect(status, done);
-      });
     });
   });
 
