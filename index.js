@@ -38,17 +38,8 @@ module.exports = function proxy(host, options) {
   return function handleProxy(req, res, next) {
     if (filter && !filter(req, res)) return next();
 
-    var headers = options.headers || {};
     var path;
-
     path = forwardPath ? forwardPath(req, res) : url.parse(req.url).path;
-
-    var skipHdrs = [ 'connection', 'content-length' ];
-    if (!preserveHostHdr) {
-      skipHdrs.push('host');
-    }
-    var hds = extend(headers, req.headers, skipHdrs);
-    hds.connection = 'close';
 
     if (!parsedHost) {
         parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
@@ -72,7 +63,7 @@ module.exports = function proxy(host, options) {
       var reqOpt = {
         hostname: parsedHost.host,
         port: options.port || parsedHost.port,
-        headers: hds,
+        headers: reqHeaders(req, options),
         method: req.method,
         path: path,
         bodyContent: bodyContent,
@@ -216,4 +207,17 @@ function parseHost(host) {
     port: parsed.port || (ishttps ? 443 : 80),
     module: ishttps ? https : http
   };
+}
+
+function reqHeaders(req, options) {
+  var headers = options.headers || {};
+
+  var skipHdrs = [ 'connection', 'content-length' ];
+  if (!options.preserveHostHdr) {
+    skipHdrs.push('host');
+  }
+  var hds = extend(headers, req.headers, skipHdrs);
+  hds.connection = 'close';
+
+  return hds;
 }
