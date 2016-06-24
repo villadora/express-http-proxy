@@ -28,18 +28,25 @@ module.exports = function proxy(host, options) {
    */
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
-  var forwardPath = options.forwardPath;
-  var filter = options.filter;
+  var forwardPath = options.forwardPath || defaultForwardPath;
+  var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
-  var preserveHostHdr = options.preserveHostHdr;
+  var preserveHostHdr = options.preserveHostHdr || false;
   var preserveReqSession = options.preserveReqSession;
+
+  /* For reqBodyEncoding, these is a meaningful difference between null and
+   * undefined.  null should be passed forward as the value of reqBodyEncoding,
+   * and undefined should result in utf-8.
+   */
   var reqBodyEncoding = options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
 
+
   return function handleProxy(req, res, next) {
-    if (filter && !filter(req, res)) return next();
+    if (!filter(req, res)) { return next(); }
 
     var path;
-    path = forwardPath ? forwardPath(req, res) : url.parse(req.url).path;
+
+    path = forwardPath(req, res);
 
     if (!parsedHost) {
         parsedHost = parseHost((typeof host == 'function') ? host(req) : host.toString());
@@ -220,4 +227,13 @@ function reqHeaders(req, options) {
   hds.connection = 'close';
 
   return hds;
+}
+
+function defaultFilter(req, res) {
+  // Allow everything!
+  return true;
+}
+
+function defaultForwardPath(req, res) {
+    return url.parse(req.url).path;
 }
