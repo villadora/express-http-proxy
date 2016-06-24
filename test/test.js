@@ -110,48 +110,6 @@ describe('http-proxy', function() {
     });
   });
 
-  describe('proxying port', function() {
-    var other, http;
-    beforeEach(function () {
-      http = express();
-      other = proxyTarget(8080);
-    });
-
-    afterEach(function () {
-      other.close();
-    });
-
-    it('when passed as an option', function(done) {
-
-      http.use(proxy('http://localhost', {
-        port: 8080
-      }));
-
-      request(http)
-        .get('/')
-        .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err);
-          assert(res.text === "Success");
-          done();
-        });
-    });
-
-    it('when passed on the host string', function(done) {
-
-      http.use(proxy('http://localhost:8080'));
-
-      request(http)
-        .get('/')
-        .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err);
-          assert(res.text === "Success");
-          done();
-        });
-    });
-  });
-
   describe('test intercept & decorateRequest', function() {
     it('decorateRequest', function(done) {
       var app = express();
