@@ -73,13 +73,17 @@ describe('http-proxy', function() {
           done();
         });
     });
-    it('https port 443', function(done) {
+
+    it('when host is a String and specifies port as port 443', function(done) {
       var https = express();
       https.use(proxy('httpbin.org:443'));
       request(https)
-        .get('/user-agent')
+        .get('/get?show_env=1')
+        .expect(200)
         .end(function(err, res) {
           if (err) return done(err);
+          assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
+          assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
           done();
         });
     });
@@ -97,6 +101,18 @@ describe('http-proxy', function() {
         });
     });
 
+    it('protocol can be forced by using https option', function (done) {
+      var https = express();
+      https.use(proxy(function() { return 'http://httpbin.org'; }, {https: true}) );
+      request(https)
+        .get('/get?show_env=1')
+        .end(function(err, res) {
+          if (err) return done(err);
+          assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
+          assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
+          done();
+        });
+    });
 
     it('https with function for URL', function(done) {
       var https = express();
