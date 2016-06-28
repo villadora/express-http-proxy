@@ -156,7 +156,6 @@ module.exports = function proxy(host, options) {
           next(e);
         });
 
-
         if (!res.headersSent) { // if header is not set yet
           res.status(rsp.statusCode);
           for (var p in rsp.headers) {
@@ -165,11 +164,25 @@ module.exports = function proxy(host, options) {
             res.set(p, rsp.headers[p]);
           }
         }
-
       });
 
-      realRequest.on('error', function(e) {
-        next(e);
+      realRequest.on('socket', function (socket) {
+        if (options.timeout) {
+          socket.setTimeout(options.timeout, function (){
+            realRequest.abort();
+          });
+        }
+      });
+
+      realRequest.on('error', function(err) {
+        if (err.code === 'ECONNRESET') {
+          res.setHeader('X-Timout-Reason', 'express-http-proxy timed out your request after ' + options.timeout + 'ms.');
+          res.writeHead(504, {'Content-Type': 'text/plain'});
+          res.end();
+          next();
+        } else {
+          next(err);
+        }
       });
 
       if (bodyContent.length) {
@@ -180,6 +193,7 @@ module.exports = function proxy(host, options) {
     }
   };
 };
+
 
 
 function extend(obj, source, skips) {
