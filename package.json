@@ -4,9 +4,9 @@
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint && npm run mocha",
-    "mocha": "mocha -R spec test/*.js",
-    "lint": "jshint index.js test/*.js"
+    "test": "npm -s run lint && npm -s run mocha",
+    "mocha": "mocha -R spec test/*.js 2>/dev/null",
+    "lint": "jshint index.js test/*.js 2>/dev/null"
   },
   "repository": {
     "type": "git",
