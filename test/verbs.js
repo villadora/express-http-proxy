@@ -1,19 +1,10 @@
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
-var fs = require('fs');
-var os = require('os');
 var proxy = require('../');
 
-function proxyTarget(port) {
-  var other = express();
-  other.get('/', function(req, res) {
-    res.send('Success');
-  });
-  return other.listen(port);
-}
-
 describe('http verbs', function() {
+  'use strict';
   this.timeout(10000);
 
   var app;
@@ -27,7 +18,7 @@ describe('http verbs', function() {
     request(app)
       .get('/get')
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(/node-superagent/.test(res.body.headers['User-Agent']));
         assert.equal(res.body.url, 'http://httpbin.org/get');
         done(err);

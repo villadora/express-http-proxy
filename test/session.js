@@ -4,6 +4,8 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('preserveReqSession', function() {
+  'use strict';
+
   this.timeout(10000);
 
   var app;
@@ -28,11 +30,9 @@ describe('preserveReqSession', function() {
 
     request(app)
       .get('/user-agent')
-      .end(function(err, res) {
-        if (err) return done(err);
+      .end(function(err) {
+        if (err) { return done(err); }
         done();
       });
   });
 });
-
-

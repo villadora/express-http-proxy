@@ -1,10 +1,11 @@
-var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 var mockEndpoint = require('../lib/mockHTTP.js');
 
 describe('proxies status code', function() {
+  'use strict';
+
   var proxyServer = express(),
     port = 21231,
     proxiedEndpoint = 'http://localhost:' + port,

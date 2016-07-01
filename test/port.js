@@ -4,6 +4,8 @@ var request = require('supertest');
 var proxy = require('../');
 
 function proxyTarget(port) {
+  'use strict';
+
   var other = express();
   other.get('/', function(req, res) {
     res.send('Success');
@@ -12,6 +14,8 @@ function proxyTarget(port) {
 }
 
 describe('proxies to requested port', function() {
+  'use strict';
+
   var other, http;
   beforeEach(function () {
     http = express();
@@ -28,7 +32,7 @@ describe('proxies to requested port', function() {
       .get('/')
       .expect(200)
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.text === "Success");
         done();
       });

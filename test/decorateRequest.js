@@ -3,15 +3,9 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-function proxyTarget(port) {
-  var other = express();
-  other.get('/', function(req, res) {
-    res.send('Success');
-  });
-  return other.listen(port);
-}
-
 describe('decorateRequest', function() {
+  'use strict';
+
   this.timeout(10000);
 
   var app;
@@ -33,7 +27,7 @@ describe('decorateRequest', function() {
     request(app)
       .get('/user-agent')
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.body.origin);
         done();
       });
@@ -51,8 +45,8 @@ describe('decorateRequest', function() {
 
     request(app)
       .get('/')
-      .end(function(err, res) {
-        if (err) return done(err);
+      .end(function(err) {
+        if (err) { return done(err); }
         done();
       });
 

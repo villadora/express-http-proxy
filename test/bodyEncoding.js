@@ -6,6 +6,7 @@ var os = require('os');
 var proxy = require('../');
 
 describe('body encoding', function() {
+  'use strict';
   this.timeout(10000);
 
   var app;
@@ -22,13 +23,14 @@ describe('body encoding', function() {
     var app = express();
     app.use(proxy('httpbin.org', {
       reqBodyEncoding: null,
-      decorateRequest: function(reqOpts, req) {
+      decorateRequest: function(reqOpts) {
         assert((new Buffer(reqOpts.bodyContent).toString('hex')).indexOf(png_data.toString('hex')) >= 0, 'body should contain same data');
         return reqOpts;
       }
     }));
 
     fs.writeFile(filename, png_data, function(err) {
+      if (err) { throw err; }
       request(app)
         .post('/post')
         .attach('image', filename)

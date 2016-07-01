@@ -4,10 +4,12 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('intercept', function () {
+  'use strict';
+
   it('has access to original response', function (done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function (rsp, data, req, res, cb) {
+      intercept: function (rsp) {
         assert(rsp.connection);
         assert(rsp.socket);
         assert(rsp.headers);
@@ -32,7 +34,7 @@ describe('intercept', function () {
     request(app)
     .get('/ip')
     .end(function (err, res) {
-      if (err) return done(err);
+      if (err) { return done(err); }
       assert(res.body.intercepted);
       done();
     });
@@ -52,7 +54,7 @@ describe('intercept', function () {
     request(app)
     .get('/html')
     .end(function (err, res) {
-      if (err) return done(err);
+      if (err) { return done(err); }
       assert(res.text.indexOf('<strong>Hey</strong>') > -1);
       done();
     });

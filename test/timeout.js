@@ -4,6 +4,7 @@ var request = require('supertest');
 var proxy = require('../');
 
 function proxyTarget(port, timeout) {
+  'use strict';
   var other = express();
   other.get('/', function(req, res) {
     setTimeout(function () {
@@ -14,6 +15,7 @@ function proxyTarget(port, timeout) {
 }
 
 describe('honors timeout option', function() {
+  'use strict';
 
   var other, http;
   beforeEach(function () {
@@ -30,7 +32,7 @@ describe('honors timeout option', function() {
       .get('/')
       .expect(200)
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.text === "Success");
         done();
       });
@@ -41,7 +43,7 @@ describe('honors timeout option', function() {
       .get('/')
       .expect(408)
       .expect('X-Timout-Reason', 'express-http-proxy timed out your request after 100 ms.')
-      .end(function(err, res) {
+      .end(function() {
         done();
       });
   }
