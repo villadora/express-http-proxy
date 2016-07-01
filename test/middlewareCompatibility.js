@@ -4,6 +4,7 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('middleware compatibility', function() {
+  'use strict';
   it('should use req.body if defined', function(done) {
     var app = express();
 
@@ -11,10 +12,10 @@ describe('middleware compatibility', function() {
     app.use(function(req, res, next) {
       var received = [];
       req.on('data', function onData(chunk) {
-        if (!chunk) return;
+        if (!chunk) { return; }
         received.push(chunk);
       });
-      req.on('end', function onEnd(err) {
+      req.on('end', function onEnd() {
         received = Buffer.concat(received).toString('utf8');
         req.body = JSON.parse(received);
         req.body.foo = 1;
@@ -36,7 +37,7 @@ describe('middleware compatibility', function() {
       .send({
         mypost: 'hello'
       })
-      .end(function(err, res) {
+      .end(function(err) {
         done(err);
       });
   });

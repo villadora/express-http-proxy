@@ -4,6 +4,8 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('proxies cookie', function() {
+  'use strict';
+
   this.timeout(10000);
 
   var app;

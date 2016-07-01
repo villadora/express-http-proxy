@@ -4,6 +4,8 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('url parsing', function() {
+  'use strict';
+
   this.timeout(10000);
 
   it('can parse a url with a port', function(done) {
@@ -11,8 +13,8 @@ describe('url parsing', function() {
     app.use(proxy('http://httpbin.org:80'));
     request(app)
       .get('/')
-      .end(function(err, res) {
-        if (err) return done(err);
+      .end(function(err) {
+        if (err) { return done(err); }
         assert(true);
         done();
       });
@@ -23,8 +25,8 @@ describe('url parsing', function() {
     app.use(proxy('http://httpbin.org:80/'));
     request(app)
       .get('/')
-      .end(function(err, res) {
-        if (err) return done(err);
+      .end(function(err) {
+        if (err) { return done(err); }
         assert(true);
         done();
       });

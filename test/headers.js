@@ -1,14 +1,13 @@
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
-var fs = require('fs');
-var os = require('os');
 var proxy = require('../');
 
 describe('proxies headers', function() {
+  'use strict';
   this.timeout(10000);
 
-  var other, http;
+  var http;
 
   beforeEach(function () {
     http = express();
@@ -24,7 +23,7 @@ describe('proxies headers', function() {
       .get('/headers')
       .expect(200)
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.body.headers['X-Current-President'] === 'taft');
         done();
       });
@@ -36,7 +35,7 @@ describe('proxies headers', function() {
       .set('X-Powerererer', 'XTYORG')
       .expect(200)
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.body.headers['X-Powerererer']);
         done();
       });

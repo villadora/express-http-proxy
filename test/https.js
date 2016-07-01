@@ -4,6 +4,8 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('proxies https', function() {
+  'use strict';
+
   this.timeout(10000);
 
   var app;
@@ -20,7 +22,7 @@ describe('proxies https', function() {
     request(https)
       .get('/get?show_env=1')
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
         assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
         done();
@@ -32,8 +34,8 @@ describe('proxies https', function() {
     https.use(proxy('httpbin.org:443'));
     request(https)
       .get('/user-agent')
-      .end(function(err, res) {
-        if (err) return done(err);
+      .end(function(err) {
+        if (err) { return done(err); }
         done();
       });
   });
@@ -44,7 +46,7 @@ describe('proxies https', function() {
     request(https)
       .get('/get?show_env=1')
       .end(function(err, res) {
-        if (err) return done(err);
+        if (err) { return done(err); }
         assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
         assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
         done();
@@ -56,11 +58,9 @@ describe('proxies https', function() {
     https.use(proxy(function() { return 'httpbin.org'; }, {https: true}) );
     request(https)
       .get('/user-agent')
-      .end(function(err, res) {
-        if (err) return done(err);
+      .end(function(err) {
+        if (err) { return done(err); }
         done();
       });
   });
 });
-
-
