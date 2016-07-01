@@ -108,6 +108,18 @@ app.use('/post', proxy('httpbin.org', {
 }));
 ```
 
+
+#### timeout
+
+By default, node does not express a timeout on connections.   Use timeout option to impose a specific timeout.    Timed-out requests will respond with 504 status code and a X-Timeout-Reason header.
+
+```js
+app.use('/', proxy('httpbin.org', {
+  timeout: 2000  // in milliseconds, two seconds
+}));
+```
+
+
 ## Questions
 
 ### Q: Can it support https proxy?
