@@ -36,7 +36,8 @@
     "supertest": "^1.2.0"
   },
   "dependencies": {
-    "raw-body": "^2.1.7"
+    "raw-body": "^2.1.7",
+    "es6-promise": "^3.2.1"
   },
   "contributors": [
     {
