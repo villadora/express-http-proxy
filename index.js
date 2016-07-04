@@ -4,6 +4,7 @@ var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
 var isError = require('lodash.iserror');
+var Promise = require('es6-promise').Promise;
 
 require('buffer');
 
@@ -28,6 +29,7 @@ module.exports = function proxy(host, options) {
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath || defaultForwardPath;
+  var forwardPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
@@ -42,10 +44,12 @@ module.exports = function proxy(host, options) {
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
 
-    var path;
+    forwardPathAsync(req, res).then(function(path) {
+      handleProxyInner(req, res, next, path);
+    });
+  };
 
-    path = forwardPath(req, res);
-
+  function handleProxyInner(req, res, next, path) {
     if (!parsedHost) {
         parsedHost = parseHost((typeof host === 'function') ? host(req) : host.toString());
         if (isError(parsedHost)) {
@@ -195,7 +199,7 @@ module.exports = function proxy(host, options) {
 
       realRequest.end();
     }
-  };
+  }
 };
 
 
@@ -265,4 +269,13 @@ function defaultFilter() {
 function defaultForwardPath(req) {
   'use strict';
   return url.parse(req.url).path;
+}
+
+function defaultForwardPathAsync(forwardPath) {
+  'use strict';
+  return function(req) {
+    return new Promise(function(resolve) {
+      resolve(forwardPath(req));
+    });
+  };
 }
