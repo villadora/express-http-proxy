@@ -6,18 +6,18 @@ var mockEndpoint = require('../lib/mockHTTP.js');
 describe('proxies status code', function() {
   'use strict';
 
-  var proxyServer = express(),
-    port = 21231,
-    proxiedEndpoint = 'http://localhost:' + port,
-    server;
+  var proxyServer = express();
+  var port = 21231;
+  var proxiedEndpoint = 'http://localhost:' + port;
+  var server;
 
   proxyServer.use(proxy(proxiedEndpoint));
 
-  beforeEach(function () {
+  beforeEach(function() {
     server = mockEndpoint.listen(21231);
   });
 
-  afterEach(function () {
+  afterEach(function() {
     server.close();
   });
 

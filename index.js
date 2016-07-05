@@ -23,7 +23,7 @@ module.exports = function proxy(host, options) {
   }
 
   /**
-   * intercept(targetResponse, data, res, req, function(err, json));
+   * Function :: intercept(targetResponse, data, res, req, function(err, json));
    */
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
@@ -40,10 +40,10 @@ module.exports = function proxy(host, options) {
     path = forwardPath(req, res);
 
     if (!parsedHost) {
-        parsedHost = parseHost((typeof host === 'function') ? host(req) : host.toString());
-        if (isError(parsedHost)) {
-          throw parsedHost;
-        }
+      parsedHost = parseHost((typeof host === 'function') ? host(req) : host.toString());
+      if (isError(parsedHost)) {
+        throw parsedHost;
+      }
     }
 
     // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
@@ -66,7 +66,7 @@ module.exports = function proxy(host, options) {
         method: req.method,
         path: path,
         bodyContent: bodyContent,
-        params: req.params
+        params: req.params,
       };
 
       if (preserveReqSession) {
@@ -116,8 +116,8 @@ module.exports = function proxy(host, options) {
                 var contentType = rsp.headers['content-type'];
                 if (/charset=/.test(contentType)) {
                   var attrs = contentType.split(';').map(function(str) { return str.trim(); });
-                  for(var i = 0, len = attrs.length; i < len; i++) {
-                      var attr = attrs[i];
+                  for (var i = 0, len = attrs.length; i < len; i++) {
+                    var attr = attrs[i];
                     if (/charset=/.test(attr)) {
                       // encode = attr.split('=')[1];
                       break;
@@ -131,13 +131,16 @@ module.exports = function proxy(host, options) {
               }
 
               if (!Buffer.isBuffer(rspd)) {
-                next(new Error("intercept should return string or buffer as data"));
+                next(new Error('intercept should return string or' +
+                      'buffer as data'));
               }
 
               if (!res.headersSent) {
                 res.set('content-length', rspd.length);
               } else if (rspd.length !== rspData.length) {
-                next(new Error("'Content-Length' is already sent, the length of response data can not be changed"));
+                var error = '"Content-Length" is already sent,' +
+                      'the length of response data can not be changed';
+                next(new Error(error));
               }
 
               if (!sent) {
@@ -153,19 +156,19 @@ module.exports = function proxy(host, options) {
           next(e);
         });
 
-        if (!res.headersSent) { // if header is not set yet
+        if (!res.headersSent) {
           res.status(rsp.statusCode);
           Object.keys(rsp.headers)
-            .filter(function (item) { return item !== 'transfer-encoding'; })
+            .filter(function(item) { return item !== 'transfer-encoding'; })
             .forEach(function(item) {
               res.set(item, rsp.headers[item]);
             });
         }
       });
 
-      realRequest.on('socket', function (socket) {
+      realRequest.on('socket', function(socket) {
         if (options.timeout) {
-          socket.setTimeout(options.timeout, function (){
+          socket.setTimeout(options.timeout, function() {
             realRequest.abort();
           });
         }
@@ -173,7 +176,9 @@ module.exports = function proxy(host, options) {
 
       realRequest.on('error', function(err) {
         if (err.code === 'ECONNRESET') {
-          res.setHeader('X-Timout-Reason', 'express-http-proxy timed out your request after ' + options.timeout + 'ms.');
+          res.setHeader('X-Timout-Reason',
+            'express-http-proxy timed out your request after ' +
+            options.timeout + 'ms.');
           res.writeHead(504, {'Content-Type': 'text/plain'});
           res.end();
           next();
@@ -213,16 +218,16 @@ function parseHost(host) {
   'use strict';
 
   if (!host) {
-    return new Error("Empty host parameter");
+    return new Error('Empty host parameter');
   }
 
   if (!/http(s)?:\/\//.test(host)) {
-    host = "http://" + host;
+    host = 'http://' + host;
   }
 
   var parsed = url.parse(host);
-  if (! parsed.hostname) {
-    return new Error("Unable to parse hostname, possibly missing protocol://?");
+  if (!parsed.hostname) {
+    return new Error('Unable to parse hostname, possibly missing protocol://?');
   }
 
   var ishttps = parsed.protocol === 'https:';
@@ -230,7 +235,7 @@ function parseHost(host) {
   return {
     host: parsed.hostname,
     port: parsed.port || (ishttps ? 443 : 80),
-    module: ishttps ? https : http
+    module: ishttps ? https : http,
   };
 }
 
@@ -250,7 +255,7 @@ function reqHeaders(req, options) {
 }
 
 function defaultFilter() {
-  // no-op version of filter.  allows everything!
+  // No-op version of filter.  Allows everything!
   'use strict';
   return true;
 }
