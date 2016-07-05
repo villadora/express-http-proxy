@@ -32,13 +32,6 @@ module.exports = function proxy(host, options) {
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
 
-  /* For reqBodyEncoding, these is a meaningful difference between null and
-   * undefined.  null should be passed forward as the value of reqBodyEncoding,
-   * and undefined should result in utf-8.
-   */
-  var reqBodyEncoding = options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
-
-
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
 
@@ -61,7 +54,7 @@ module.exports = function proxy(host, options) {
       getRawBody(req, {
         length: req.headers['content-length'],
         limit: limit,
-        encoding: reqBodyEncoding
+        encoding: bodyEncoding(options),
       }, runProxy);
     }
 
@@ -265,4 +258,15 @@ function defaultFilter() {
 function defaultForwardPath(req) {
   'use strict';
   return url.parse(req.url).path;
+}
+
+function bodyEncoding(options) {
+  'use strict';
+
+  /* For reqBodyEncoding, these is a meaningful difference between null and
+   * undefined.  null should be passed forward as the value of reqBodyEncoding,
+   * and undefined should result in utf-8.
+   */
+
+  return options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
 }
