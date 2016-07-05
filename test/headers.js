@@ -9,16 +9,16 @@ describe('proxies headers', function() {
 
   var http;
 
-  beforeEach(function () {
+  beforeEach(function() {
     http = express();
     http.use(proxy('http://httpbin.org', {
-      'headers': {
-          'X-Current-president': 'taft'
+      headers: {
+        'X-Current-president': 'taft'
       }
     }));
   });
 
-  it('passed as options', function (done) {
+  it('passed as options', function(done) {
     request(http)
       .get('/headers')
       .expect(200)
@@ -29,7 +29,7 @@ describe('proxies headers', function() {
       });
   });
 
-  it('passed as on request', function (done) {
+  it('passed as on request', function(done) {
     request(http)
       .get('/headers')
       .set('X-Powerererer', 'XTYORG')

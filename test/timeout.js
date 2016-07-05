@@ -7,7 +7,7 @@ function proxyTarget(port, timeout) {
   'use strict';
   var other = express();
   other.get('/', function(req, res) {
-    setTimeout(function () {
+    setTimeout(function() {
       res.send('Success');
     },timeout);
   });
@@ -18,12 +18,12 @@ describe('honors timeout option', function() {
   'use strict';
 
   var other, http;
-  beforeEach(function () {
+  beforeEach(function() {
     http = express();
     other = proxyTarget(8080, 1000);
   });
 
-  afterEach(function () {
+  afterEach(function() {
     other.close();
   });
 
@@ -33,7 +33,7 @@ describe('honors timeout option', function() {
       .expect(200)
       .end(function(err, res) {
         if (err) { return done(err); }
-        assert(res.text === "Success");
+        assert(res.text === 'Success');
         done();
       });
   }
@@ -48,7 +48,7 @@ describe('honors timeout option', function() {
       });
   }
 
-  describe('when timeout option is set lower than server response time', function () {
+  describe('when timeout option is set lower than server response time', function() {
     it('should fail with CONNECTION TIMEOUT', function(done) {
 
       http.use(proxy('http://localhost:8080', {
@@ -59,7 +59,7 @@ describe('honors timeout option', function() {
     });
   });
 
-  describe('when timeout option is set higher than server response time', function () {
+  describe('when timeout option is set higher than server response time', function() {
     it('should succeed', function(done) {
 
       http.use(proxy('http://localhost:8080', {

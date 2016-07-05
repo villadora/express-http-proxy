@@ -40,9 +40,9 @@ describe('proxies https', function() {
       });
   });
 
-  it('protocol is resolved correctly if host is function', function (done) {
+  it('protocol is resolved correctly if host is function', function(done) {
     var https = express();
-    https.use(proxy(function() { return 'https://httpbin.org'; }) );
+    https.use(proxy(function() { return 'https://httpbin.org'; }));
     request(https)
       .get('/get?show_env=1')
       .end(function(err, res) {
@@ -55,7 +55,7 @@ describe('proxies https', function() {
 
   it('https with function for URL', function(done) {
     var https = express();
-    https.use(proxy(function() { return 'httpbin.org'; }, {https: true}) );
+    https.use(proxy(function() { return 'httpbin.org'; }, {https: true}));
     request(https)
       .get('/user-agent')
       .end(function(err) {
