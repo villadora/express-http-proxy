@@ -17,7 +17,7 @@ describe('preserveReqSession', function() {
 
   it('preserveReqSession', function(done) {
     var app = express();
-    app.use(function (req, res, next) {
+    app.use(function(req, res, next) {
       req.session = 'hola';
       next();
     });

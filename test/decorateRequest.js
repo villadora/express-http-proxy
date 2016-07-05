@@ -15,7 +15,7 @@ describe('decorateRequest', function() {
     app.use(proxy('httpbin.org'));
   });
 
- it('decorateRequest', function(done) {
+  it('decorateRequest', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
       decorateRequest: function(req) {
@@ -33,8 +33,7 @@ describe('decorateRequest', function() {
       });
   });
 
-
-  it('test decorateRequest has access to calling ip', function (done) {
+  it('test decorateRequest has access to calling ip', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
       decorateRequest: function(reqOpts, req) {

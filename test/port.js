@@ -17,12 +17,12 @@ describe('proxies to requested port', function() {
   'use strict';
 
   var other, http;
-  beforeEach(function () {
+  beforeEach(function() {
     http = express();
     other = proxyTarget(8080);
   });
 
-  afterEach(function () {
+  afterEach(function() {
     other.close();
   });
 
@@ -33,12 +33,12 @@ describe('proxies to requested port', function() {
       .expect(200)
       .end(function(err, res) {
         if (err) { return done(err); }
-        assert(res.text === "Success");
+        assert(res.text === 'Success');
         done();
       });
   }
 
-  describe('when host is a String', function () {
+  describe('when host is a String', function() {
     it('when passed as an option', function(done) {
 
       http.use(proxy('http://localhost', {
@@ -57,13 +57,13 @@ describe('proxies to requested port', function() {
 
   });
 
-  describe('when host is a function', function () {
+  describe('when host is a function', function() {
 
 
     it('and port is on the String returned', function(done) {
 
       http.use(proxy(
-          function () { return 'http://localhost:8080'; }
+          function() { return 'http://localhost:8080'; }
       ));
 
       assertSuccess(http, done);
@@ -72,7 +72,7 @@ describe('proxies to requested port', function() {
     it('and port passed as an option', function(done) {
 
       http.use(proxy(
-        function () { return 'http://localhost'; },
+        function() { return 'http://localhost'; },
         { port: 8080 }
       ));
 
