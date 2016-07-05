@@ -3,13 +3,13 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('intercept', function () {
+describe('intercept', function() {
   'use strict';
 
-  it('has access to original response', function (done) {
+  it('has access to original response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function (rsp) {
+      intercept: function(rsp) {
         assert(rsp.connection);
         assert(rsp.socket);
         assert(rsp.headers);
@@ -21,10 +21,10 @@ describe('intercept', function () {
     request(app).get('/').end();
   });
 
-  it('can modify the response data', function (done) {
+  it('can modify the response data', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function (rsp, data, req, res, cb) {
+      intercept: function(rsp, data, req, res, cb) {
         data = JSON.parse(data.toString('utf8'));
         data.intercepted = true;
         cb(null, JSON.stringify(data));
@@ -33,7 +33,7 @@ describe('intercept', function () {
 
     request(app)
     .get('/ip')
-    .end(function (err, res) {
+    .end(function(err, res) {
       if (err) { return done(err); }
       assert(res.body.intercepted);
       done();
@@ -41,30 +41,30 @@ describe('intercept', function () {
   });
 
 
-  it('can mutuate an html response', function (done) {
+  it('can mutuate an html response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function (rsp, data, req, res, cb) {
+      intercept: function(rsp, data, req, res, cb) {
         data = data.toString().replace('Oh', '<strong>Hey</strong>');
-        assert(data !== "");
+        assert(data !== '');
         cb(null, data);
       }
     }));
 
     request(app)
     .get('/html')
-    .end(function (err, res) {
+    .end(function(err, res) {
       if (err) { return done(err); }
       assert(res.text.indexOf('<strong>Hey</strong>') > -1);
       done();
     });
   });
 
-  it('can change the location of a redirect', function (done) {
+  it('can change the location of a redirect', function(done) {
 
     function redirectingServer(port, origin) {
       var app = express();
-      app.get('/', function (req, res) {
+      app.get('/', function(req, res) {
         res.status(302);
         res.location(origin + '/proxied/redirect/url');
         res.send();
@@ -81,7 +81,7 @@ describe('intercept', function () {
     var preferredPort = 3000;
 
     proxyApp.use(proxy(redirectingServerOrigin, {
-      intercept: function (rsp, data, req, res, cb) {
+      intercept: function(rsp, data, req, res, cb) {
         var proxyReturnedLocation = res._headers.location;
         res.location(proxyReturnedLocation.replace(redirectingServerPort, preferredPort));
         cb(null, data);
@@ -90,10 +90,10 @@ describe('intercept', function () {
 
     request(proxyApp)
     .get('/')
-    .expect(function (res) {
+    .expect(function(res) {
       res.headers.location.match(/localhost:3000/);
     })
-    .end(function () {
+    .end(function() {
       server.close();
       done();
     });
