@@ -4,9 +4,11 @@
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
-    "test": "npm -s run lint && npm -s run mocha",
+    "test": "npm -s run lint && npm -s run mocha && npm run jscs",
     "mocha": "mocha -R spec test/*.js 2>/dev/null",
-    "lint": "jshint index.js test/*.js 2>/dev/null"
+    "lint": "jshint index.js test/*.js 2>/dev/null",
+    "jscs": "jscs index.js 2>/dev/null",
+    "jscs-test": "jscs index.js test/*.js"
   },
   "repository": {
     "type": "git",
@@ -34,6 +36,7 @@
     "supertest": "^0.13.0"
   },
   "dependencies": {
+    "jscs": "^3.0.6",
     "lodash.iserror": "^3.1.0",
     "raw-body": "^1.1.6"
   },
