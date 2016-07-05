@@ -26,7 +26,7 @@ describe('body encoding', function() {
                  'c6300010000050001' +
                  '0d0a2db4000000004' +
                  '9454e44ae426082';
-    var pngData = new Buffer(pngHex);
+    var pngData = new Buffer(pngHex, 'hex');
     var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
     var app = express();
     app.use(proxy('httpbin.org', {

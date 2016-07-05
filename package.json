@@ -7,8 +7,7 @@
     "test": "npm -s run lint && npm -s run mocha && npm run jscs",
     "mocha": "mocha -R spec test/*.js 2>/dev/null",
     "lint": "jshint index.js test/*.js 2>/dev/null",
-    "jscs": "jscs index.js 2>/dev/null",
-    "jscs-test": "jscs index.js test/*.js"
+    "jscs": "jscs index.js test/*.js 2/dev/null"
   },
   "repository": {
     "type": "git",
