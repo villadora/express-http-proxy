@@ -94,19 +94,6 @@ module.exports = function proxy(host, options) {
               }
 
               var encode = 'utf8';
-              if (rsp.headers && rsp.headers['content-type']) {
-                var contentType = rsp.headers['content-type'];
-                if (/charset=/.test(contentType)) {
-                  var attrs = contentType.split(';').map(function(str) { return str.trim(); });
-                  for (var i = 0, len = attrs.length; i < len; i++) {
-                    var attr = attrs[i];
-                    if (/charset=/.test(attr)) {
-                      // encode = attr.split('=')[1];
-                      break;
-                    }
-                  }
-                }
-              }
 
               if (typeof rspd === 'string') {
                 rspd = new Buffer(rspd, encode);
