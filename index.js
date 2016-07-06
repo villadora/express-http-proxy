@@ -3,7 +3,6 @@ var url = require('url');
 var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
-var isError = require('lodash.iserror');
 
 require('buffer');
 
@@ -14,40 +13,26 @@ module.exports = function proxy(host, options) {
 
   options = options || {};
 
-  var parsedHost = null;
-  if (typeof host !== 'function') {
-    parsedHost = parseHost(host.toString());
-    if (isError(parsedHost)) {
-      throw parsedHost;
-    }
-  }
+  var parsedHost;
 
   /**
    * Function :: intercept(targetResponse, data, res, req, function(err, json));
    */
-  var intercept = options.intercept;
-  var decorateRequest = options.decorateRequest;
-  var forwardPath = options.forwardPath || defaultForwardPath;
-  var filter = options.filter || defaultFilter;
-  var limit = options.limit || '1mb';
-  var preserveReqSession = options.preserveReqSession;
+  var intercept = options.intercept;   // after request (5)
+  var decorateRequest = options.decorateRequest;  // before request (2)
+  var forwardPath = options.forwardPath || defaultForwardPath;  // before request (1)
+  var filter = options.filter || defaultFilter;  // before request (0)
+  var limit = options.limit || '1mb';  // option
+  var preserveReqSession = options.preserveReqSession; // binary option
 
   return function handleProxy(req, res, next) {
+
     if (!filter(req, res)) { return next(); }
 
-    var path;
+    var path = forwardPath(req, res);
 
-    path = forwardPath(req, res);
+    parsedHost = parsedHost || parseHost(host, req);
 
-    if (!parsedHost) {
-      parsedHost = parseHost((typeof host === 'function') ? host(req) : host.toString());
-      if (isError(parsedHost)) {
-        throw parsedHost;
-      }
-    }
-
-    // var hasRequestBody = 'content-type' in req.headers || 'transfer-encoding' in req.headers;
-    // Support for body-parser or other modules which already consume the req and store the result in req.body
     if (req.body) {
       runProxy(null, req.body);
     } else {
@@ -214,8 +199,10 @@ function extend(obj, source, skips) {
   return obj;
 }
 
-function parseHost(host) {
+function parseHost(host, req) {
   'use strict';
+
+  host = (typeof host === 'function') ? host(req) : host.toString();
 
   if (!host) {
     return new Error('Empty host parameter');
@@ -226,6 +213,7 @@ function parseHost(host) {
   }
 
   var parsed = url.parse(host);
+
   if (!parsed.hostname) {
     return new Error('Unable to parse hostname, possibly missing protocol://?');
   }
