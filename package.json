@@ -4,7 +4,7 @@
   "description": "http proxy middleware for express",
   "main": "index.js",
   "scripts": {
-    "test": "npm -s run lint && npm -s run mocha && npm run jscs",
+    "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
     "mocha": "mocha -R spec test/*.js",
     "lint": "jshint index.js test/*.js",
     "jscs": "jscs index.js test/*.js"
