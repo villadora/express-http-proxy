@@ -144,6 +144,7 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
+| 0.7.3 | Adds a timeout option.   Code organization and small bug fixes. |
 | 0.7.2 | Collecting many minor documentation and test improvements. |
 | 0.4.0 | Signature of `intercept` callback changed from `function(data, req, res, callback)` to `function(rsp, data, req, res, callback)` where `rsp` is the original response from the target |
 
