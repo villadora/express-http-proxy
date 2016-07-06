@@ -76,19 +76,16 @@ module.exports = function proxy(host, options) {
         reqOpt.headers['content-length'] = bodyContent.length;
       }
 
-      var chunks = [];
       var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
+        var chunks = [];
 
         rsp.on('data', function(chunk) {
           chunks.push(chunk);
         });
 
         rsp.on('end', function() {
-          var totalLength = chunks.reduce(function(len, buf) {
-            return len + buf.length;
-          }, 0);
 
-          var rspData = Buffer.concat(chunks, totalLength);
+          var rspData = Buffer.concat(chunks, length(chunks));
 
           if (intercept) {
             intercept(rsp, rspData, req, res, function(err, rspd, sent) {
@@ -262,4 +259,12 @@ function bodyEncoding(options) {
    */
 
   return options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
+}
+
+function length(chunks) {
+  'use strict';
+
+  return chunks.reduce(function(len, buf) {
+    return len + buf.length;
+  }, 0);
 }
