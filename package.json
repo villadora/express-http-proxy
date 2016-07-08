@@ -32,10 +32,10 @@
     "iconv": "^2.1.4",
     "jshint": "^2.5.5",
     "mocha": "^2.1.0",
+    "jscs": "^3.0.6",
     "supertest": "^0.13.0"
   },
   "dependencies": {
-    "jscs": "^3.0.6",
     "lodash.iserror": "^3.1.0",
     "raw-body": "^1.1.6"
   },
