@@ -123,7 +123,11 @@ module.exports = function proxy(host, options) {
               }
             });
           } else {
-            res.send(rspData);
+            // see issue https://github.com/villadora/express-http-proxy/issues/104
+            // Not sure how to automate tests on this line, so be careful when changing.
+            if (!res.headersSent) {
+              res.send(rspData);
+            }
           }
         });
 
