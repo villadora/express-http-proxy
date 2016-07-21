@@ -41,6 +41,21 @@ app.use('/proxy', proxy('www.google.com', {
   }
 }));
 ```
+#### forwardPathAsync
+
+The ```forwardPathAsync``` options allows you to modify the path asyncronously prior to proxying the request, using Promises.
+
+```js
+app.use(proxy('httpbin.org', {
+  forwardPathAsync: function() {
+    return new Promise(function(resolve, reject) {
+      // ...
+      // eventually
+      resolve( /* your resolved eorwardPath as string */ )
+    });
+  }
+}));
+```
 
 #### filter
 The ```filter``` option can be used to limit what requests are proxied. For example, if you only want to proxy get request
