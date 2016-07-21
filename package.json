@@ -9,6 +9,7 @@
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
+    "test:debug": "mocha debug -R spec test/*.js",
     "mocha": "mocha -R spec test/*.js",
     "lint": "jshint index.js test/*.js",
     "jscs": "jscs index.js test/*.js"
@@ -36,7 +37,8 @@
     "supertest": "^1.2.0"
   },
   "dependencies": {
-    "raw-body": "^2.1.7"
+    "raw-body": "^2.1.7",
+    "es6-promise": "^3.2.1"
   },
   "contributors": [
     {

@@ -3,6 +3,7 @@ var url = require('url');
 var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
+var promise = require('es6-promise');
 
 require('buffer');
 
@@ -18,19 +19,24 @@ module.exports = function proxy(host, options) {
   /**
    * Function :: intercept(targetResponse, data, res, req, function(err, json));
    */
-  var intercept = options.intercept;   // after request (5)
-  var decorateRequest = options.decorateRequest;  // before request (2)
-  var forwardPath = options.forwardPath || defaultForwardPath;  // before request (1)
-  var filter = options.filter || defaultFilter;  // before request (0)
-  var limit = options.limit || '1mb';  // option
-  var preserveReqSession = options.preserveReqSession; // binary option
+  var intercept = options.intercept;
+  var decorateRequest = options.decorateRequest;
+  var forwardPath = options.forwardPath || defaultForwardPath;
+  var forwardPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
+  var filter = options.filter || defaultFilter;
+  var limit = options.limit || '1mb';
+  var preserveReqSession = options.preserveReqSession;
 
   return function handleProxy(req, res, next) {
-
     if (!filter(req, res)) { return next(); }
 
-    var path = forwardPath(req, res);
+    forwardPathAsync(req, res)
+      .then(function(path) {
+        proxyWithResolvedPath(req, res, next, path);
+      });
+  };
 
+  function proxyWithResolvedPath(req, res, next, path) {
     parsedHost = parsedHost || parseHost(host, req);
 
     if (req.body) {
@@ -166,7 +172,7 @@ module.exports = function proxy(host, options) {
         realRequest.abort();
       });
     }
-  };
+  }
 };
 
 
@@ -252,10 +258,20 @@ function bodyEncoding(options) {
   return options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
 }
 
+
 function length(chunks) {
   'use strict';
 
   return chunks.reduce(function(len, buf) {
     return len + buf.length;
   }, 0);
+}
+
+function defaultForwardPathAsync(forwardPath) {
+  'use strict';
+  return function(req) {
+    return new promise.Promise(function(resolve) {
+      resolve(forwardPath(req));
+    });
+  };
 }
