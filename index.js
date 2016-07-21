@@ -162,7 +162,7 @@ module.exports = function proxy(host, options) {
 
       realRequest.end();
 
-      req.on('aborted', function () {
+      req.on('aborted', function() {
         realRequest.abort();
       });
     }
