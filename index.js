@@ -30,12 +30,13 @@ module.exports = function proxy(host, options) {
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
 
-    forwardPathAsync(req, res).then(function(path) {
-      handleProxyInner(req, res, next, path);
-    });
+    forwardPathAsync(req, res)
+      .then(function(path) {
+        proxyWithResolvedPath(req, res, next, path);
+      });
   };
 
-  function handleProxyInner(req, res, next, path) {
+  function proxyWithResolvedPath(req, res, next, path) {
     parsedHost = parsedHost || parseHost(host, req);
 
     if (req.body) {

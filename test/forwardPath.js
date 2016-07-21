@@ -2,7 +2,7 @@ var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
-var Promise = require('es6-promise').Promise;
+var promise = require('es6-promise');
 
 describe('forwardPath', function() {
   'use strict';
@@ -63,8 +63,8 @@ describe('forwardPath', function() {
     var app = express();
     app.use(proxy('httpbin.org', {
       forwardPath: function() {
-        setTimeout(function () {
-          return '/post';        
+        setTimeout(function() {
+          return '/post';
         }, 100);
       }
     }));
@@ -84,13 +84,32 @@ describe('forwardPath', function() {
     var app = express();
     app.use(proxy('httpbin.org', {
       forwardPathAsync: function() {
-        return new Promise(function(resolve) {
-          setTimeout(function () {
-            resolve('/post');        
+        return new promise.Promise(function(resolve) {
+          setTimeout(function() {
+            resolve('/post');
           }, 250);
         });
       }}
     ));
+
+    request(app)
+      .post('/foobar')
+      .send({
+        mypost: 'hello'
+      })
+      .end(function(err, res) {
+        assert.equal(res.statusCode, 200);
+        done(err);
+      });
+  });
+
+  it('test forwardPathAsync to known path (as function) yields 200', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      forwardPath: function() {
+        return ('/post');
+      }
+    }));
 
     request(app)
       .post('/foobar')
