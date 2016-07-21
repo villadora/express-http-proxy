@@ -31,12 +31,11 @@
     "express": "^4.3.1",
     "jshint": "^2.5.5",
     "mocha": "^2.1.0",
-    "jscs": "^3.0.6",
-    "supertest": "^0.13.0"
+    "jscs": "^3.0.7",
+    "supertest": "^1.2.0"
   },
   "dependencies": {
-    "lodash.iserror": "^3.1.0",
-    "raw-body": "^1.1.6"
+    "raw-body": "^2.1.7"
   },
   "contributors": [
     {
