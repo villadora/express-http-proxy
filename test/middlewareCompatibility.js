@@ -1,6 +1,7 @@
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
+var bodyParser = require('body-parser');
 var proxy = require('../');
 
 describe('middleware compatibility', function() {
@@ -23,7 +24,7 @@ describe('middleware compatibility', function() {
       });
     });
 
-    app.use(proxy('example.com', {
+    app.use(proxy('httpbin.org', {
       intercept: function(rsp, data, req, res, cb) {
         assert(req.body);
         assert.equal(req.body.foo, 1);
@@ -37,8 +38,53 @@ describe('middleware compatibility', function() {
       .send({
         mypost: 'hello'
       })
-      .end(function(err) {
-        done(err);
-      });
+      .expect(function(res) {
+        assert.equal(res.body.json.foo, 1);
+        assert.equal(res.body.json.mypost, 'hello');
+      })
+      .end(done);
   });
+
+  it('should stringify req.body when it is a json body so it is written to proxy request', function(done) {
+    var app = express();
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({
+      extended: false
+    }));
+    app.use(proxy('httpbin.org'));
+    request(app)
+      .post('/post')
+      .send({
+        mypost: 'hello',
+        doorknob: 'wrect'
+      })
+      .expect(function(res) {
+        assert.equal(res.body.json.doorknob, 'wrect');
+        assert.equal(res.body.json.mypost, 'hello');
+      })
+      .end(done);
+  });
+
+  it('should convert req.body to a Buffer when reqAsBuffer is set', function(done) {
+    var app = express();
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({
+      extended: false
+    }));
+    app.use(proxy('httpbin.org', {
+      reqAsBuffer: true
+    }));
+    request(app)
+      .post('/post')
+      .send({
+        mypost: 'hello',
+        doorknob: 'wrect'
+      })
+      .expect(function(res) {
+        assert.equal(res.body.json.doorknob, 'wrect');
+        assert.equal(res.body.json.mypost, 'hello');
+      })
+      .end(done);
+  });
+
 });

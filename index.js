@@ -5,8 +5,6 @@ var https = require('https');
 var getRawBody = require('raw-body');
 var promise = require('es6-promise');
 
-require('buffer');
-
 module.exports = function proxy(host, options) {
   'use strict';
 
@@ -17,7 +15,7 @@ module.exports = function proxy(host, options) {
   var parsedHost;
 
   /**
-   * Function :: intercept(targetResponse, data, res, req, function(err, json));
+   * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
@@ -76,11 +74,11 @@ module.exports = function proxy(host, options) {
         return next(err);
       }
 
-      if (typeof bodyContent === 'string') {
-        reqOpt.headers['content-length'] = Buffer.byteLength(bodyContent);
-      } else if (Buffer.isBuffer(bodyContent)) { // Buffer
-        reqOpt.headers['content-length'] = bodyContent.length;
-      }
+      bodyContent = options.reqAsBuffer ?
+        asBuffer(bodyContent, options) :
+        asBufferOrString(bodyContent);
+
+      reqOpt.headers['content-length'] = getContentLength(bodyContent);
 
       var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
         var chunks = [];
@@ -91,7 +89,7 @@ module.exports = function proxy(host, options) {
 
         rsp.on('end', function() {
 
-          var rspData = Buffer.concat(chunks, length(chunks));
+          var rspData = Buffer.concat(chunks, chunkLength(chunks));
 
           if (intercept) {
             intercept(rsp, rspData, req, res, function(err, rspd, sent) {
@@ -99,11 +97,7 @@ module.exports = function proxy(host, options) {
                 return next(err);
               }
 
-              var encode = 'utf8';
-
-              if (typeof rspd === 'string') {
-                rspd = new Buffer(rspd, encode);
-              }
+              rspd = asBuffer(rspd, options);
 
               if (!Buffer.isBuffer(rspd)) {
                 next(new Error('intercept should return string or' +
@@ -263,7 +257,7 @@ function bodyEncoding(options) {
 }
 
 
-function length(chunks) {
+function chunkLength(chunks) {
   'use strict';
 
   return chunks.reduce(function(len, buf) {
@@ -278,4 +272,41 @@ function defaultForwardPathAsync(forwardPath) {
       resolve(forwardPath(req));
     });
   };
+}
+
+function asBuffer(body, options) {
+  'use strict';
+  var ret;
+  if (Buffer.isBuffer(body)) {
+    ret = body;
+  } else if (typeof body === 'object') {
+    ret = new Buffer(JSON.stringify(body), bodyEncoding(options));
+  } else if (typeof body === 'string') {
+    ret = new Buffer(body, bodyEncoding(options));
+  }
+  return ret;
+}
+
+function asBufferOrString(body) {
+  'use strict';
+  var ret;
+  if (Buffer.isBuffer(body)) {
+    ret = body;
+  } else if (typeof body === 'object') {
+    ret = JSON.stringify(body);
+  } else if (typeof body === 'string') {
+    ret = body;
+  }
+  return ret;
+}
+
+function getContentLength(body) {
+  'use strict';
+  var result;
+  if (Buffer.isBuffer(body)) { // Buffer
+    result = body.length;
+  } else if (typeof body === 'string') {
+    result = Buffer.byteLength(body);
+  }
+  return result;
 }
