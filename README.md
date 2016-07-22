@@ -26,6 +26,7 @@ app.use('/proxy', proxy('www.google.com'));
 ### Options
 
 
+
 #### forwardPath
 
 The ```forwardPath``` option allows you to modify the path prior to proxying the request.
@@ -109,13 +110,31 @@ app.use('/proxy', proxy('www.google.com', {
   preserveHostHdr: true
 }));
 ```
+#### reqAsBuffer
+
+Note: this is an experimental feature.  ymmv
+
+The ```reqAsBuffer``` option allows you to ensure the req body is encoded as a Node
+```Buffer``` when sending a proxied request.   Any value for this is truthy.
+
+This defaults to to false in order to preserve legacy behavior. Note that
+the value of ```reqBodyEnconding``` is used as the encoding when coercing strings
+(and stringified JSON) to Buffer.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  reqAsBuffer: true
+}));
+```
 
 #### reqBodyEncoding
 
-Encoding used to decode request body. Default to ```utf-8```.
+Encoding used to decode request body. Defaults to ```utf-8```.
 
-Use ```null``` to avoid decoding and pass the body as is.
+Use ```null``` to preserve as Buffer when proxied request body is a Buffer. (e.g image upload)
 Accept any values supported by [raw-body](https://www.npmjs.com/package/raw-body#readme).
+
+The same encoding is used in the intercept method.
 
 ```
 app.use('/post', proxy('httpbin.org', {
