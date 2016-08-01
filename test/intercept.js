@@ -99,3 +99,38 @@ describe('intercept', function() {
     });
   });
 });
+
+
+describe('test intercept on html response from github',function() {
+  /*
+     Github provided a unique situation where the encoding was different than
+     utf-8 when we didn't explicitly ask for utf-8.  This test helped sort out
+     the issue, and even though its a little too on the nose for a specific
+     case, it seems worth keeping around to ensure we don't regress on this
+     issue.
+  */
+
+  'use strict';
+
+  it('is able to read and manipulate the response', function(done) {
+    this.timeout(1500);  // give it some extra time to get response
+    var app = express();
+    app.use(proxy('https://github.com/villadora/express-http-proxy', {
+      intercept: function(targetResponse, data, req, res, cb) {
+        data = data.toString().replace('DOCTYPE','WINNING');
+        assert(data !== '');
+        cb(null, data);
+      }
+    }));
+
+    request(app)
+    .get('/html')
+    .end(function(err, res) {
+      if (err) { return done(err); }
+      assert(res.text.indexOf('WINNING') > -1);
+      done();
+    });
+
+  });
+});
+
