@@ -112,8 +112,9 @@ module.exports = function proxy(host, options) {
                 next(new Error(error));
               }
 
+
               if (!sent) {
-                res.send(rspd);
+                res.send(rspd.toString('utf-8'));
               }
             });
           } else {
