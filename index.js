@@ -80,6 +80,10 @@ module.exports = function proxy(host, options) {
 
       reqOpt.headers['content-length'] = getContentLength(bodyContent);
 
+      if (bodyEncoding(options)) {
+        reqOpt.headers[ 'Accept-Encoding' ] = bodyEncoding(options);
+      }
+
       var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
         var chunks = [];
 
