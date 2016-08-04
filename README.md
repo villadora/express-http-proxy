@@ -91,11 +91,14 @@ You can change the request options before it is sent to the target.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateRequest: function(reqOpt, req) {
-    reqOpt.headers['Content-Type'] = '';
-    reqOpt.method = 'GET';
-    reqOpt.bodyContent = wrap(req.bodyContent);
-    return reqOpt;
+  decorateRequest: function(proxyReq, originalReq) {
+    // you can update headers
+    proxyReq.headers['Content-Type'] = 'text/html';
+    // you can change the method
+    proxyReq.method = 'GET';
+    // you can munge the bodyContent.
+    proxyReq.bodyContent = proxyReq.bodyContent.replace(/losing/, 'winning!');
+    return proxyReq;
   }
 }));
 
