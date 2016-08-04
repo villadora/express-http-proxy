@@ -161,6 +161,11 @@ app.use('/', proxy('httpbin.org', {
 
 ### Q: Can it support https proxy?
 
+The library will use https if the provided path has 'https://' or ':443'.   You can use decorateRequest to ammend any auth or challenge headers required to succeed https.
+
+
+Here is an older answer about using the https-proxy-agent package.   It may be useful if the included functionality in ```http-express-proxy``` does not solve your use case.
+
 A:  Yes, you can use the 'https-proxy-agent' package. Something like this:
 
 ```js
