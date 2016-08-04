@@ -186,6 +186,7 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
+| 0.9.1 | Documentation updates.  Set 'Accept-Encoding' header to match bodyEncoding. |
 | 0.9.0 | Better handling for request body when body is JSON. |
 | 0.8.0 | Features:  add forwardPathAsync option <br />Updates:  modernize dependencies <br />Fixes: Exceptions parsing proxied response causes error: Can't set headers after they are sent. (#111) <br />If client request aborts, proxied request is aborted too (#107) |
 | 0.7.4 | Move jscs to devDependencies to avoid conflict with nsp. |
