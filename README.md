@@ -101,7 +101,7 @@ app.use('/proxy', proxy('www.google.com', {
           item.replace('secure; ', '');
         });
       }
-      delete res.headers['Strict-Transport-Security'];
+      delete res.headers['strict-ransport-security'];
     }
   }
 }));
