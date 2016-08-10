@@ -86,7 +86,9 @@ module.exports = function proxy(host, options) {
       }
 
       var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
-        if (preIntercept) preIntercept(rsp);
+        if (preIntercept) {
+          preIntercept(rsp);
+        }
         var chunks = [];
 
         rsp.on('data', function(chunk) {
