@@ -1,11 +1,18 @@
 {
   "name": "express-http-proxy",
-  "version": "0.6.0",
+  "version": "0.9.1",
   "description": "http proxy middleware for express",
+  "engines": {
+    "node": ">=4.0.0"
+  },
+  "engineStrict": true,
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint && ./node_modules/.bin/mocha -R spec test/test.js",
-    "lint": "./node_modules/.bin/jshint index.js test/*.js"
+    "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
+    "test:debug": "mocha debug -R spec test/*.js",
+    "mocha": "mocha -R spec test/*.js",
+    "lint": "jshint index.js test/*.js",
+    "jscs": "jscs index.js test/*.js"
   },
   "repository": {
     "type": "git",
@@ -14,9 +21,6 @@
   "keywords": [
     "express-http-proxy"
   ],
-  "engines": {
-    "node": ">=0.10.0"
-  },
   "author": {
     "name": "villadora",
     "email": "jky239@gmail.com"
@@ -26,15 +30,16 @@
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
   "devDependencies": {
+    "body-parser": "^1.15.2",
     "express": "^4.3.1",
-    "iconv": "^2.1.4",
+    "jscs": "^3.0.7",
     "jshint": "^2.5.5",
     "mocha": "^2.1.0",
-    "supertest": "^0.13.0"
+    "supertest": "^1.2.0"
   },
   "dependencies": {
-    "type-is": "^1.2.0",
-    "raw-body": "^1.1.6"
+    "es6-promise": "^3.2.1",
+    "raw-body": "^2.1.7"
   },
   "contributors": [
     {
@@ -55,6 +60,10 @@
     {
       "name": "Wei Gao",
       "email": "jky239@gmail.com"
+    },
+    {
+      "name": "Nik Krimm",
+      "url": "https://github.com/monkpow"
     }
   ]
 }
