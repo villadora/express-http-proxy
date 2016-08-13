@@ -47,6 +47,55 @@ module.exports = function proxy(host, options) {
       }, runProxy);
     }
 
+    var sendIsCalled = false;
+    var nextIsCalled = false;
+
+    function canWeExecuteFinalizeActions() {
+      return !sendIsCalled && !nextIsCalled;
+    }
+
+    function finalize(err, rspd, sent) {
+      if (!canWeExecuteFinalizeActions()) {
+        return; // We prevent the execution
+      }
+
+      sendIsCalled = true;
+
+      if (err) {
+        return next(err);
+      }
+
+      rspd = asBuffer(rspd, options);
+
+      if (!Buffer.isBuffer(rspd)) {
+        next(new Error('intercept should return string or' +
+            'buffer as data'));
+      }
+
+      if (!res.headersSent) {
+        res.set('content-length', rspd.length);
+      } else if (rspd.length !== rspData.length) {
+        var error = '"Content-Length" is already sent,' +
+            'the length of response data can not be changed';
+        next(new Error(error));
+      }
+
+      if (!sent) {
+        res.send(rspd);
+      }
+    }
+
+    finalize.send = finalize;
+    finalize.next = function () {
+      if (!canWeExecuteFinalizeActions()) {
+        return; // We prevent the execution
+      }
+
+      nextIsCalled = true;
+
+      next.apply(null, arguments);
+    };
+
     function runProxy(err, bodyContent) {
       var reqOpt = {
         hostname: parsedHost.host,
@@ -96,30 +145,7 @@ module.exports = function proxy(host, options) {
           var rspData = Buffer.concat(chunks, chunkLength(chunks));
 
           if (intercept) {
-            intercept(rsp, rspData, req, res, function(err, rspd, sent) {
-              if (err) {
-                return next(err);
-              }
-
-              rspd = asBuffer(rspd, options);
-
-              if (!Buffer.isBuffer(rspd)) {
-                next(new Error('intercept should return string or' +
-                      'buffer as data'));
-              }
-
-              if (!res.headersSent) {
-                res.set('content-length', rspd.length);
-              } else if (rspd.length !== rspData.length) {
-                var error = '"Content-Length" is already sent,' +
-                      'the length of response data can not be changed';
-                next(new Error(error));
-              }
-
-              if (!sent) {
-                res.send(rspd);
-              }
-            });
+            intercept(rsp, rspData, req, res, finalize);
           } else {
             // see issue https://github.com/villadora/express-http-proxy/issues/104
             // Not sure how to automate tests on this line, so be careful when changing.
