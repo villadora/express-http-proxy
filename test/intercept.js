@@ -41,6 +41,26 @@ describe('intercept', function() {
   });
 
 
+  it('can modify the response headers', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      intercept: function(rsp, data, req, res, cb) {
+        res.set('x-wombat-alliance', 'mammels');
+        res.set('content-type', 'wiki/wiki');
+        cb(null, data);
+      }
+    }));
+
+    request(app)
+    .get('/ip')
+    .end(function(err, res) {
+      if (err) { return done(err); }
+      assert(res.headers['content-type'] === 'wiki/wiki');
+      assert(res.headers['x-wombat-alliance'] === 'mammels');
+      done();
+    });
+  });
+
   it('can mutuate an html response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
