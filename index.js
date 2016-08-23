@@ -271,9 +271,9 @@ function chunkLength(chunks) {
 
 function defaultForwardPathAsync(forwardPath) {
   'use strict';
-  return function(req) {
+  return function(req, res) {
     return new promise.Promise(function(resolve) {
-      resolve(forwardPath(req));
+      resolve(forwardPath(req, res));
     });
   };
 }
