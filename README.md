@@ -52,7 +52,7 @@ app.use(proxy('httpbin.org', {
     return new Promise(function(resolve, reject) {
       // ...
       // eventually
-      resolve( /* your resolved eorwardPath as string */ )
+      resolve( /* your resolved forwardPath as string */ )
     });
   }
 }));
