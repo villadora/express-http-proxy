@@ -42,6 +42,27 @@ describe('forwardPath', function() {
       });
   });
 
+  it('test forwardPath to known path with request and response yields 200', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      forwardPath: function(req, res) {
+        assert.ok(req);
+        assert.ok(res);
+        return '/post';
+      }
+    }));
+
+    request(app)
+      .post('/foobar')
+      .send({
+        mypost: 'hello'
+      })
+      .end(function(err, res) {
+        assert.equal(res.statusCode, 200);
+        done(err);
+      });
+  });
+
   it('test forwardPath to undefined yields 404', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
