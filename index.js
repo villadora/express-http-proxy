@@ -158,7 +158,6 @@ module.exports = function proxy(host, options) {
             options.timeout + 'ms.');
           res.writeHead(504, {'Content-Type': 'text/plain'});
           res.end();
-          next();
         } else {
           next(err);
         }
