@@ -18,6 +18,7 @@ module.exports = function proxy(host, options) {
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
   var intercept = options.intercept;
+  var preIntercept = options.preIntercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath || defaultForwardPath;
   var forwardPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
@@ -85,6 +86,9 @@ module.exports = function proxy(host, options) {
       }
 
       var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
+        if (preIntercept) {
+          preIntercept(rsp);
+        }
         var chunks = [];
 
         rsp.on('data', function(chunk) {

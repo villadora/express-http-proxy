@@ -85,6 +85,28 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
+#### preIntercept
+Similar to `intercept`, but is executed before the request was actually sent.
+
+Can be used to modify headers, while `intercept` stage is too late for this.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  preIntercept: function(res) {
+    var cookie = res.headers['set-cookie'];
+    if (cookie) {
+      // Make HTTPS -> HTTP proxying work correctly.
+      if (Array.isArray(cookie)) {
+        res.headers['set-cookie'] = cookie.map(function(item) {
+          item.replace('secure; ', '');
+        });
+      }
+      delete res.headers['strict-ransport-security'];
+    }
+  }
+}));
+```
+
 #### decorateRequest
 
 You can change the request options before it is sent to the target.
