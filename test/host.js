@@ -10,18 +10,19 @@ describe('host can be a dynamic function', function() {
   var app = express();
   var proxyApp = express();
   var randomPort = Math.floor(Math.random() * 10000);
-  var proxyUrl = "localhost:" + randomPort;
+  var proxyUrl = 'localhost:' + randomPort;
 
-  app.use(function (req, res, next) {
-    req.session = { dynamic_host: proxyUrl };
+  app.use(function(req, res, next) {
+    req.session = { 'dynamic_host': proxyUrl };
     next();
   });
 
-  app.use('/proxy', proxy(function (req) {
-    return req.session.dynamic_host;
+  app.use('/proxy', proxy(function(req) {
+    var sessionKey = 'dynamic_host';
+    return req.session[sessionKey];
   }));
 
-  proxyApp.get('/', function (req, res) {
+  proxyApp.get('/', function(req, res) {
     res.sendStatus(204);
   });
   proxyApp.listen(randomPort);
