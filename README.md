@@ -108,7 +108,7 @@ app.use('/proxy', proxy('www.google.com', {
 
 You can copy the host HTTP header to the proxied express server using the `preserveHostHdr` option.
 
-```
+```js
 app.use('/proxy', proxy('www.google.com', {
   preserveHostHdr: true
 }));
@@ -139,7 +139,7 @@ Accept any values supported by [raw-body](https://www.npmjs.com/package/raw-body
 
 The same encoding is used in the intercept method.
 
-```
+```js
 app.use('/post', proxy('httpbin.org', {
   reqBodyEncoding: null
 }));
