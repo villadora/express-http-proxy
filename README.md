@@ -85,6 +85,30 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
+An alternative way:
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  intercept: function(rsp, data, req, res, finalize) {
+    // rsp - original response from the target
+    data = JSON.parse(data.toString('utf8'));
+    finalize.send(null, JSON.stringify(data));
+  }
+}));
+```
+
+
+If your proxy is between middlewares, you can call the next method like so:
+```js
+app.use('/proxy', previousMiddleware, proxy('www.google.com', {
+  intercept: function(rsp, data, req, res, callback) {
+    // Do something
+    finalize.next();
+  }
+}), anotherMiddleWare);
+```
+
+
 #### decorateRequest
 
 You can change the request options before it is sent to the target.

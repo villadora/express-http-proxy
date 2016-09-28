@@ -120,6 +120,206 @@ describe('intercept', function() {
   });
 });
 
+describe('intercept - finalize way', function() {
+  'use strict';
+
+  this.timeout(5000);
+
+  it('can modify the response data', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      intercept: function(rsp, data, req, res, finalize) {
+        data = JSON.parse(data.toString('utf8'));
+        data.intercepted = true;
+        finalize.send(null, JSON.stringify(data));
+      }
+    }));
+
+    request(app)
+        .get('/ip')
+        .end(function(err, res) {
+          if (err) { return done(err); }
+          assert(res.body.intercepted);
+          done();
+        });
+  });
+
+
+  it('can mutuate an html response', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      intercept: function(rsp, data, req, res, finalize) {
+        data = data.toString().replace('Oh', '<strong>Hey</strong>');
+        assert(data !== '');
+        finalize.send(null, data);
+      }
+    }));
+
+    request(app)
+        .get('/html')
+        .end(function(err, res) {
+          if (err) { return done(err); }
+          assert(res.text.indexOf('<strong>Hey</strong>') > -1);
+          done();
+        });
+  });
+
+  it('can change the location of a redirect', function(done) {
+
+    function redirectingServer(port, origin) {
+      var app = express();
+      app.get('/', function(req, res) {
+        res.status(302);
+        res.location(origin + '/proxied/redirect/url');
+        res.send();
+      });
+      return app.listen(port);
+    }
+
+    var redirectingServerPort = 8012;
+    var redirectingServerOrigin = ['http://localhost', redirectingServerPort].join(':');
+
+    var server = redirectingServer(redirectingServerPort, redirectingServerOrigin);
+
+    var proxyApp = express();
+    var preferredPort = 3000;
+
+    proxyApp.use(proxy(redirectingServerOrigin, {
+      intercept: function(rsp, data, req, res, finalize) {
+        var proxyReturnedLocation = res._headers.location;
+        res.location(proxyReturnedLocation.replace(redirectingServerPort, preferredPort));
+        finalize.send(null, data);
+      }
+    }));
+
+    request(proxyApp)
+        .get('/')
+        .expect(function(res) {
+          res.headers.location.match(/localhost:3000/);
+        })
+        .end(function() {
+          server.close();
+          done();
+        });
+  });
+
+  it('can called easily the next middleware', function(done) {
+    var app = express();
+    var nextWasCalled = false;
+    var nextMiddleWare = function (req, resp) {
+      nextWasCalled = true;
+
+      assert(req);
+      assert(resp);
+
+      resp.sendStatus(200);
+    };
+
+    app.use(
+        proxy('httpbin.org', {
+          intercept: function(rsp, data, req, res, finalize) {
+            finalize.next();
+          }
+        }),
+        nextMiddleWare
+    );
+
+    request(app)
+        .get('/ip')
+        .end(function(err) {
+          if (err) { return done(err); }
+          assert(nextWasCalled);
+          done();
+        });
+  });
+
+  it('cannot called many times the next middleware', function(done) {
+    var app = express();
+    var nextWasCalledCount = 0;
+    var nextMiddleWare = function (req, resp) {
+      nextWasCalledCount++;
+
+      setTimeout(function () {
+        resp.sendStatus(200);
+      }, 300);
+    };
+
+    app.use(
+        proxy('httpbin.org', {
+          intercept: function(rsp, data, req, res, finalize) {
+            finalize.next();
+            finalize.next();
+            finalize.next();
+          }
+        }),
+        nextMiddleWare
+    );
+
+    request(app)
+        .get('/ip')
+        .end(function(err) {
+          if (err) { return done(err); }
+          assert(nextWasCalledCount === 1);
+          done();
+        });
+  });
+
+  it('cannot called many times the send method', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      intercept: function(rsp, data, req, res, finalize) {
+        data = JSON.parse(data.toString('utf8'));
+        data.intercepted = true;
+        finalize.send(null, JSON.stringify(data));
+        finalize.send(null, JSON.stringify({ 'whyNot': true }));
+      }
+    }));
+
+    request(app)
+        .get('/ip')
+        .end(function(err, res) {
+          if (err) { return done(err); }
+          assert(res.body.intercepted);
+          done();
+        });
+  });
+
+  it('cannot called the next middleware and the send method', function(done) {
+    var app = express();
+    var nextWasCalledCount = 0;
+    var nextMiddleWare = function (req, resp) {
+      nextWasCalledCount++;
+
+      setTimeout(function () {
+        resp.sendStatus(200);
+      }, 300);
+    };
+
+    app.use(
+        proxy('httpbin.org', {
+          intercept: function(rsp, data, req, res, finalize) {
+            data = JSON.parse(data.toString('utf8'));
+            data.intercepted = true;
+            finalize.send(null, JSON.stringify(data));
+            finalize.next();
+          }
+        }),
+        nextMiddleWare
+    );
+
+    request(app)
+        .get('/ip')
+        .end(function(err, res) {
+          if (err) { return done(err); }
+          assert(res.body.intercepted);
+          assert(nextWasCalledCount === 0);
+          done();
+        });
+  });
+
+
+});
+
 
 describe('test intercept on html response from github',function() {
   /*
