@@ -7,6 +7,7 @@ var https = require('https');
 var getRawBody = require('raw-body');
 var zlib = require('zlib');
 
+
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
 
@@ -24,6 +25,7 @@ module.exports = function proxy(host, options) {
   var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
+  var memoizeHost = true || options.memoizeHost;
 
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
@@ -37,9 +39,8 @@ module.exports = function proxy(host, options) {
     });
   };
 
-
   function sendProxyRequest(req, res, next, path, bodyContent) {
-    parsedHost = parsedHost || parseHost(host, req, options);
+    parsedHost = memoizeHost && parsedHost ? parsedHost : parseHost(host, req, options);
 
     var reqOpt = {
       hostname: parsedHost.host,

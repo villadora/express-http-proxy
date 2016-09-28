@@ -99,6 +99,30 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
+#### memoizeHost
+
+Defaults to ```true```.
+
+When true, the ```host``` argument will be parsed on first request, and
+memoized for all subsequent requests.    Setting this value to ```false``` will
+cause the host argument to be parsed on each request serviced.  Use this when
+you have a dynamic host function that should be re-evaluated on each request.
+
+```js
+
+  function coinToss() { return Math.random() > .5 }
+  function getHost() { return coinToss() ? 'http://yahoo.com' : 'http://google.com' }
+
+  app.use('proxy(getHost, {
+      memoizeHost: false
+    }
+  )
+```
+
+In this example, when ```memoizeHost:false```, each request will have a coin tosses chance of getting either host.
+Conversely, When ```memoizeHost:true```,  the coinToss would occur on the first request, and all additional requests would return that value.
+
+
 #### decorateRequest
 
 You can change the request options before it is sent to the target.
