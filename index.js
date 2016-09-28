@@ -35,7 +35,7 @@ module.exports = function proxy(host, options) {
   };
 
   function proxyWithResolvedPath(req, res, next, path) {
-    parsedHost = parsedHost || parseHost(host, req);
+    parsedHost = parsedHost || parseHost(host, req, options);
 
     if (req.body) {
       runProxy(null, req.body);
@@ -194,7 +194,7 @@ function extend(obj, source, skips) {
   return obj;
 }
 
-function parseHost(host, req) {
+function parseHost(host, req, options) {
   'use strict';
 
   host = (typeof host === 'function') ? host(req) : host.toString();
@@ -213,7 +213,7 @@ function parseHost(host, req) {
     return new Error('Unable to parse hostname, possibly missing protocol://?');
   }
 
-  var ishttps = parsed.protocol === 'https:';
+  var ishttps = options.https || parsed.protocol === 'https:';
 
   return {
     host: parsed.hostname,
