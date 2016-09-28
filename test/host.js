@@ -8,28 +8,36 @@ describe('host can be a dynamic function', function() {
   this.timeout(10000);
 
   var app = express();
-  var proxyApp = express();
-  var randomPort = Math.floor(Math.random() * 10000);
-  var proxyUrl = 'localhost:' + randomPort;
+  var firstProxyApp = express();
+  var secondProxyApp = express();
+  var firstPort = Math.floor(Math.random() * 10000);
+  var secondPort = Math.floor(Math.random() * 10000);
 
-  app.use(function(req, res, next) {
-    req.session = { 'dynamic_host': proxyUrl };
-    next();
-  });
-
-  app.use('/proxy', proxy(function(req) {
-    var sessionKey = 'dynamic_host';
-    return req.session[sessionKey];
+  app.use('/proxy/:port', proxy(function(req) {
+    return 'localhost:' + req.params.port;
   }));
 
-  proxyApp.get('/', function(req, res) {
+  firstProxyApp.get('/', function(req, res) {
     res.sendStatus(204);
   });
-  proxyApp.listen(randomPort);
+  firstProxyApp.listen(firstPort);
+
+  secondProxyApp.get('/', function(req, res) {
+    res.sendStatus(200);
+  });
+  secondProxyApp.listen(secondPort);
 
   it('can proxy with session value', function(done) {
     request(app)
-      .get('/proxy')
-      .expect(204, done);
+      .get('/proxy/' + firstPort)
+      .expect(204)
+      .end(function(err) {
+        if (err) {
+          return done(err);
+        }
+        request(app)
+            .get('/proxy/' + secondPort)
+            .expect(200, done);
+      });
   });
 });

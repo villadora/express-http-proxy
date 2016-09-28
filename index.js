@@ -35,7 +35,7 @@ module.exports = function proxy(host, options) {
   };
 
   function proxyWithResolvedPath(req, res, next, path) {
-    parsedHost = parsedHost || parseHost(host, req, options);
+    parsedHost = parseHost(host, req, options);
 
     if (req.body) {
       runProxy(null, req.body);
