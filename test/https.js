@@ -12,14 +12,10 @@ describe('proxies https', function() {
 
   beforeEach(function() {
     app = express();
-    app.use(proxy('httpbin.org'));
   });
 
-
-  it('when host is a String and includes \'https\' protocol', function(done) {
-    var https = express();
-    https.use(proxy('https://httpbin.org'));
-    request(https)
+  function assertSecureRequest(app, done) {
+    request(app)
       .get('/get?show_env=1')
       .end(function(err, res) {
         if (err) { return done(err); }
@@ -27,40 +23,36 @@ describe('proxies https', function() {
         assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
         done();
       });
+  }
+
+  describe('when host is a String', function () {
+    describe('and includes "https" as protocol', function () {
+      it('proxys via https', function (done) {
+        app.use(proxy('https://httpbin.org'));
+        assertSecureRequest(app, done);
+      });
+    });
+    describe('option https is set to "true"', function() {
+      it('proxys via https', function (done) {
+        app.use(proxy('http://httpbin.org', {https: true}));
+        assertSecureRequest(app, done);
+      });
+    });
   });
 
-  it('https port 443', function(done) {
-    var https = express();
-    https.use(proxy('httpbin.org:443'));
-    request(https)
-      .get('/user-agent')
-      .end(function(err) {
-        if (err) { return done(err); }
-        done();
+  describe('when host is a Function', function () {
+    describe('returned value includes "https" as protocol', function () {
+      it('proxys via https', function (done) {
+        app.use(proxy(function() { return 'https://httpbin.org'; }));
+        assertSecureRequest(app, done);
       });
+    });
+    describe('option https is set to "true"', function() {
+      it('proxys via https', function (done) {
+        app.use(proxy(function() { return 'http://httpbin.org'; }, {https: true}));
+        assertSecureRequest(app, done);
+      });
+    });
   });
 
-  it('protocol is resolved correctly if host is function', function(done) {
-    var https = express();
-    https.use(proxy(function() { return 'https://httpbin.org'; }));
-    request(https)
-      .get('/get?show_env=1')
-      .end(function(err, res) {
-        if (err) { return done(err); }
-        assert(res.body.headers['X-Forwarded-Ssl'] === 'on');
-        assert(res.body.headers['X-Forwarded-Protocol'] === 'https');
-        done();
-      });
-  });
-
-  it('https with function for URL', function(done) {
-    var https = express();
-    https.use(proxy(function() { return 'httpbin.org'; }, {https: true}));
-    request(https)
-      .get('/user-agent')
-      .end(function(err) {
-        if (err) { return done(err); }
-        done();
-      });
-  });
 });

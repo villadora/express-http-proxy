@@ -104,6 +104,18 @@ app.use('/proxy', proxy('www.google.com', {
 
 ```
 
+#### https
+
+Normally, your proxy request will be made on the same protocol as the original
+request.  If you'd like to force the proxy request to be https, use this
+option.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  https: true
+}));
+```
+
 #### preserveHostHdr
 
 You can copy the host HTTP header to the proxied express server using the `preserveHostHdr` option.
@@ -113,6 +125,8 @@ app.use('/proxy', proxy('www.google.com', {
   preserveHostHdr: true
 }));
 ```
+
+
 #### reqAsBuffer
 
 Note: this is an experimental feature.  ymmv
