@@ -1,13 +1,14 @@
+'use strict';
+
 var assert = require('assert');
 var url = require('url');
 var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
 var promise = require('es6-promise');
+var zlib = require('zlib');
 
 module.exports = function proxy(host, options) {
-  'use strict';
-
   assert(host, 'Host should not be empty');
 
   options = options || {};
@@ -96,12 +97,13 @@ module.exports = function proxy(host, options) {
           var rspData = Buffer.concat(chunks, chunkLength(chunks));
 
           if (intercept) {
+            rspData = maybeUnzipResponse(rspData, res);
             intercept(rsp, rspData, req, res, function(err, rspd, sent) {
               if (err) {
                 return next(err);
               }
-
               rspd = asBuffer(rspd, options);
+              rspd = maybeZipResponse(rspd, res);
 
               if (!Buffer.isBuffer(rspd)) {
                 next(new Error('intercept should return string or' +
@@ -179,7 +181,6 @@ module.exports = function proxy(host, options) {
 
 
 function extend(obj, source, skips) {
-  'use strict';
 
   if (!source) {
     return obj;
@@ -195,7 +196,6 @@ function extend(obj, source, skips) {
 }
 
 function parseHost(host, req, options) {
-  'use strict';
 
   host = (typeof host === 'function') ? host(req) : host.toString();
 
@@ -223,7 +223,7 @@ function parseHost(host, req, options) {
 }
 
 function reqHeaders(req, options) {
-  'use strict';
+
 
   var headers = options.headers || {};
 
@@ -239,17 +239,17 @@ function reqHeaders(req, options) {
 
 function defaultFilter() {
   // No-op version of filter.  Allows everything!
-  'use strict';
+
   return true;
 }
 
 function defaultForwardPath(req) {
-  'use strict';
+
   return url.parse(req.url).path;
 }
 
 function bodyEncoding(options) {
-  'use strict';
+
 
   /* For reqBodyEncoding, these is a meaningful difference between null and
    * undefined.  null should be passed forward as the value of reqBodyEncoding,
@@ -261,7 +261,7 @@ function bodyEncoding(options) {
 
 
 function chunkLength(chunks) {
-  'use strict';
+
 
   return chunks.reduce(function(len, buf) {
     return len + buf.length;
@@ -269,7 +269,7 @@ function chunkLength(chunks) {
 }
 
 function defaultForwardPathAsync(forwardPath) {
-  'use strict';
+
   return function(req, res) {
     return new promise.Promise(function(resolve) {
       resolve(forwardPath(req, res));
@@ -278,7 +278,7 @@ function defaultForwardPathAsync(forwardPath) {
 }
 
 function asBuffer(body, options) {
-  'use strict';
+
   var ret;
   if (Buffer.isBuffer(body)) {
     ret = body;
@@ -291,7 +291,7 @@ function asBuffer(body, options) {
 }
 
 function asBufferOrString(body) {
-  'use strict';
+
   var ret;
   if (Buffer.isBuffer(body)) {
     ret = body;
@@ -304,7 +304,7 @@ function asBufferOrString(body) {
 }
 
 function getContentLength(body) {
-  'use strict';
+
   var result;
   if (Buffer.isBuffer(body)) { // Buffer
     result = body.length;
@@ -313,3 +313,16 @@ function getContentLength(body) {
   }
   return result;
 }
+
+function isResGzipped(res) {
+  return res._headers['content-encoding'] === 'gzip';
+}
+
+function zipOrUnzip(method) {
+  return function(rspData, res) {
+    return (isResGzipped(res)) ? zlib[method](rspData) : rspData;
+  };
+}
+
+var maybeUnzipResponse = zipOrUnzip('gunzipSync');
+var maybeZipResponse = zipOrUnzip('gzipSync');
