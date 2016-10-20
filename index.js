@@ -18,6 +18,8 @@ module.exports = function proxy(host, options) {
   /**
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
+  var readCache = options.readCache || defaultReadCache;
+  var writeCache = options.writeCache;
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath || defaultForwardPath;
@@ -28,12 +30,30 @@ module.exports = function proxy(host, options) {
 
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
+    var readPromise = readCache(req);
+    if (readPromise) {
+      readPromise.then(function(cachedRes) {
+        copyResponse(res, cachedRes);
+        res.send(cachedRes.data);
+      });
+      return;
+    }
 
     forwardPathAsync(req, res)
       .then(function(path) {
         proxyWithResolvedPath(req, res, next, path);
       });
   };
+
+  // Copies status and headers from source response to the target response
+  function copyResponse(source, target) {
+    target.status(source.statusCode);
+    Object.keys(source.headers)
+      .filter(function(item) { return item !== 'transfer-encoding'; })
+      .forEach(function(item) {
+        target.set(item, source.headers[item]);
+      });
+  }
 
   function proxyWithResolvedPath(req, res, next, path) {
     parsedHost = parsedHost || parseHost(host, req, options);
@@ -95,6 +115,9 @@ module.exports = function proxy(host, options) {
         rsp.on('end', function() {
 
           var rspData = Buffer.concat(chunks, chunkLength(chunks));
+          if (writeCache) {
+            writeCache(req, {statusCode: res.statusCode, headers: res.headers, data: rspData});
+          }
 
           if (intercept) {
             rspData = maybeUnzipResponse(rspData, res);
@@ -136,12 +159,7 @@ module.exports = function proxy(host, options) {
         });
 
         if (!res.headersSent) {
-          res.status(rsp.statusCode);
-          Object.keys(rsp.headers)
-            .filter(function(item) { return item !== 'transfer-encoding'; })
-            .forEach(function(item) {
-              res.set(item, rsp.headers[item]);
-            });
+          copyResponse(rsp, res);
         }
       });
 
@@ -246,6 +264,10 @@ function defaultFilter() {
 function defaultForwardPath(req) {
 
   return url.parse(req.url).path;
+}
+
+function defaultReadCache() {
+  return null; // Default is always a cache-miss.
 }
 
 function bodyEncoding(options) {
