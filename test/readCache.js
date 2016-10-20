@@ -17,24 +17,25 @@ describe('readCache', function() {
   it('should provide a cached response as though it came from the host', function(done) {
       app = express();
       app.use(proxy('httpbin.org',{
-          cacheRead: function (req) {
-            return {
+          readCache: function (req) {
+            return new Promise (function (resolve, reject) {
+              resolve ({
                 headers: {
-                    'X-President': 'Obama'
+                    'x-president': 'Obama'
                 },
-                status: '200',
+                statusCode: 200,
                 data: {
                     isCached: 'yes'
                 }
-            }
+              });
+            });
           }
       }));
     request(app)
       .get('/get')
       .end(function(err, res) {
         if (err) { return done(err); }
-        console.log ('res = ' + JSON.stringify(res));
-        assert(res.headers['X-President'],'Obama');
+        assert(res.header['x-president'],'Obama');
         assert.equal(res.body.isCached, 'yes');
         done(err);
       });

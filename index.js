@@ -30,19 +30,21 @@ module.exports = function proxy(host, options) {
 
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
-    var readPromise = readCache(req);
+    var readPromise = readCache ? readCache(req) : null;
     if (readPromise) {
       readPromise.then(function(cachedRes) {
-        copyResponse(res, cachedRes);
-        res.send(cachedRes.data);
+        copyResponse(cachedRes, res);
+        if (!res.headersSent) {
+          res.send(cachedRes.data);
+        }
       });
-      return;
     }
-
-    forwardPathAsync(req, res)
-      .then(function(path) {
-        proxyWithResolvedPath(req, res, next, path);
+    else {
+      forwardPathAsync(req, res)
+        .then(function(path) {
+          proxyWithResolvedPath(req, res, next, path);
       });
+    }
   };
 
   // Copies status and headers from source response to the target response
@@ -116,7 +118,7 @@ module.exports = function proxy(host, options) {
 
           var rspData = Buffer.concat(chunks, chunkLength(chunks));
           if (writeCache) {
-            writeCache(req, {statusCode: res.statusCode, headers: res.headers, data: rspData});
+            writeCache(req, {statusCode: rsp.statusCode, headers: rsp.headers, data: rspData});
           }
 
           if (intercept) {
