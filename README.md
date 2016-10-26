@@ -200,7 +200,7 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
-| 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding.  Dropped explicit support for node 0.10.   Intercept can now deal with gziped responses.   Author can now 'force https', even if the original request is over http.  Do not call next after ECONNRESET catch. |
+| 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
 | 0.9.1 | Documentation updates.  Set 'Accept-Encoding' header to match bodyEncoding. |
 | 0.9.0 | Better handling for request body when body is JSON. |
