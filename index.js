@@ -20,7 +20,7 @@ module.exports = function proxy(host, options) {
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath || defaultForwardPath;
-  var forwardPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
+  var resolveProxyPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
@@ -28,9 +28,9 @@ module.exports = function proxy(host, options) {
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
 
-    forwardPathAsync(req, res)
+    resolveProxyPathAsync(req, res)
       .then(function(path) {
-        proxyWithResolvedPath(req, res, next, path);
+        sendProxyRequest(req, res, next, path);
       });
   };
 
@@ -50,7 +50,7 @@ module.exports = function proxy(host, options) {
     return promise;
   }
 
-  function proxyWithResolvedPath(req, res, next, path) {
+  function sendProxyRequest(req, res, next, path) {
     parsedHost = parsedHost || parseHost(host, req, options);
 
     getBody(req)
