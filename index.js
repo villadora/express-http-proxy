@@ -35,17 +35,19 @@ module.exports = function proxy(host, options) {
   };
 
   function getBody(req) {
+    var promise;
     if (req.body) {
-      return new Promise(function (resolve) {
+      promise = new Promise(function(resolve) {
         resolve(req.body);
       });
     } else {
       // Returns a promise if no callback specified and global Promise exists.
-      return getRawBody(req, {
+      promise = getRawBody(req, {
         length: req.headers['content-length'],
         limit: limit,
       });
     }
+    return promise;
   }
 
   function proxyWithResolvedPath(req, res, next, path) {
@@ -53,7 +55,7 @@ module.exports = function proxy(host, options) {
 
     getBody(req)
       .then(runProxy)
-      .catch(function (err) { return next(err); });
+      .catch(function(err) { return next(err); });
 
     function runProxy(bodyContent) {
       var reqOpt = {
