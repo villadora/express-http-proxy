@@ -1,5 +1,4 @@
 'use strict';
-
 var assert = require('assert');
 var url = require('url');
 var http = require('http');
@@ -38,11 +37,10 @@ module.exports = function proxy(host, options) {
           res.send(cachedRes.data);
         }
       });
-    }
-    else {
+    } else {
       forwardPathAsync(req, res)
         .then(function(path) {
-          proxyWithResolvedPath(req, res, next, path);
+        proxyWithResolvedPath(req, res, next, path);
       });
     }
   };

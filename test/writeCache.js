@@ -14,7 +14,7 @@ describe('writeCache', function() {
       app.use(proxy('httpbin.org',{
           cacheWrite: function (req,cacheData) {
             assert.equal (cacheData.data.url,'http://httpbin.org/get');
-            assert.equal (cacheData.headers['Content-Type'], 'application/json')
+            assert.equal (cacheData.headers['Content-Type'], 'application/json');
             assert.equal (cacheData.status,'200');
           }
       }));
