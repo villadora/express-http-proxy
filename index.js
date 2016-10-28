@@ -30,6 +30,7 @@ module.exports = function proxy(host, options) {
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
     var readPromise = readCache ? readCache(req) : null;
+    // If a cached value exists, use it
     if (readPromise) {
       readPromise.then(function(cachedRes) {
         copyResponse(cachedRes, res);
