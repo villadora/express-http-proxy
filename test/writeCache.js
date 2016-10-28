@@ -12,13 +12,13 @@ describe('writeCache', function() {
   it('should receive the request and cache data', function(done) {
       app = express();
       app.use(proxy('httpbin.org',{
-          cacheWrite: function (req,cacheData) {
+          cacheWrite: function(req,cacheData) {
             assert.equal (cacheData.data.url,'http://httpbin.org/get');
             assert.equal (cacheData.headers['Content-Type'], 'application/json');
             assert.equal (cacheData.status,'200');
           }
-      }));
-    request(app)
+        }));
+      request(app)
       .get('/get')
       .end(function(err, res) {
         if (err) { return done(err); }
@@ -26,5 +26,5 @@ describe('writeCache', function() {
         assert.equal(res.body.url, 'http://httpbin.org/get');
         done(err);
       });
-  });
+    });
 });
