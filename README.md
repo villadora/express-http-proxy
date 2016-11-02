@@ -170,6 +170,25 @@ app.use('/', proxy('httpbin.org', {
 }));
 ```
 
+#### optionalCertAuthority
+
+This is a certificate object or array of certificate objects (just like what you'd pass to the https agent for a normal request). Use this to connect to hosts with https that use internal or known, self-signed certificates.
+
+```js
+var caCert = fs.readFileSync('certs/root-cert.crt');
+var intermediaryCert = fs.readFileSync('certs/intermediary-cert.crt');
+
+app.use('/', proxy('internalhost.example.com', {
+  optionalCertAuthority: {
+    [caCert, intermediaryCert]
+  } 
+}));
+
+```
+
+
+
+
 
 ## Questions
 
