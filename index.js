@@ -114,7 +114,8 @@ module.exports = function proxy(host, options) {
 
         if (intercept) {
           rspData = maybeUnzipResponse(rspData, res);
-          intercept(rsp, rspData, req, res, postIntercept(res, next, rspData));
+          var callback = postIntercept(res, next, rspData);
+          intercept(rsp, rspData, req, res, callback);
         } else {
           // see issue https://github.com/villadora/express-http-proxy/issues/104
           // Not sure how to automate tests on this line, so be careful when changing.
@@ -124,8 +125,8 @@ module.exports = function proxy(host, options) {
         }
       });
 
-      rsp.on('error', function(e) {
-        next(e);
+      rsp.on('error', function(err) {
+        next(err);
       });
 
       if (!res.headersSent) {
