@@ -90,7 +90,35 @@ module.exports = function proxy(host, options) {
         reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
       }
 
-      var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
+
+      function postIntercept(res, next, rspData) {
+        return function(err, rspd, sent) {
+          if (err) {
+            return next(err);
+          }
+          rspd = asBuffer(rspd, options);
+          rspd = maybeZipResponse(rspd, res);
+
+          if (!Buffer.isBuffer(rspd)) {
+            next(new Error('intercept should return string or' +
+                  'buffer as data'));
+          }
+
+          if (!res.headersSent) {
+            res.set('content-length', rspd.length);
+          } else if (rspd.length !== rspData.length) {
+            var error = '"Content-Length" is already sent,' +
+                  'the length of response data can not be changed';
+            next(new Error(error));
+          }
+
+          if (!sent) {
+            res.send(rspd);
+          }
+        };
+      }
+
+      var proxyTargetRequest = parsedHost.module.request(reqOpt, function(rsp) {
         var chunks = [];
 
         rsp.on('data', function(chunk) {
@@ -103,30 +131,7 @@ module.exports = function proxy(host, options) {
 
           if (intercept) {
             rspData = maybeUnzipResponse(rspData, res);
-            intercept(rsp, rspData, req, res, function(err, rspd, sent) {
-              if (err) {
-                return next(err);
-              }
-              rspd = asBuffer(rspd, options);
-              rspd = maybeZipResponse(rspd, res);
-
-              if (!Buffer.isBuffer(rspd)) {
-                next(new Error('intercept should return string or' +
-                      'buffer as data'));
-              }
-
-              if (!res.headersSent) {
-                res.set('content-length', rspd.length);
-              } else if (rspd.length !== rspData.length) {
-                var error = '"Content-Length" is already sent,' +
-                      'the length of response data can not be changed';
-                next(new Error(error));
-              }
-
-              if (!sent) {
-                res.send(rspd);
-              }
-            });
+            intercept(rsp, rspData, req, res, postIntercept(res, next, rspData));
           } else {
             // see issue https://github.com/villadora/express-http-proxy/issues/104
             // Not sure how to automate tests on this line, so be careful when changing.
@@ -150,15 +155,15 @@ module.exports = function proxy(host, options) {
         }
       });
 
-      realRequest.on('socket', function(socket) {
+      proxyTargetRequest.on('socket', function(socket) {
         if (options.timeout) {
           socket.setTimeout(options.timeout, function() {
-            realRequest.abort();
+            proxyTargetRequest.abort();
           });
         }
       });
 
-      realRequest.on('error', function(err) {
+      proxyTargetRequest.on('error', function(err) {
         if (err.code === 'ECONNRESET') {
           res.setHeader('X-Timout-Reason',
             'express-http-proxy timed out your request after ' +
@@ -171,13 +176,13 @@ module.exports = function proxy(host, options) {
       });
 
       if (bodyContent.length) {
-        realRequest.write(bodyContent);
+        proxyTargetRequest.write(bodyContent);
       }
 
-      realRequest.end();
+      proxyTargetRequest.end();
 
       req.on('aborted', function() {
-        realRequest.abort();
+        proxyTargetRequest.abort();
       });
     }
   }
