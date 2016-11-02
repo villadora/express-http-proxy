@@ -5,7 +5,6 @@ var url = require('url');
 var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
-var promise = require('es6-promise');
 var zlib = require('zlib');
 
 module.exports = function proxy(host, options) {
@@ -21,7 +20,7 @@ module.exports = function proxy(host, options) {
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath || defaultForwardPath;
-  var forwardPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
+  var resolveProxyPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
@@ -29,26 +28,36 @@ module.exports = function proxy(host, options) {
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
 
-    forwardPathAsync(req, res)
+    resolveProxyPathAsync(req, res)
       .then(function(path) {
-        proxyWithResolvedPath(req, res, next, path);
+        sendProxyRequest(req, res, next, path);
       });
   };
 
-  function proxyWithResolvedPath(req, res, next, path) {
-    parsedHost = parsedHost || parseHost(host, req, options);
-
+  function getBody(req) {
+    var promise;
     if (req.body) {
-      runProxy(null, req.body);
+      promise = new Promise(function(resolve) {
+        resolve(req.body);
+      });
     } else {
-      getRawBody(req, {
+      // Returns a promise if no callback specified and global Promise exists.
+      promise = getRawBody(req, {
         length: req.headers['content-length'],
         limit: limit,
-        encoding: bodyEncoding(options),
-      }, runProxy);
+      });
     }
+    return promise;
+  }
 
-    function runProxy(err, bodyContent) {
+  function sendProxyRequest(req, res, next, path) {
+    parsedHost = parsedHost || parseHost(host, req, options);
+
+    getBody(req)
+      .then(runProxy)
+      .catch(function(err) { return next(err); });
+
+    function runProxy(bodyContent) {
       var reqOpt = {
         hostname: parsedHost.host,
         port: options.port || parsedHost.port,
@@ -70,10 +79,6 @@ module.exports = function proxy(host, options) {
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
       delete reqOpt.params;
-
-      if (err && !bodyContent) {
-        return next(err);
-      }
 
       bodyContent = options.reqAsBuffer ?
         asBuffer(bodyContent, options) :
@@ -271,7 +276,7 @@ function chunkLength(chunks) {
 function defaultForwardPathAsync(forwardPath) {
 
   return function(req, res) {
-    return new promise.Promise(function(resolve) {
+    return new Promise(function(resolve) {
       resolve(forwardPath(req, res));
     });
   };
