@@ -33,13 +33,14 @@ module.exports = function proxy(host, options) {
     prepareRequest.then(function(results) {
       var path = results[0];
       var bodyContent = results[1];
-      sendProxyRequest(req, res, next, path, bodyContent);
+      sendProxyRequest(req, res, next, path, bodyContent, options.optionalCertAuthority);
     });
   };
 
 
-  function sendProxyRequest(req, res, next, path, bodyContent) {
+  function sendProxyRequest(req, res, next, path, bodyContent, optionalCertAuthority) {
     parsedHost = parsedHost || parseHost(host, req, options);
+
 
     var reqOpt = {
       hostname: parsedHost.host,
@@ -50,6 +51,10 @@ module.exports = function proxy(host, options) {
       bodyContent: bodyContent,
       params: req.params,
     };
+
+    if (optionalCertAuthority) {
+      reqOpt.ca = optionalCertAuthority;
+    }
 
     if (preserveReqSession) {
       reqOpt.session = req.session;
