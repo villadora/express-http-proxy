@@ -59,6 +59,7 @@ app.use(proxy('httpbin.org', {
 ```
 
 #### filter
+
 The ```filter``` option can be used to limit what requests are proxied. For example, if you only want to proxy get request
 
 ```js
@@ -73,6 +74,7 @@ app.use('/proxy', proxy('www.google.com', {
 ```
 
 #### intercept
+
 You can intercept the response before sending it back to the client.
 
 ```js
@@ -82,6 +84,18 @@ app.use('/proxy', proxy('www.google.com', {
     data = JSON.parse(data.toString('utf8'));
     callback(null, JSON.stringify(data));
   }
+}));
+```
+
+#### limit
+
+This sets the body size limit (default: `1mb`). If the body size is larger than the specified (or default) limit, 
+a `413 Request Entity Too Large`  error will be returned. See [bytes.js](https://www.npmjs.com/package/bytes) for 
+a list of supported formats.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  limit: '5mb'
 }));
 ```
 
