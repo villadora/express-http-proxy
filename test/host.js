@@ -15,6 +15,8 @@ describe('host can be a dynamic function', function() {
 
   app.use('/proxy/:port', proxy(function(req) {
     return 'localhost:' + req.params.port;
+  }, {
+    memoizeHost: false
   }));
 
   firstProxyApp.get('/', function(req, res) {
