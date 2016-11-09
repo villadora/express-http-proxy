@@ -89,8 +89,8 @@ app.use('/proxy', proxy('www.google.com', {
 
 #### limit
 
-This sets the body size limit (default: `1mb`). If the body size is larger than the specified (or default) limit, 
-a `413 Request Entity Too Large`  error will be returned. See [bytes.js](https://www.npmjs.com/package/bytes) for 
+This sets the body size limit (default: `1mb`). If the body size is larger than the specified (or default) limit,
+a `413 Request Entity Too Large`  error will be returned. See [bytes.js](https://www.npmjs.com/package/bytes) for
 a list of supported formats.
 
 ```js
@@ -98,6 +98,36 @@ app.use('/proxy', proxy('www.google.com', {
   limit: '5mb'
 }));
 ```
+
+#### memoizeHost
+
+Defaults to ```true```.
+
+When true, the ```host``` argument will be parsed on first request, and
+memoized for all subsequent requests.
+
+When ```false```, ```host``` argument will be parsed on each request.
+
+E.g., 
+
+```js
+
+  function coinToss() { return Math.random() > .5 }
+  function getHost() { return coinToss() ? 'http://yahoo.com' : 'http://google.com' }
+
+  app.use('proxy(getHost, {
+      memoizeHost: false
+    }
+  )
+```
+
+In this example, when ```memoizeHost:false```, the coinToss occurs on each
+request, and each request could get either value.
+
+Conversely, When ```memoizeHost:true```,  the coinToss would occur on the first
+request, and all additional requests would return the value resolved on the
+first request.
+
 
 #### decorateRequest
 
