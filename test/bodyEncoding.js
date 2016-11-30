@@ -10,6 +10,16 @@ describe('body encoding', function() {
   this.timeout(10000);
 
   var app;
+  var pngHex = '89504e470d0a1a0a0' +
+               '000000d4948445200' +
+               '00000100000001080' +
+               '60000001f15c48900' +
+               '00000a49444154789' +
+               'c6300010000050001' +
+               '0d0a2db4000000004' +
+               '9454e44ae426082';
+  var pngData = new Buffer(pngHex, 'hex');
+
 
   beforeEach(function() {
     app = express();
@@ -18,15 +28,6 @@ describe('body encoding', function() {
 
 
   it('allow raw data', function(done) {
-    var pngHex = '89504e470d0a1a0a0' +
-                 '000000d4948445200' +
-                 '00000100000001080' +
-                 '60000001f15c48900' +
-                 '00000a49444154789' +
-                 'c6300010000050001' +
-                 '0d0a2db4000000004' +
-                 '9454e44ae426082';
-    var pngData = new Buffer(pngHex, 'hex');
     var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
     var app = express();
     app.use(proxy('httpbin.org', {
@@ -52,6 +53,51 @@ describe('body encoding', function() {
 
   });
 
+  describe('when user sets parseReqBody', function() {
+    it('should not parse body', function(done) {
+      var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
+      var app = express();
+      app.use(proxy('httpbin.org', {
+        parseReqBody: false,
+        decorateRequest: function(reqOpts) {
+          assert(!reqOpts.bodyContent, 'body content should not be parsed.');
+          return reqOpts;
+        }
+      }));
+
+      fs.writeFile(filename, pngData, function(err) {
+        if (err) { throw err; }
+        request(app)
+          .post('/post')
+          .attach('image', filename)
+          .end(function(err, res) {
+            fs.unlink(filename);
+            assert.equal(res.body.files.image, 'data:image/png;base64,' + pngData.toString('base64'));
+            done(err);
+          });
+      });
+    });
+    it('should not fail on large limit', function(done) {
+      var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
+      var app = express();
+      app.use(proxy('httpbin.org', {
+        parseReqBody: false,
+        limit: '20gb',
+      }));
+      fs.writeFile(filename, pngData, function(err) {
+        if (err) { throw err; }
+        request(app)
+          .post('/post')
+          .attach('image', filename)
+          .end(function(err, res) {
+            fs.unlink(filename);
+            assert.equal(res.body.files.image, 'data:image/png;base64,' + pngData.toString('base64'));
+            done(err);
+          });
+      });
+    });
+  });
+
 
   describe('when user sets reqBodyEncoding', function() {
     it('should set the accepts-charset header', function(done) {
@@ -68,5 +114,6 @@ describe('body encoding', function() {
         });
     });
   });
-});
 
+
+});
