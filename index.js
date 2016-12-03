@@ -70,7 +70,6 @@ module.exports = function proxy(host, options) {
                         Promise.resolve(reqOpt);
 
     afterDecorate.then(function (reqOpt) {
-
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
       delete reqOpt.params;
