@@ -71,7 +71,7 @@ module.exports = function proxy(host, options) {
     /**
      * Note : Changes not detected
      */
-    afterDecorate.then(function (reqOpt) {
+    afterDecorate.then(function(reqOpt) {
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
       delete reqOpt.params;
