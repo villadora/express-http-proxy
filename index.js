@@ -181,6 +181,8 @@ module.exports = function proxy(host, options) {
       req.on('aborted', function() {
         proxyTargetRequest.abort();
       });
+    }).catch(function(err) {
+      console.log(err);
     });
   }
 };
