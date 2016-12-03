@@ -182,7 +182,7 @@ module.exports = function proxy(host, options) {
         proxyTargetRequest.abort();
       });
     }).catch(function(err) {
-      console.log(err);
+      next(err ? err : new Error('INVALIDREQUEST: Unable to Proccess The Request'));
     });
   }
 };
