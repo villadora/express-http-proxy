@@ -68,7 +68,9 @@ module.exports = function proxy(host, options) {
     var afterDecorate = decorateRequestAsync ?
                         decorateRequestAsync(reqOpt, req) :
                         Promise.resolve(reqOpt);
-
+    /**
+     * Note : Changes not detected
+     */
     afterDecorate.then(function (reqOpt) {
       bodyContent = reqOpt.bodyContent;
       delete reqOpt.bodyContent;
