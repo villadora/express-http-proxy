@@ -24,6 +24,7 @@ module.exports = function proxy(host, options) {
    */
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest;
+  var decorateRequestAsync = options.decorateRequestAsync;
   var forwardPath = options.forwardPath || defaultForwardPath;
   var resolveProxyPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
@@ -64,114 +65,121 @@ module.exports = function proxy(host, options) {
       reqOpt = decorateRequest(reqOpt, req) || reqOpt;
     }
 
-    bodyContent = reqOpt.bodyContent;
-    delete reqOpt.bodyContent;
-    delete reqOpt.params;
+    var afterDecorate = decorateRequestAsync ?
+                        decorateRequestAsync(reqOpt, req) :
+                        Promise.resolve(reqOpt);
 
-    bodyContent = options.reqAsBuffer ?
-      asBuffer(bodyContent, options) :
-      asBufferOrString(bodyContent);
+    afterDecorate.then((reqOpt)=>{
 
-    reqOpt.headers['content-length'] = getContentLength(bodyContent);
+      bodyContent = reqOpt.bodyContent;
+      delete reqOpt.bodyContent;
+      delete reqOpt.params;
 
-    if (bodyEncoding(options)) {
-      reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
-    }
+      bodyContent = options.reqAsBuffer ?
+        asBuffer(bodyContent, options) :
+        asBufferOrString(bodyContent);
+
+      reqOpt.headers['content-length'] = getContentLength(bodyContent);
+
+      if (bodyEncoding(options)) {
+        reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+      }
 
 
-    function postIntercept(res, next, rspData) {
-      return function(err, rspd, sent) {
-        if (err) {
-          return next(err);
-        }
-        rspd = asBuffer(rspd, options);
-        rspd = maybeZipResponse(rspd, res);
+      function postIntercept(res, next, rspData) {
+        return function(err, rspd, sent) {
+          if (err) {
+            return next(err);
+          }
+          rspd = asBuffer(rspd, options);
+          rspd = maybeZipResponse(rspd, res);
 
-        if (!Buffer.isBuffer(rspd)) {
-          next(new Error('intercept should return string or' +
-                'buffer as data'));
-        }
+          if (!Buffer.isBuffer(rspd)) {
+            next(new Error('intercept should return string or' +
+                  'buffer as data'));
+          }
+
+          if (!res.headersSent) {
+            res.set('content-length', rspd.length);
+          } else if (rspd.length !== rspData.length) {
+            var error = '"Content-Length" is already sent,' +
+                  'the length of response data can not be changed';
+            next(new Error(error));
+          }
+
+          if (!sent) {
+            res.send(rspd);
+          }
+        };
+      }
+
+      var proxyTargetRequest = parsedHost.module.request(reqOpt, function(rsp) {
+        var chunks = [];
+
+        rsp.on('data', function(chunk) {
+          chunks.push(chunk);
+        });
+
+        rsp.on('end', function() {
+
+          var rspData = Buffer.concat(chunks, chunkLength(chunks));
+
+          if (intercept) {
+            rspData = maybeUnzipResponse(rspData, res);
+            var callback = postIntercept(res, next, rspData);
+            intercept(rsp, rspData, req, res, callback);
+          } else {
+            // see issue https://github.com/villadora/express-http-proxy/issues/104
+            // Not sure how to automate tests on this line, so be careful when changing.
+            if (!res.headersSent) {
+              res.send(rspData);
+            }
+          }
+        });
+
+        rsp.on('error', function(err) {
+          next(err);
+        });
 
         if (!res.headersSent) {
-          res.set('content-length', rspd.length);
-        } else if (rspd.length !== rspData.length) {
-          var error = '"Content-Length" is already sent,' +
-                'the length of response data can not be changed';
-          next(new Error(error));
-        }
-
-        if (!sent) {
-          res.send(rspd);
-        }
-      };
-    }
-
-    var proxyTargetRequest = parsedHost.module.request(reqOpt, function(rsp) {
-      var chunks = [];
-
-      rsp.on('data', function(chunk) {
-        chunks.push(chunk);
-      });
-
-      rsp.on('end', function() {
-
-        var rspData = Buffer.concat(chunks, chunkLength(chunks));
-
-        if (intercept) {
-          rspData = maybeUnzipResponse(rspData, res);
-          var callback = postIntercept(res, next, rspData);
-          intercept(rsp, rspData, req, res, callback);
-        } else {
-          // see issue https://github.com/villadora/express-http-proxy/issues/104
-          // Not sure how to automate tests on this line, so be careful when changing.
-          if (!res.headersSent) {
-            res.send(rspData);
-          }
+          res.status(rsp.statusCode);
+          Object.keys(rsp.headers)
+            .filter(function(item) { return item !== 'transfer-encoding'; })
+            .forEach(function(item) {
+              res.set(item, rsp.headers[item]);
+            });
         }
       });
 
-      rsp.on('error', function(err) {
-        next(err);
-      });
-
-      if (!res.headersSent) {
-        res.status(rsp.statusCode);
-        Object.keys(rsp.headers)
-          .filter(function(item) { return item !== 'transfer-encoding'; })
-          .forEach(function(item) {
-            res.set(item, rsp.headers[item]);
+      proxyTargetRequest.on('socket', function(socket) {
+        if (options.timeout) {
+          socket.setTimeout(options.timeout, function() {
+            proxyTargetRequest.abort();
           });
+        }
+      });
+
+      proxyTargetRequest.on('error', function(err) {
+        if (err.code === 'ECONNRESET') {
+          res.setHeader('X-Timout-Reason',
+            'express-http-proxy timed out your request after ' +
+            options.timeout + 'ms.');
+          res.writeHead(504, {'Content-Type': 'text/plain'});
+          res.end();
+        } else {
+          next(err);
+        }
+      });
+
+      if (bodyContent.length) {
+        proxyTargetRequest.write(bodyContent);
       }
-    });
 
-    proxyTargetRequest.on('socket', function(socket) {
-      if (options.timeout) {
-        socket.setTimeout(options.timeout, function() {
-          proxyTargetRequest.abort();
-        });
-      }
-    });
+      proxyTargetRequest.end();
 
-    proxyTargetRequest.on('error', function(err) {
-      if (err.code === 'ECONNRESET') {
-        res.setHeader('X-Timout-Reason',
-          'express-http-proxy timed out your request after ' +
-          options.timeout + 'ms.');
-        res.writeHead(504, {'Content-Type': 'text/plain'});
-        res.end();
-      } else {
-        next(err);
-      }
-    });
-
-    if (bodyContent.length) {
-      proxyTargetRequest.write(bodyContent);
-    }
-
-    proxyTargetRequest.end();
-
-    req.on('aborted', function() {
-      proxyTargetRequest.abort();
+      req.on('aborted', function() {
+        proxyTargetRequest.abort();
+      });
     });
   }
 };
