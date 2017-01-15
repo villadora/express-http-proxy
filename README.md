@@ -108,17 +108,16 @@ memoized for all subsequent requests.
 
 When ```false```, ```host``` argument will be parsed on each request.
 
-E.g., 
+E.g.,
 
 ```js
 
   function coinToss() { return Math.random() > .5 }
   function getHost() { return coinToss() ? 'http://yahoo.com' : 'http://google.com' }
 
-  app.use('proxy(getHost, {
-      memoizeHost: false
-    }
-  )
+  app.use(proxy(getHost, {
+    memoizeHost: false
+  }))
 ```
 
 In this example, when ```memoizeHost:false```, the coinToss occurs on each
