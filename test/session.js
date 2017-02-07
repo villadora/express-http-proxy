@@ -25,6 +25,7 @@ describe('preserveReqSession', function() {
       preserveReqSession: true,
       decorateRequest: function(req) {
         assert(req.session, 'hola');
+        return req;
       }
     }));
 
