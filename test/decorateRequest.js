@@ -15,7 +15,7 @@ describe('decorateRequest', function() {
     app.use(proxy('httpbin.org'));
   });
 
-  it('decorateRequest', function(done) {
+  it('decorateRequest function not returning options', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
       decorateRequest: function(req) {
@@ -29,6 +29,90 @@ describe('decorateRequest', function() {
       .end(function(err, res) {
         if (err) { return done(err); }
         assert(res.body.origin);
+        done();
+      });
+  });
+
+  it('decorateRequest async function not returning options', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      decorateRequest: function(req) {
+        return new Promise(function(resolve) {
+          req.path = '/ip';
+          req.bodyContent = 'data';
+          resolve();
+        });
+      }
+    }));
+
+    request(app)
+      .get('/user-agent')
+      .end(function(err, res) {
+        if (err) { return done(err); }
+        assert(res.body.origin);
+        done();
+      });
+  });
+
+  it('decorateRequest function returning options', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      decorateRequest: function(reqOpt, req) {
+        reqOpt.headers['user-agent'] = 'test user agent';
+        assert(req);
+        return reqOpt;
+      }
+    }));
+
+    request(app)
+      .get('/user-agent')
+      .end(function(err, res) {
+        if (err) { return done(err); }
+        assert.equal(res.body['user-agent'], 'test user agent');
+        done();
+      });
+  });
+
+  it('decorateRequest async function returning options', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      decorateRequest: function(reqOpt, req) {
+        assert(req);
+        return new Promise(function(resolve) {
+          reqOpt.headers['user-agent'] = 'test user agent';
+          resolve(reqOpt);
+        });
+      }
+    }));
+
+    request(app)
+      .get('/user-agent')
+      .end(function(err, res) {
+        if (err) { return done(err); }
+        assert.equal(res.body['user-agent'], 'test user agent');
+        done();
+      });
+  });
+
+  it('decorateRequest async function returning failure', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      decorateRequest: function(reqOpt, req) {
+        assert(reqOpt);
+        assert(req);
+        return new Promise(function(resolve, reject) {
+          assert(resolve);
+          reject(new Error('Fake error'));
+        });
+      }
+    }));
+
+    request(app)
+      .get('/user-agent')
+      .expect(500)
+      .end(function(err, res) {
+        assert(res);
+        if (err) { return done(err); }
         done();
       });
   });
@@ -51,4 +135,3 @@ describe('decorateRequest', function() {
 
   });
 });
-
