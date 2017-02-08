@@ -169,6 +169,22 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
+#### parseReqBody
+
+The ```parseReqBody``` option allows you to control parsing the request body.
+Disabling body parsing is useful for large uploads where it would be inefficient
+to hold the data in memory.
+
+This defaults to true in order to preserve legacy behavior. When false, no action will be taken on the body and accordingly ```req.bodyContent``` will no longer be set.
+
+Note that setting this to false overrides ```reqAsBuffer``` and ```reqBodyEncoding``` below.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  parseReqBody: false
+}));
+```
+
 
 #### reqAsBuffer
 
@@ -180,6 +196,8 @@ The ```reqAsBuffer``` option allows you to ensure the req body is encoded as a N
 This defaults to to false in order to preserve legacy behavior. Note that
 the value of ```reqBodyEnconding``` is used as the encoding when coercing strings
 (and stringified JSON) to Buffer.
+
+Ignored if ```parseReqBody``` is set to false.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -195,6 +213,8 @@ Use ```null``` to preserve as Buffer when proxied request body is a Buffer. (e.g
 Accept any values supported by [raw-body](https://www.npmjs.com/package/raw-body#readme).
 
 The same encoding is used in the intercept method.
+
+Ignored if ```parseReqBody``` is set to false.
 
 ```js
 app.use('/post', proxy('httpbin.org', {

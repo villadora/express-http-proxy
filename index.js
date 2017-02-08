@@ -30,11 +30,12 @@ module.exports = function proxy(host, options) {
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
   var memoizeHost = unset(options.memoizeHost) ? true : options.memoizeHost;
+  var parseReqBody = unset(options.parseReqBody) ? true : options.parseReqBody;
 
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
     var resolvePath = resolveProxyPathAsync(req, res);
-    var parseBody = maybeParseBody(req, limit);
+    var parseBody = (!parseReqBody) ? Promise.resolve(null) : maybeParseBody(req, limit);
     var prepareRequest = Promise.all([resolvePath, parseBody]);
     prepareRequest.then(function(results) {
       var path = results[0];
@@ -52,9 +53,12 @@ module.exports = function proxy(host, options) {
       headers: reqHeaders(req, options),
       method: req.method,
       path: path,
-      bodyContent: bodyContent,
       params: req.params,
     };
+
+    if (parseReqBody) {
+      reqOpt.bodyContent = bodyContent;
+    }
 
     if (preserveReqSession) {
       reqOpt.session = req.session;
@@ -64,18 +68,21 @@ module.exports = function proxy(host, options) {
       reqOpt = decorateRequest(reqOpt, req) || reqOpt;
     }
 
-    bodyContent = reqOpt.bodyContent;
-    delete reqOpt.bodyContent;
     delete reqOpt.params;
 
-    bodyContent = options.reqAsBuffer ?
-      asBuffer(bodyContent, options) :
-      asBufferOrString(bodyContent);
+    if (parseReqBody) {
+      bodyContent = reqOpt.bodyContent;
+      delete reqOpt.bodyContent;
 
-    reqOpt.headers['content-length'] = getContentLength(bodyContent);
+      bodyContent = options.reqAsBuffer ?
+        asBuffer(bodyContent, options) :
+        asBufferOrString(bodyContent);
 
-    if (bodyEncoding(options)) {
-      reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+      reqOpt.headers['content-length'] = getContentLength(bodyContent);
+
+      if (bodyEncoding(options)) {
+        reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+      }
     }
 
 
@@ -164,11 +171,18 @@ module.exports = function proxy(host, options) {
       }
     });
 
-    if (bodyContent.length) {
-      proxyTargetRequest.write(bodyContent);
+    if (parseReqBody) {
+      // We are parsing the body ourselves so we need to write the body content
+      // and then manually end the request.
+      if (bodyContent.length) {
+        proxyTargetRequest.write(bodyContent);
+      }
+      proxyTargetRequest.end();
+    } else {
+      // Pipe will call end when it has completely read from the request.
+      req.pipe(proxyTargetRequest);
     }
 
-    proxyTargetRequest.end();
 
     req.on('aborted', function() {
       proxyTargetRequest.abort();
