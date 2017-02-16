@@ -34,6 +34,7 @@
     "jscs": "^3.0.7",
     "jshint": "^2.5.5",
     "mocha": "^2.1.0",
+    "standard": "^8.6.0",
     "supertest": "^1.2.0"
   },
   "dependencies": {
