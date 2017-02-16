@@ -3,5 +3,7 @@
   "requireCapitalizedComments": null,
   "maximumLineLength": 120,
   "requireTrailingComma": null,
-  "disallowQuotedKeysInObjects":false
+  "disallowQuotedKeysInObjects":false,
+  "requireSpaceAfterLineComment":false,
+  "validateIndentation":false
 }
