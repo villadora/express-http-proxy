@@ -7,6 +7,12 @@ var https = require('https');
 var getRawBody = require('raw-body');
 var zlib = require('zlib');
 
+// ROADMAP:
+// There are a lot of competing strategies in this code.
+// It would be easier to follow if we extract to simpler functions, and used
+// a standard, step-wise set of filters with clearer edges and borders.
+
+
 
 function unset(val) {
   return (typeof val  ===  'undefined' || val === '' || val === null);
@@ -44,9 +50,18 @@ module.exports = function proxy(host, options) {
     });
   };
 
+  // TODO: This method is huge and misleading.
+  // It prepares the request and sends it and handles it and decorates it and intercepts it.
+  // Authors are adding similar code in multiple places.
+  // The original appraoch was to use a deeply nested closure, so there is a
+  // lot of argument bleed between functional blocks.
+
   function sendProxyRequest(req, res, next, path, bodyContent) {
+
+    // resolve proxyTo host.  part of preparing proxyRequext
     parsedHost = (memoizeHost && parsedHost) ? parsedHost : parseHost(host, req, options);
 
+    // prepare proxyRequest
     var reqOpt = {
       hostname: parsedHost.host,
       port: options.port || parsedHost.port,
@@ -64,8 +79,7 @@ module.exports = function proxy(host, options) {
       reqOpt.session = req.session;
     }
 
-    // TODO accept the functional change
-    // TODO refactor
+    // this starts as prepareProxy request, but then fires off the rest of the behavior
     Promise.resolve(decorateRequest(reqOpt, req))
       .then(function(returnedOpt) {
 
