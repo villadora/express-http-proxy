@@ -1,26 +1,26 @@
-var assert = require('assert');
-var express = require('express');
-var request = require('supertest');
-var proxy = require('../');
+var assert = require('assert')
+var express = require('express')
+var request = require('supertest')
+var proxy = require('../')
 
-describe('proxies cookie', function() {
-  'use strict';
+describe('proxies cookie', function () {
+  'use strict'
 
-  this.timeout(10000);
+  this.timeout(10000)
 
-  var app;
+  var app
 
-  beforeEach(function() {
-    app = express();
-    app.use(proxy('httpbin.org'));
-  });
+  beforeEach(function () {
+    app = express()
+    app.use(proxy('httpbin.org'))
+  })
 
-  it('set cookie', function(done) {
+  it('set cookie', function (done) {
     request(app)
       .get('/cookies/set?mycookie=value')
-      .end(function(err, res) {
-        assert(res.headers['set-cookie']);
-        done(err);
-      });
-  });
-});
+      .end(function (err, res) {
+        assert(res.headers['set-cookie'])
+        done(err)
+      })
+  })
+})

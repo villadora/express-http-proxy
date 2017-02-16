@@ -1,7 +1,0 @@
-{ 
-  "preset": "node-style-guide",
-  "requireCapitalizedComments": null,
-  "maximumLineLength": 120,
-  "requireTrailingComma": null,
-  "disallowQuotedKeysInObjects":false
-}
