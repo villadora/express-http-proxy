@@ -130,7 +130,7 @@ first request.
 
 #### decorateRequest
 
-You can change the request options before it is sent to the target.
+You can change the request options before it is sent to the target.   
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -142,6 +142,19 @@ app.use('/proxy', proxy('www.google.com', {
     // you can munge the bodyContent.
     proxyReq.bodyContent = proxyReq.bodyContent.replace(/losing/, 'winning!');
     return proxyReq;
+  }
+}));
+```
+
+Use a Promise for async decorations.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  decorateRequest: function(proxyReq, originalReq) {
+    return new Promise(function(resolve, reject) {
+      proxyReq.bodyContent = proxyReq.bodyContent.replace(/losing/, 'winning!');
+      resolve(proxyReq);
+    })
   }
 }));
 
