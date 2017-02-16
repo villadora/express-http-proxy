@@ -1,22 +1,19 @@
 'use strict';
 
 var assert = require('assert');
-var url = require('url');
+var getRawBody = require('raw-body');
 var http = require('http');
 var https = require('https');
-var getRawBody = require('raw-body');
+var url = require('url');
 var zlib = require('zlib');
+
+var isUnset = require('./lib/isUnset');
 
 // ROADMAP:
 // There are a lot of competing strategies in this code.
 // It would be easier to follow if we extract to simpler functions, and used
 // a standard, step-wise set of filters with clearer edges and borders.
-
-
-
-function unset(val) {
-  return (typeof val  ===  'undefined' || val === '' || val === null);
-}
+// Currently working on identifying through comments the workflow steps.
 
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
@@ -35,8 +32,8 @@ module.exports = function proxy(host, options) {
   var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
-  var memoizeHost = unset(options.memoizeHost) ? true : options.memoizeHost;
-  var parseReqBody = unset(options.parseReqBody) ? true : options.parseReqBody;
+  var memoizeHost = isUnset(options.memoizeHost) ? true : options.memoizeHost;
+  var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
 
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
