@@ -84,6 +84,7 @@ module.exports = function proxy(host, options) {
           throw new ReferenceError('decorateRequest must return an Object.');
         }
 
+        // continue preparing reqOpts
         reqOpt = returnedOpt;
         delete reqOpt.params;
 
@@ -102,7 +103,8 @@ module.exports = function proxy(host, options) {
           }
         }
 
-
+        // Extract: define method in closure so I have access to necessary variables.
+        // extract by making this return a value, rather than mutate a value
         function postIntercept(res, next, rspData) {
           return function(err, rspd, sent) {
             if (err) {
@@ -124,12 +126,14 @@ module.exports = function proxy(host, options) {
               next(new Error(error));
             }
 
+            //  returns res to user
             if (!sent) {
               res.send(rspd);
             }
           };
         }
 
+        //  actually making the request, callback form
         var proxyTargetRequest = parsedHost.module.request(reqOpt, function(rsp) {
           var chunks = [];
 
@@ -158,6 +162,7 @@ module.exports = function proxy(host, options) {
             next(err);
           });
 
+          // copy proxy res values to use res
           if (!res.headersSent) {
             res.status(rsp.statusCode);
             Object.keys(rsp.headers)
@@ -188,6 +193,7 @@ module.exports = function proxy(host, options) {
           }
         });
 
+        // prepare proxy request
         if (parseReqBody) {
           // We are parsing the body ourselves so we need to write the body content
           // and then manually end the request.
@@ -213,6 +219,7 @@ module.exports = function proxy(host, options) {
 
 
 
+// Utility methods from here on down.
 function extend(obj, source, skips) {
 
   if (!source) {
