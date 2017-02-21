@@ -1,18 +1,13 @@
-'use strict';
-
 var assert = require('assert');
 var url = require('url');
 var http = require('http');
 var https = require('https');
 var getRawBody = require('raw-body');
-var zlib = require('zlib');
-
-
-function unset(val) {
-  return (typeof val  ===  'undefined' || val === '' || val === null);
-}
+var promise = require('es6-promise');
 
 module.exports = function proxy(host, options) {
+  'use strict';
+
   assert(host, 'Host should not be empty');
 
   options = options || {};
@@ -23,164 +18,177 @@ module.exports = function proxy(host, options) {
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
   var intercept = options.intercept;
+  var preIntercept = options.preIntercept;
   var decorateRequest = options.decorateRequest;
   var forwardPath = options.forwardPath || defaultForwardPath;
-  var resolveProxyPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
+  var forwardPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
   var limit = options.limit || '1mb';
   var preserveReqSession = options.preserveReqSession;
-  var memoizeHost = unset(options.memoizeHost) ? true : options.memoizeHost;
 
   return function handleProxy(req, res, next) {
     if (!filter(req, res)) { return next(); }
-    var resolvePath = resolveProxyPathAsync(req, res);
-    var parseBody = maybeParseBody(req, limit);
-    var prepareRequest = Promise.all([resolvePath, parseBody]);
-    prepareRequest.then(function(results) {
-      var path = results[0];
-      var bodyContent = results[1];
-      sendProxyRequest(req, res, next, path, bodyContent);
-    });
+
+    forwardPathAsync(req, res)
+      .then(function(path) {
+        proxyWithResolvedPath(req, res, next, path);
+      });
   };
 
-  function sendProxyRequest(req, res, next, path, bodyContent) {
-    parsedHost = (memoizeHost && parsedHost) ? parsedHost : parseHost(host, req, options);
+  function proxyWithResolvedPath(req, res, next, path) {
+    parsedHost = parsedHost || parseHost(host, req);
 
-    var reqOpt = {
-      hostname: parsedHost.host,
-      port: options.port || parsedHost.port,
-      headers: reqHeaders(req, options),
-      method: req.method,
-      path: path,
-      bodyContent: bodyContent,
-      params: req.params,
-    };
-
-    if (preserveReqSession) {
-      reqOpt.session = req.session;
+    if (req.body) {
+      runProxy(null, req.body);
+    } else {
+      getRawBody(req, {
+        length: req.headers['content-length'],
+        limit: limit,
+        encoding: bodyEncoding(options),
+      }, runProxy);
     }
 
-    if (decorateRequest) {
-      reqOpt = decorateRequest(reqOpt, req) || reqOpt;
-    }
+    function runProxy(err, bodyContent) {
+      var reqOpt = {
+        hostname: parsedHost.host,
+        port: options.port || parsedHost.port,
+        headers: reqHeaders(req, options),
+        method: req.method,
+        path: path,
+        bodyContent: bodyContent,
+        params: req.params,
+      };
 
-    bodyContent = reqOpt.bodyContent;
-    delete reqOpt.bodyContent;
-    delete reqOpt.params;
+      if (preserveReqSession) {
+        reqOpt.session = req.session;
+      }
 
-    bodyContent = options.reqAsBuffer ?
-      asBuffer(bodyContent, options) :
-      asBufferOrString(bodyContent);
+      if (decorateRequest) {
+        reqOpt = decorateRequest(reqOpt, req) || reqOpt;
+      }
 
-    if (reqOpt.method !== 'GET') {
+      bodyContent = reqOpt.bodyContent;
+      delete reqOpt.bodyContent;
+      delete reqOpt.params;
+
+      if (err && !bodyContent) {
+        return next(err);
+      }
+
+      bodyContent = options.reqAsBuffer ?
+        asBuffer(bodyContent, options) :
+        asBufferOrString(bodyContent);
+
       reqOpt.headers['content-length'] = getContentLength(bodyContent);
-    }
-      
-    if (bodyEncoding(options)) {
-      reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
-    }
 
+      if (reqOpt.method !== 'GET') {
+        reqOpt.headers['content-length'] = getContentLength(bodyContent);
+      }
 
-    function postIntercept(res, next, rspData) {
-      return function(err, rspd, sent) {
-        if (err) {
-          return next(err);
+      if (bodyEncoding(options)) {
+        reqOpt.headers[ 'Accept-Encoding' ] = bodyEncoding(options);
+      }
+
+      var realRequest = parsedHost.module.request(reqOpt, function(rsp) {
+        if (preIntercept) {
+          preIntercept(rsp);
         }
-        rspd = asBuffer(rspd, options);
-        rspd = maybeZipResponse(rspd, res);
+        var chunks = [];
 
-        if (!Buffer.isBuffer(rspd)) {
-          next(new Error('intercept should return string or' +
-                'buffer as data'));
-        }
+        rsp.on('data', function(chunk) {
+          chunks.push(chunk);
+        });
+
+        rsp.on('end', function() {
+
+          var rspData = Buffer.concat(chunks, chunkLength(chunks));
+
+          if (intercept) {
+            intercept(rsp, rspData, req, res, function(err, rspd, sent) {
+              if (err) {
+                return next(err);
+              }
+
+              rspd = asBuffer(rspd, options);
+
+              if (!Buffer.isBuffer(rspd)) {
+                next(new Error('intercept should return string or' +
+                      'buffer as data'));
+              }
+
+              if (!res.headersSent) {
+                res.set('content-length', rspd.length);
+              } else if (rspd.length !== rspData.length) {
+                var error = '"Content-Length" is already sent,' +
+                      'the length of response data can not be changed';
+                next(new Error(error));
+              }
+
+              if (!sent) {
+                res.send(rspd);
+              }
+            });
+          } else {
+            // see issue https://github.com/villadora/express-http-proxy/issues/104
+            // Not sure how to automate tests on this line, so be careful when changing.
+            if (!res.headersSent) {
+              res.send(rspData);
+            }
+          }
+        });
+
+        rsp.on('error', function(e) {
+          next(e);
+        });
 
         if (!res.headersSent) {
-          res.set('content-length', rspd.length);
-        } else if (rspd.length !== rspData.length) {
-          var error = '"Content-Length" is already sent,' +
-                'the length of response data can not be changed';
-          next(new Error(error));
-        }
-
-        if (!sent) {
-          res.send(rspd);
-        }
-      };
-    }
-
-    var proxyTargetRequest = parsedHost.module.request(reqOpt, function(rsp) {
-      var chunks = [];
-
-      rsp.on('data', function(chunk) {
-        chunks.push(chunk);
-      });
-
-      rsp.on('end', function() {
-
-        var rspData = Buffer.concat(chunks, chunkLength(chunks));
-
-        if (intercept) {
-          rspData = maybeUnzipResponse(rspData, res);
-          var callback = postIntercept(res, next, rspData);
-          intercept(rsp, rspData, req, res, callback);
-        } else {
-          // see issue https://github.com/villadora/express-http-proxy/issues/104
-          // Not sure how to automate tests on this line, so be careful when changing.
-          if (!res.headersSent) {
-            res.send(rspData);
-          }
+          res.status(rsp.statusCode);
+          Object.keys(rsp.headers)
+            .filter(function(item) { return item !== 'transfer-encoding'; })
+            .forEach(function(item) {
+              res.set(item, rsp.headers[item]);
+            });
         }
       });
 
-      rsp.on('error', function(err) {
-        next(err);
-      });
-
-      if (!res.headersSent) {
-        res.status(rsp.statusCode);
-        Object.keys(rsp.headers)
-          .filter(function(item) { return item !== 'transfer-encoding'; })
-          .forEach(function(item) {
-            res.set(item, rsp.headers[item]);
+      realRequest.on('socket', function(socket) {
+        if (options.timeout) {
+          socket.setTimeout(options.timeout, function() {
+            realRequest.abort();
           });
-      }
-    });
+        }
+      });
 
-    proxyTargetRequest.on('socket', function(socket) {
-      if (options.timeout) {
-        socket.setTimeout(options.timeout, function() {
-          proxyTargetRequest.abort();
-        });
-      }
-    });
+      realRequest.on('error', function(err) {
+        if (err.code === 'ECONNRESET') {
+          res.setHeader('X-Timout-Reason',
+            'express-http-proxy timed out your request after ' +
+            options.timeout + 'ms.');
+          res.writeHead(504, {'Content-Type': 'text/plain'});
+          res.end();
+          next();
+        } else {
+          next(err);
+        }
+      });
 
-    proxyTargetRequest.on('error', function(err) {
-      if (err.code === 'ECONNRESET') {
-        res.setHeader('X-Timout-Reason',
-          'express-http-proxy timed out your request after ' +
-          options.timeout + 'ms.');
-        res.writeHead(504, {'Content-Type': 'text/plain'});
-        res.end();
-      } else {
-        next(err);
+      if (bodyContent.length) {
+        realRequest.write(bodyContent);
       }
-    });
 
-    if (bodyContent.length) {
-      proxyTargetRequest.write(bodyContent);
+      realRequest.end();
+
+      req.on('aborted', function() {
+        realRequest.abort();
+      });
     }
-
-    proxyTargetRequest.end();
-
-    req.on('aborted', function() {
-      proxyTargetRequest.abort();
-    });
   }
 };
 
 
 
 function extend(obj, source, skips) {
+  'use strict';
 
   if (!source) {
     return obj;
@@ -195,7 +203,8 @@ function extend(obj, source, skips) {
   return obj;
 }
 
-function parseHost(host, req, options) {
+function parseHost(host, req) {
+  'use strict';
 
   host = (typeof host === 'function') ? host(req) : host.toString();
 
@@ -213,7 +222,7 @@ function parseHost(host, req, options) {
     return new Error('Unable to parse hostname, possibly missing protocol://?');
   }
 
-  var ishttps = options.https || parsed.protocol === 'https:';
+  var ishttps = parsed.protocol === 'https:';
 
   return {
     host: parsed.hostname,
@@ -223,7 +232,7 @@ function parseHost(host, req, options) {
 }
 
 function reqHeaders(req, options) {
-
+  'use strict';
 
   var headers = options.headers || {};
 
@@ -239,17 +248,17 @@ function reqHeaders(req, options) {
 
 function defaultFilter() {
   // No-op version of filter.  Allows everything!
-
+  'use strict';
   return true;
 }
 
 function defaultForwardPath(req) {
-
+  'use strict';
   return url.parse(req.url).path;
 }
 
 function bodyEncoding(options) {
-
+  'use strict';
 
   /* For reqBodyEncoding, these is a meaningful difference between null and
    * undefined.  null should be passed forward as the value of reqBodyEncoding,
@@ -261,7 +270,7 @@ function bodyEncoding(options) {
 
 
 function chunkLength(chunks) {
-
+  'use strict';
 
   return chunks.reduce(function(len, buf) {
     return len + buf.length;
@@ -269,16 +278,16 @@ function chunkLength(chunks) {
 }
 
 function defaultForwardPathAsync(forwardPath) {
-
-  return function(req, res) {
-    return new Promise(function(resolve) {
-      resolve(forwardPath(req, res));
+  'use strict';
+  return function(req) {
+    return new promise.Promise(function(resolve) {
+      resolve(forwardPath(req));
     });
   };
 }
 
 function asBuffer(body, options) {
-
+  'use strict';
   var ret;
   if (Buffer.isBuffer(body)) {
     ret = body;
@@ -291,7 +300,7 @@ function asBuffer(body, options) {
 }
 
 function asBufferOrString(body) {
-
+  'use strict';
   var ret;
   if (Buffer.isBuffer(body)) {
     ret = body;
@@ -304,7 +313,7 @@ function asBufferOrString(body) {
 }
 
 function getContentLength(body) {
-
+  'use strict';
   var result;
   if (Buffer.isBuffer(body)) { // Buffer
     result = body.length;
@@ -313,32 +322,3 @@ function getContentLength(body) {
   }
   return result;
 }
-
-function isResGzipped(res) {
-  return res._headers['content-encoding'] === 'gzip';
-}
-
-function zipOrUnzip(method) {
-  return function(rspData, res) {
-    return (isResGzipped(res)) ? zlib[method](rspData) : rspData;
-  };
-}
-
-function maybeParseBody(req, limit) {
-  var promise;
-  if (req.body) {
-    promise = new Promise(function(resolve) {
-      resolve(req.body);
-    });
-  } else {
-    // Returns a promise if no callback specified and global Promise exists.
-    promise = getRawBody(req, {
-      length: req.headers['content-length'],
-      limit: limit,
-    });
-  }
-  return promise;
-}
-
-var maybeUnzipResponse = zipOrUnzip('gunzipSync');
-var maybeZipResponse = zipOrUnzip('gzipSync');
