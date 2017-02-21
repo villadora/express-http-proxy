@@ -79,8 +79,6 @@ module.exports = function proxy(host, options) {
         asBuffer(bodyContent, options) :
         asBufferOrString(bodyContent);
 
-      reqOpt.headers['content-length'] = getContentLength(bodyContent);
-
       if (reqOpt.method !== 'GET') {
         reqOpt.headers['content-length'] = getContentLength(bodyContent);
       }
