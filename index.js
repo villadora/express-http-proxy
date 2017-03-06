@@ -9,12 +9,15 @@ var requestOptions = require('./lib/requestOptions');
 
 var isUnset = require('./lib/isUnset');
 
+var isUnset = require('./lib/isUnset');
+
 // ROADMAP:
 // There are a lot of competing strategies in this code.
 // It would be easier to follow if we extract to simpler functions, and used
 // a standard, step-wise set of filters with clearer edges and borders.
 // Currently working on identifying through comments the workflow steps.
 // I think I could extract reqBody and reqOpt to classes
+
 
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
@@ -119,6 +122,7 @@ module.exports = function proxy(host, options) {
 
         // Extract: define method in closure so I have access to necessary variables.
         // extract by making this return a value, rather than mutate a value
+
         // maybe this should actually use a wrapper pattern.
         // if (intercept)
         //   beforeIntercept()
