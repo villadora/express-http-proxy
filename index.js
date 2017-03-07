@@ -142,6 +142,12 @@ module.exports = function proxy(host, options) {
                 };
               }
 
+              // maybe this should actually use a wrapper pattern.
+              // if (intercept)
+              //   beforeIntercept()
+              //   intercept()
+              //   afterIntercept();
+
               if (intercept) {
                 // beforeIntercept
                 rspData = maybeUnzipResponse(rspData, res);
@@ -162,54 +168,27 @@ module.exports = function proxy(host, options) {
     });
   };
 
-  // TODO: This method is huge and misleading.
-  // It prepares the request and sends it and handles it and decorates it and intercepts it.
-  // Authors are adding similar code in multiple places.
-  // The original appraoch was to use a deeply nested closure, so there is a
-  // lot of argument bleed between functional blocks.
-
   function sendProxyRequest(req, res, next, path, bodyContent, reqOpt) {
-
-        // Extract: define method in closure so I have access to necessary variables.
-        // extract by making this return a value, rather than mutate a value
-
-        // maybe this should actually use a wrapper pattern.
-        // if (intercept)
-        //   beforeIntercept()
-        //   intercept()
-        //   afterIntercept();
-
-
-        //  actually making the request, callback form
+      return new Promise(function(resolve, reject) {
         var protocol = parseHost(host, req, options).module;
-        return new Promise(function(resolve, reject) {
-          var proxyTargetRequest = protocol.request(reqOpt, function(rsp) {
-            var chunks = [];
+        var proxyReq = protocol.request(reqOpt, function(rsp) {
+          var chunks = [];
+          rsp.on('data', function(chunk) { chunks.push(chunk); });
+          rsp.on('end', function()       { resolve([rsp, Buffer.concat(chunks, chunkLength(chunks))]); });
+          rsp.on('error', function(err)  { reject(err); });
+        });
 
-            rsp.on('data', function(chunk) {
-              chunks.push(chunk);
-            });
-
-            rsp.on('end', function() {
-              var rspData = Buffer.concat(chunks, chunkLength(chunks));
-              resolve([rsp, rspData]);
-            });
-
-            rsp.on('error', function(err) {
-              reject(err);
-            });
-
-          });
-
-        proxyTargetRequest.on('socket', function(socket) {
+        proxyReq.on('socket', function(socket) {
           if (options.timeout) {
             socket.setTimeout(options.timeout, function() {
-              proxyTargetRequest.abort();
+              proxyReq.abort();
             });
           }
         });
 
-        proxyTargetRequest.on('error', function(err) {
+        // is this the same as the error I'm checking above as well?
+        proxyReq.on('error', function(err) {
+          // reject(error);
           if (err.code === 'ECONNRESET') {
             res.setHeader('X-Timout-Reason',
               'express-http-proxy timed out your request after ' +
@@ -221,23 +200,23 @@ module.exports = function proxy(host, options) {
           }
         });
 
-        // prepare proxy request
         if (parseReqBody) {
           // We are parsing the body ourselves so we need to write the body content
           // and then manually end the request.
           if (bodyContent.length) {
-            proxyTargetRequest.write(bodyContent);
+            proxyReq.write(bodyContent);
           }
-          proxyTargetRequest.end();
+          proxyReq.end();
         } else {
           // Pipe will call end when it has completely read from the request.
-          req.pipe(proxyTargetRequest);
+          req.pipe(proxyReq);
         }
 
         req.on('aborted', function() {
-          proxyTargetRequest.abort();
+          // reject?
+          proxyReq.abort();
         });
-      });
+    });
   }
 };
 
