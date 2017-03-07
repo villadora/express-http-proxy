@@ -50,37 +50,53 @@ module.exports = function proxy(host, options) {
     // Do not proxy request if filter returns false.
     if (!filter(req, res)) { return next(); }
 
-    var resolvePath = resolveProxyPathAsync(req, res);
     var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
 
     var buildProxyReq = Promise.all([
-      resolvePath, // this is in a weird place.  I'ts a part of decorateRequestOpts
       parseBody,
       createReqOptions
     ]);
 
     // ProxyRequestPair // { settings, body }
     buildProxyReq.then(function(results) {
-      var path = results[0];
-      var bodyContent = results[1];
-      var reqOpt = results[2];
+      var bodyContent = results[0];
+      var reqOpt = results[1];
 
       if (parseReqBody) {
         reqOpt.bodyContent = bodyContent;
       }
 
-      // this should move to decorateRequestOptions
-      reqOpt.path = path;
+      // need to get resolveProxyPathAsync and decorateRequest off this scope so I can move this
+      function decorateRequestWrapper(reqOpt, req) {
+        return new Promise(function(resolve) {
+          Promise.all([
+            // resolve path
+            resolveProxyPathAsync(req),
+            // resolve decorateRequestHook
+            decorateRequest(reqOpt, req)
+          ]).then(function(values) {
+            var path = values[0];
+            var reqOpt = values[1];
+            reqOpt.path = path;
+            // still need to resolve the bodyContent stuff
+            resolve(reqOpt);
+          });
+        });
+      }
 
       Promise
-        .resolve(decorateRequest(reqOpt, req))
+        // Pattern:   always call the maybe function; have a default noop.
+        // Pattern:   use Promise.resolve here to avoid having to guess if its a promise or not.
+        .resolve(decorateRequestWrapper(reqOpt, req))
         .then(function(processedReqOpt) {
           if (typeof processedReqOpt !== 'object') {
             throw new ReferenceError('decorateRequest must return an Object.');
           }
 
+
           // this can go to an after filter
+          // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
           if (parseReqBody) {
             bodyContent = options.reqAsBuffer ?
               asBuffer(bodyContent, options) :

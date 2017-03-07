@@ -1,5 +1,6 @@
 var assert = require('assert');
 var express = require('express');
+var http = require('http');
 var request = require('supertest');
 var proxy = require('../');
 var promise = require('es6-promise');
@@ -42,12 +43,11 @@ describe('forwardPath', function() {
       });
   });
 
-  it('test forwardPath to known path with request and response yields 200', function(done) {
+  it('forwardPath has access to request object', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      forwardPath: function(req, res) {
-        assert.ok(req);
-        assert.ok(res);
+      forwardPath: function(req) {
+        assert.ok(req instanceof http.IncomingMessage);
         return '/post';
       }
     }));
