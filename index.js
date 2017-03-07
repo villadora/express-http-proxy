@@ -1,23 +1,31 @@
 'use strict';
 
+// ROADMAP:
+// There are a lot of competing strategies in this code.
+// It would be easier to follow if we extract to simpler functions, and used
+// a standard, step-wise set of filters with clearer edges and borders.
+// Currently working on identifying through comments the workflow steps.
+
+// I think I could extract reqBody and reqOpt to classes
+
+// I think this might be a good pattern to work toward.
+// might have to partially apply a lot of arguments up top
+//filterRequest(req)
+  //.then(createProxyRequestOptions)
+  //.then(decorateProxyRequestOptions)
+  //.then(decorateProxyRequestBody)
+  //.then(makeProxyRequest)
+  //.then(decorateProxyResponse)
+  //.then(sendUserResponse);
+  //.catch(next)
+
 var assert = require('assert');
 var http = require('http');
 var https = require('https');
 var url = require('url');
 var zlib = require('zlib');
 var requestOptions = require('./lib/requestOptions');
-
 var isUnset = require('./lib/isUnset');
-
-var isUnset = require('./lib/isUnset');
-
-// ROADMAP:
-// There are a lot of competing strategies in this code.
-// It would be easier to follow if we extract to simpler functions, and used
-// a standard, step-wise set of filters with clearer edges and borders.
-// Currently working on identifying through comments the workflow steps.
-// I think I could extract reqBody and reqOpt to classes
-
 
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
@@ -55,24 +63,14 @@ module.exports = function proxy(host, options) {
     var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
 
-    var prepareRequest = Promise.all([
+    var buildProxyReq = Promise.all([
       resolvePath, // this is in a weird place.  I'ts a part of decorateRequestOpts
       parseBody,
       createReqOptions
     ]);
 
-    // I think this might be a good pattern to work toward.
-    // might have to partially apply a lot of arguments up top
-    //filterRequest(req)
-      //.then(createProxyRequestOptions)
-      //.then(decorateProxyRequestOptions)
-      //.then(decorateProxyRequestBody)
-      //.then(makeProxyRequest)
-      //.then(decorateProxyResponse)
-      //.then(sendUserResponse);
-      //.catch(next)
 
-    prepareRequest.then(function(results) {
+    buildProxyReq.then(function(results) {
       var path = results[0];
       var bodyContent = results[1];
       var reqOpt = results[2];
