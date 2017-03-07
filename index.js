@@ -97,7 +97,7 @@ module.exports = function proxy(host, options) {
 
           // WIP: req, res, and next are not needed until the callback method.
           // split into a thennable
-          sendProxyRequest(req, res, next, path, bodyContent, processedReqOpt)
+          sendProxyRequest(req, res, next, bodyContent, processedReqOpt)
             .then(function(proxyResponse) {
               var rsp = proxyResponse[0];
               var rspData = proxyResponse[1];
@@ -168,7 +168,7 @@ module.exports = function proxy(host, options) {
     });
   };
 
-  function sendProxyRequest(req, res, next, path, bodyContent, reqOpt) {
+  function sendProxyRequest(req, res, next, bodyContent, reqOpt) {
       return new Promise(function(resolve, reject) {
         var protocol = parseHost(host, req, options).module;
         var proxyReq = protocol.request(reqOpt, function(rsp) {
