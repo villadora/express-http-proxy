@@ -50,15 +50,6 @@ module.exports = function proxy(host, options) {
     // Do not proxy request if filter returns false.
     if (!filter(req, res)) { return next(); }
 
-    // maybe? new ProxyRequestBuilder(req, res, options, host)
-    // maybe? ProxyRequestBuilder.create(req, res, options, host)
-    //requestOptions.create(req, res, options, host)
-    //reqOpt.bodyContent = bodyContent;
-      //.then(function(reqOpts) {
-        //// decorateProxyRequestOptions
-
-      //});
-
     var resolvePath = resolveProxyPathAsync(req, res);
     var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
@@ -69,7 +60,7 @@ module.exports = function proxy(host, options) {
       createReqOptions
     ]);
 
-
+    // ProxyRequestPair // { settings, body }
     buildProxyReq.then(function(results) {
       var path = results[0];
       var bodyContent = results[1];
@@ -104,7 +95,68 @@ module.exports = function proxy(host, options) {
 
           delete processedReqOpt.params;
 
-          sendProxyRequest(req, res, next, path, bodyContent, processedReqOpt);
+          // WIP: req, res, and next are not needed until the callback method.
+          // split into a thennable
+          sendProxyRequest(req, res, next, path, bodyContent, processedReqOpt)
+            .then(function(proxyResponse) {
+              var rsp = proxyResponse[0];
+              var rspData = proxyResponse[1];
+
+              if (!res.headersSent) {
+                res.status(rsp.statusCode);
+                Object.keys(rsp.headers)
+                  .filter(function(item) { return item !== 'transfer-encoding'; })
+                  .forEach(function(item) {
+                    res.set(item, rsp.headers[item]);
+                  });
+              }
+
+              function postIntercept(res, next, rspData) {
+                return function(err, rspd, sent) {
+                  if (err) {
+                    return next(err);
+                  }
+                  rspd = asBuffer(rspd, options);
+                  rspd = maybeZipResponse(rspd, res);
+
+                  if (!Buffer.isBuffer(rspd)) {
+                    next(new Error('intercept should return string or' +
+                          'buffer as data'));
+                  }
+
+                  // TODO: return rspd here
+
+                  // afterIntercept
+                  if (!res.headersSent) {
+                    res.set('content-length', rspd.length);
+                  } else if (rspd.length !== rspData.length) {
+                    var error = '"Content-Length" is already sent,' +
+                          'the length of response data can not be changed';
+                    next(new Error(error));
+                  }
+
+                  //  returns res to user
+                  if (!sent) {
+                    res.send(rspd);
+                  }
+                };
+              }
+
+              if (intercept) {
+                // beforeIntercept
+                rspData = maybeUnzipResponse(rspData, res);
+                var callback = postIntercept(res, next, rspData);
+                intercept(rsp, rspData, req, res, callback);
+              } else {
+                // see issue https://github.com/villadora/express-http-proxy/issues/104
+                // Not sure how to automate tests on this line, so be careful when changing.
+                if (!res.headersSent) {
+                  res.send(rspData);
+                }
+              }
+            });
+
+
         })
         .catch(next);
     });
@@ -127,78 +179,27 @@ module.exports = function proxy(host, options) {
         //   intercept()
         //   afterIntercept();
 
-        function postIntercept(res, next, rspData) {
-          return function(err, rspd, sent) {
-            if (err) {
-              return next(err);
-            }
-            rspd = asBuffer(rspd, options);
-            rspd = maybeZipResponse(rspd, res);
-
-            if (!Buffer.isBuffer(rspd)) {
-              next(new Error('intercept should return string or' +
-                    'buffer as data'));
-            }
-
-            // TODO: return rspd here
-
-            // afterIntercept
-            if (!res.headersSent) {
-              res.set('content-length', rspd.length);
-            } else if (rspd.length !== rspData.length) {
-              var error = '"Content-Length" is already sent,' +
-                    'the length of response data can not be changed';
-              next(new Error(error));
-            }
-
-            //  returns res to user
-            if (!sent) {
-              res.send(rspd);
-            }
-          };
-        }
 
         //  actually making the request, callback form
         var protocol = parseHost(host, req, options).module;
-        var proxyTargetRequest = protocol.request(reqOpt, function(rsp) {
-          var chunks = [];
+        return new Promise(function(resolve, reject) {
+          var proxyTargetRequest = protocol.request(reqOpt, function(rsp) {
+            var chunks = [];
 
-          rsp.on('data', function(chunk) {
-            chunks.push(chunk);
+            rsp.on('data', function(chunk) {
+              chunks.push(chunk);
+            });
+
+            rsp.on('end', function() {
+              var rspData = Buffer.concat(chunks, chunkLength(chunks));
+              resolve([rsp, rspData]);
+            });
+
+            rsp.on('error', function(err) {
+              reject(err);
+            });
+
           });
-
-          rsp.on('end', function() {
-
-            var rspData = Buffer.concat(chunks, chunkLength(chunks));
-
-            if (intercept) {
-              // beforeIntercept
-              rspData = maybeUnzipResponse(rspData, res);
-              var callback = postIntercept(res, next, rspData);
-              intercept(rsp, rspData, req, res, callback);
-            } else {
-              // see issue https://github.com/villadora/express-http-proxy/issues/104
-              // Not sure how to automate tests on this line, so be careful when changing.
-              if (!res.headersSent) {
-                res.send(rspData);
-              }
-            }
-          });
-
-          rsp.on('error', function(err) {
-            next(err);
-          });
-
-          // copy proxy res values to use res
-          if (!res.headersSent) {
-            res.status(rsp.statusCode);
-            Object.keys(rsp.headers)
-              .filter(function(item) { return item !== 'transfer-encoding'; })
-              .forEach(function(item) {
-                res.set(item, rsp.headers[item]);
-              });
-          }
-        });
 
         proxyTargetRequest.on('socket', function(socket) {
           if (options.timeout) {
@@ -233,14 +234,12 @@ module.exports = function proxy(host, options) {
           req.pipe(proxyTargetRequest);
         }
 
-
         req.on('aborted', function() {
           proxyTargetRequest.abort();
         });
-      }
+      });
+  }
 };
-
-
 
 // Utility methods from here on down.
 function parseHost(host, req, options) {
