@@ -1,11 +1,13 @@
 'use strict';
 
 var assert = require('assert');
-var getRawBody = require('raw-body');
 var http = require('http');
 var https = require('https');
 var url = require('url');
 var zlib = require('zlib');
+var requestOptions = require('./lib/requestOptions');
+
+var isUnset = require('./lib/isUnset');
 
 var isUnset = require('./lib/isUnset');
 
@@ -14,13 +16,15 @@ var isUnset = require('./lib/isUnset');
 // It would be easier to follow if we extract to simpler functions, and used
 // a standard, step-wise set of filters with clearer edges and borders.
 // Currently working on identifying through comments the workflow steps.
+// I think I could extract reqBody and reqOpt to classes
+
 
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
 
   options = options || {};
 
-  var parsedHost;
+  //var parsedHost;
 
   /**
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
@@ -30,20 +34,81 @@ module.exports = function proxy(host, options) {
   var forwardPath = options.forwardPath || defaultForwardPath;
   var resolveProxyPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
-  var limit = options.limit || '1mb';
-  var preserveReqSession = options.preserveReqSession;
-  var memoizeHost = isUnset(options.memoizeHost) ? true : options.memoizeHost;
+
+  // For backwards compatability, we default to legacy behavior for newly added settings.
   var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
 
   return function handleProxy(req, res, next) {
+    // Do not proxy request if filter returns false.
     if (!filter(req, res)) { return next(); }
+
+    // maybe? new ProxyRequestBuilder(req, res, options, host)
+    // maybe? ProxyRequestBuilder.create(req, res, options, host)
+    //requestOptions.create(req, res, options, host)
+    //reqOpt.bodyContent = bodyContent;
+      //.then(function(reqOpts) {
+        //// decorateProxyRequestOptions
+
+      //});
+
     var resolvePath = resolveProxyPathAsync(req, res);
-    var parseBody = (!parseReqBody) ? Promise.resolve(null) : maybeParseBody(req, limit);
-    var prepareRequest = Promise.all([resolvePath, parseBody]);
+    var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
+    var createReqOptions = requestOptions.create(req, res, options, host);
+
+    var prepareRequest = Promise.all([
+      resolvePath, // this is in a weird place.  I'ts a part of decorateRequestOpts
+      parseBody,
+      createReqOptions
+    ]);
+
+    // I think this might be a good pattern to work toward.
+    // might have to partially apply a lot of arguments up top
+    //filterRequest(req)
+      //.then(createProxyRequestOptions)
+      //.then(decorateProxyRequestOptions)
+      //.then(decorateProxyRequestBody)
+      //.then(makeProxyRequest)
+      //.then(decorateProxyResponse)
+      //.then(sendUserResponse);
+      //.catch(next)
+
     prepareRequest.then(function(results) {
       var path = results[0];
       var bodyContent = results[1];
-      sendProxyRequest(req, res, next, path, bodyContent);
+      var reqOpt = results[2];
+
+      if (parseReqBody) {
+        reqOpt.bodyContent = bodyContent;
+      }
+
+      // this should move to decorateRequestOptions
+      reqOpt.path = path;
+
+      Promise
+        .resolve(decorateRequest(reqOpt, req))
+        .then(function(processedReqOpt) {
+          if (typeof processedReqOpt !== 'object') {
+            throw new ReferenceError('decorateRequest must return an Object.');
+          }
+
+          // this can go to an after filter
+          if (parseReqBody) {
+            bodyContent = options.reqAsBuffer ?
+              asBuffer(bodyContent, options) :
+              asBufferOrString(bodyContent);
+
+            reqOpt.headers['content-length'] = getContentLength(bodyContent);
+
+            if (bodyEncoding(options)) {
+              reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+            }
+          }
+
+          delete processedReqOpt.params;
+
+          sendProxyRequest(req, res, next, path, bodyContent, processedReqOpt);
+        })
+        .catch(next);
     });
   };
 
@@ -53,58 +118,17 @@ module.exports = function proxy(host, options) {
   // The original appraoch was to use a deeply nested closure, so there is a
   // lot of argument bleed between functional blocks.
 
-  function sendProxyRequest(req, res, next, path, bodyContent) {
-
-    // resolve proxyTo host.  part of preparing proxyRequext
-    parsedHost = (memoizeHost && parsedHost) ? parsedHost : parseHost(host, req, options);
-
-    // prepare proxyRequest
-    var reqOpt = {
-      hostname: parsedHost.host,
-      port: options.port || parsedHost.port,
-      headers: reqHeaders(req, options),
-      method: req.method,
-      path: path,
-      params: req.params,
-    };
-
-    if (parseReqBody) {
-      reqOpt.bodyContent = bodyContent;
-    }
-
-    if (preserveReqSession) {
-      reqOpt.session = req.session;
-    }
-
-    // this starts as prepareProxy request, but then fires off the rest of the behavior
-    Promise.resolve(decorateRequest(reqOpt, req))
-      .then(function(returnedOpt) {
-
-        if (typeof returnedOpt !== 'object') {
-          throw new ReferenceError('decorateRequest must return an Object.');
-        }
-
-        // continue preparing reqOpts
-        reqOpt = returnedOpt;
-        delete reqOpt.params;
-
-        if (parseReqBody) {
-          bodyContent = reqOpt.bodyContent;
-          delete reqOpt.bodyContent;
-
-          bodyContent = options.reqAsBuffer ?
-            asBuffer(bodyContent, options) :
-            asBufferOrString(bodyContent);
-
-          reqOpt.headers['content-length'] = getContentLength(bodyContent);
-
-          if (bodyEncoding(options)) {
-            reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
-          }
-        }
+  function sendProxyRequest(req, res, next, path, bodyContent, reqOpt) {
 
         // Extract: define method in closure so I have access to necessary variables.
         // extract by making this return a value, rather than mutate a value
+
+        // maybe this should actually use a wrapper pattern.
+        // if (intercept)
+        //   beforeIntercept()
+        //   intercept()
+        //   afterIntercept();
+
         function postIntercept(res, next, rspData) {
           return function(err, rspd, sent) {
             if (err) {
@@ -118,6 +142,9 @@ module.exports = function proxy(host, options) {
                     'buffer as data'));
             }
 
+            // TODO: return rspd here
+
+            // afterIntercept
             if (!res.headersSent) {
               res.set('content-length', rspd.length);
             } else if (rspd.length !== rspData.length) {
@@ -134,7 +161,8 @@ module.exports = function proxy(host, options) {
         }
 
         //  actually making the request, callback form
-        var proxyTargetRequest = parsedHost.module.request(reqOpt, function(rsp) {
+        var protocol = parseHost(host, req, options).module;
+        var proxyTargetRequest = protocol.request(reqOpt, function(rsp) {
           var chunks = [];
 
           rsp.on('data', function(chunk) {
@@ -146,6 +174,7 @@ module.exports = function proxy(host, options) {
             var rspData = Buffer.concat(chunks, chunkLength(chunks));
 
             if (intercept) {
+              // beforeIntercept
               rspData = maybeUnzipResponse(rspData, res);
               var callback = postIntercept(res, next, rspData);
               intercept(rsp, rspData, req, res, callback);
@@ -210,31 +239,12 @@ module.exports = function proxy(host, options) {
         req.on('aborted', function() {
           proxyTargetRequest.abort();
         });
-      })
-      .catch(function(err) {
-        next(err);
-      });
-  }
+      }
 };
 
 
 
 // Utility methods from here on down.
-function extend(obj, source, skips) {
-
-  if (!source) {
-    return obj;
-  }
-
-  for (var prop in source) {
-    if (!skips || skips.indexOf(prop) === -1) {
-      obj[prop] = source[prop];
-    }
-  }
-
-  return obj;
-}
-
 function parseHost(host, req, options) {
 
   host = (typeof host === 'function') ? host(req) : host.toString();
@@ -260,21 +270,6 @@ function parseHost(host, req, options) {
     port: parsed.port || (ishttps ? 443 : 80),
     module: ishttps ? https : http,
   };
-}
-
-function reqHeaders(req, options) {
-
-
-  var headers = options.headers || {};
-
-  var skipHdrs = [ 'connection', 'content-length' ];
-  if (!options.preserveHostHdr) {
-    skipHdrs.push('host');
-  }
-  var hds = extend(headers, req.headers, skipHdrs);
-  hds.connection = 'close';
-
-  return hds;
 }
 
 function defaultFilter() {
@@ -362,22 +357,6 @@ function zipOrUnzip(method) {
   return function(rspData, res) {
     return (isResGzipped(res)) ? zlib[method](rspData) : rspData;
   };
-}
-
-function maybeParseBody(req, limit) {
-  var promise;
-  if (req.body) {
-    promise = new Promise(function(resolve) {
-      resolve(req.body);
-    });
-  } else {
-    // Returns a promise if no callback specified and global Promise exists.
-    promise = getRawBody(req, {
-      length: req.headers['content-length'],
-      limit: limit,
-    });
-  }
-  return promise;
 }
 
 var maybeUnzipResponse = zipOrUnzip('gunzipSync');
