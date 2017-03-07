@@ -1,23 +1,31 @@
 'use strict';
 
+// ROADMAP:
+// There are a lot of competing strategies in this code.
+// It would be easier to follow if we extract to simpler functions, and used
+// a standard, step-wise set of filters with clearer edges and borders.
+// Currently working on identifying through comments the workflow steps.
+
+// I think I could extract reqBody and reqOpt to classes
+
+// I think this might be a good pattern to work toward.
+// might have to partially apply a lot of arguments up top
+//filterRequest(req)
+  //.then(createProxyRequestOptions)
+  //.then(decorateProxyRequestOptions)
+  //.then(decorateProxyRequestBody)
+  //.then(makeProxyRequest)
+  //.then(decorateProxyResponse)
+  //.then(sendUserResponse);
+  //.catch(next)
+
 var assert = require('assert');
 var http = require('http');
 var https = require('https');
 var url = require('url');
 var zlib = require('zlib');
 var requestOptions = require('./lib/requestOptions');
-
 var isUnset = require('./lib/isUnset');
-
-var isUnset = require('./lib/isUnset');
-
-// ROADMAP:
-// There are a lot of competing strategies in this code.
-// It would be easier to follow if we extract to simpler functions, and used
-// a standard, step-wise set of filters with clearer edges and borders.
-// Currently working on identifying through comments the workflow steps.
-// I think I could extract reqBody and reqOpt to classes
-
 
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
@@ -42,37 +50,18 @@ module.exports = function proxy(host, options) {
     // Do not proxy request if filter returns false.
     if (!filter(req, res)) { return next(); }
 
-    // maybe? new ProxyRequestBuilder(req, res, options, host)
-    // maybe? ProxyRequestBuilder.create(req, res, options, host)
-    //requestOptions.create(req, res, options, host)
-    //reqOpt.bodyContent = bodyContent;
-      //.then(function(reqOpts) {
-        //// decorateProxyRequestOptions
-
-      //});
-
     var resolvePath = resolveProxyPathAsync(req, res);
     var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
 
-    var prepareRequest = Promise.all([
+    var buildProxyReq = Promise.all([
       resolvePath, // this is in a weird place.  I'ts a part of decorateRequestOpts
       parseBody,
       createReqOptions
     ]);
 
-    // I think this might be a good pattern to work toward.
-    // might have to partially apply a lot of arguments up top
-    //filterRequest(req)
-      //.then(createProxyRequestOptions)
-      //.then(decorateProxyRequestOptions)
-      //.then(decorateProxyRequestBody)
-      //.then(makeProxyRequest)
-      //.then(decorateProxyResponse)
-      //.then(sendUserResponse);
-      //.catch(next)
-
-    prepareRequest.then(function(results) {
+    // ProxyRequestPair // { settings, body }
+    buildProxyReq.then(function(results) {
       var path = results[0];
       var bodyContent = results[1];
       var reqOpt = results[2];
@@ -106,111 +95,100 @@ module.exports = function proxy(host, options) {
 
           delete processedReqOpt.params;
 
-          sendProxyRequest(req, res, next, path, bodyContent, processedReqOpt);
+          // WIP: req, res, and next are not needed until the callback method.
+          // split into a thennable
+          sendProxyRequest(req, res, next, path, bodyContent, processedReqOpt)
+            .then(function(proxyResponse) {
+              var rsp = proxyResponse[0];
+              var rspData = proxyResponse[1];
+
+              if (!res.headersSent) {
+                res.status(rsp.statusCode);
+                Object.keys(rsp.headers)
+                  .filter(function(item) { return item !== 'transfer-encoding'; })
+                  .forEach(function(item) {
+                    res.set(item, rsp.headers[item]);
+                  });
+              }
+
+              function postIntercept(res, next, rspData) {
+                return function(err, rspd, sent) {
+                  if (err) {
+                    return next(err);
+                  }
+                  rspd = asBuffer(rspd, options);
+                  rspd = maybeZipResponse(rspd, res);
+
+                  if (!Buffer.isBuffer(rspd)) {
+                    next(new Error('intercept should return string or' +
+                          'buffer as data'));
+                  }
+
+                  // TODO: return rspd here
+
+                  // afterIntercept
+                  if (!res.headersSent) {
+                    res.set('content-length', rspd.length);
+                  } else if (rspd.length !== rspData.length) {
+                    var error = '"Content-Length" is already sent,' +
+                          'the length of response data can not be changed';
+                    next(new Error(error));
+                  }
+
+                  //  returns res to user
+                  if (!sent) {
+                    res.send(rspd);
+                  }
+                };
+              }
+
+              // maybe this should actually use a wrapper pattern.
+              // if (intercept)
+              //   beforeIntercept()
+              //   intercept()
+              //   afterIntercept();
+
+              if (intercept) {
+                // beforeIntercept
+                rspData = maybeUnzipResponse(rspData, res);
+                var callback = postIntercept(res, next, rspData);
+                intercept(rsp, rspData, req, res, callback);
+              } else {
+                // see issue https://github.com/villadora/express-http-proxy/issues/104
+                // Not sure how to automate tests on this line, so be careful when changing.
+                if (!res.headersSent) {
+                  res.send(rspData);
+                }
+              }
+            });
+
+
         })
         .catch(next);
     });
   };
 
-  // TODO: This method is huge and misleading.
-  // It prepares the request and sends it and handles it and decorates it and intercepts it.
-  // Authors are adding similar code in multiple places.
-  // The original appraoch was to use a deeply nested closure, so there is a
-  // lot of argument bleed between functional blocks.
-
   function sendProxyRequest(req, res, next, path, bodyContent, reqOpt) {
-
-        // Extract: define method in closure so I have access to necessary variables.
-        // extract by making this return a value, rather than mutate a value
-
-        // maybe this should actually use a wrapper pattern.
-        // if (intercept)
-        //   beforeIntercept()
-        //   intercept()
-        //   afterIntercept();
-
-        function postIntercept(res, next, rspData) {
-          return function(err, rspd, sent) {
-            if (err) {
-              return next(err);
-            }
-            rspd = asBuffer(rspd, options);
-            rspd = maybeZipResponse(rspd, res);
-
-            if (!Buffer.isBuffer(rspd)) {
-              next(new Error('intercept should return string or' +
-                    'buffer as data'));
-            }
-
-            // TODO: return rspd here
-
-            // afterIntercept
-            if (!res.headersSent) {
-              res.set('content-length', rspd.length);
-            } else if (rspd.length !== rspData.length) {
-              var error = '"Content-Length" is already sent,' +
-                    'the length of response data can not be changed';
-              next(new Error(error));
-            }
-
-            //  returns res to user
-            if (!sent) {
-              res.send(rspd);
-            }
-          };
-        }
-
-        //  actually making the request, callback form
+      return new Promise(function(resolve, reject) {
         var protocol = parseHost(host, req, options).module;
-        var proxyTargetRequest = protocol.request(reqOpt, function(rsp) {
+        var proxyReq = protocol.request(reqOpt, function(rsp) {
           var chunks = [];
-
-          rsp.on('data', function(chunk) {
-            chunks.push(chunk);
-          });
-
-          rsp.on('end', function() {
-
-            var rspData = Buffer.concat(chunks, chunkLength(chunks));
-
-            if (intercept) {
-              // beforeIntercept
-              rspData = maybeUnzipResponse(rspData, res);
-              var callback = postIntercept(res, next, rspData);
-              intercept(rsp, rspData, req, res, callback);
-            } else {
-              // see issue https://github.com/villadora/express-http-proxy/issues/104
-              // Not sure how to automate tests on this line, so be careful when changing.
-              if (!res.headersSent) {
-                res.send(rspData);
-              }
-            }
-          });
-
-          rsp.on('error', function(err) {
-            next(err);
-          });
-
-          // copy proxy res values to use res
-          if (!res.headersSent) {
-            res.status(rsp.statusCode);
-            Object.keys(rsp.headers)
-              .filter(function(item) { return item !== 'transfer-encoding'; })
-              .forEach(function(item) {
-                res.set(item, rsp.headers[item]);
-              });
-          }
+          rsp.on('data', function(chunk) { chunks.push(chunk); });
+          rsp.on('end', function()       { resolve([rsp, Buffer.concat(chunks, chunkLength(chunks))]); });
+          rsp.on('error', function(err)  { reject(err); });
         });
 
-        proxyTargetRequest.on('socket', function(socket) {
+        proxyReq.on('socket', function(socket) {
           if (options.timeout) {
             socket.setTimeout(options.timeout, function() {
-              proxyTargetRequest.abort();
+              proxyReq.abort();
             });
           }
         });
 
-        proxyTargetRequest.on('error', function(err) {
+        // is this the same as the error I'm checking above as well?
+        proxyReq.on('error', function(err) {
+          // reject(error);
           if (err.code === 'ECONNRESET') {
             res.setHeader('X-Timout-Reason',
               'express-http-proxy timed out your request after ' +
@@ -222,27 +200,25 @@ module.exports = function proxy(host, options) {
           }
         });
 
-        // prepare proxy request
         if (parseReqBody) {
           // We are parsing the body ourselves so we need to write the body content
           // and then manually end the request.
           if (bodyContent.length) {
-            proxyTargetRequest.write(bodyContent);
+            proxyReq.write(bodyContent);
           }
-          proxyTargetRequest.end();
+          proxyReq.end();
         } else {
           // Pipe will call end when it has completely read from the request.
-          req.pipe(proxyTargetRequest);
+          req.pipe(proxyReq);
         }
 
-
         req.on('aborted', function() {
-          proxyTargetRequest.abort();
+          // reject?
+          proxyReq.abort();
         });
-      }
+    });
+  }
 };
-
-
 
 // Utility methods from here on down.
 function parseHost(host, req, options) {
