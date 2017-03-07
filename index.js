@@ -57,37 +57,38 @@ module.exports = function proxy(host, options) {
     }
 
     return new Promise(function(resolve) {
-      Promise.all([
-        decorateReqPath(req),   // resolve path
-        // split up into bodyContent and reqOpt in future commit
-        decorateRequest(reqOpt, req),  // resolve decorateRequestHook
-      ]).then(function(values) {
-        var path = values[0];
-        var reqOpt = values[1];
-        var bodyContent = reqOpt.bodyContent;
+      Promise
+        .all([
+          decorateReqPath(req),   // resolve path
+          // split up into bodyContent and reqOpt in future commit
+          decorateRequest(reqOpt, req),  // resolve decorateRequestHook
+        ])
+        .then(function(values) {
+          var path = values[0];
+          var reqOpt = values[1];
+          var bodyContent = reqOpt.bodyContent;
 
-        delete reqOpt.bodyContent;
-        reqOpt.path = path;
+          delete reqOpt.bodyContent;
+          reqOpt.path = path;
 
-        // this can go to an after filter
-        // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
-        if (parseReqBody) {
-          bodyContent = options.reqAsBuffer ?
-            asBuffer(bodyContent, options) :
-            asBufferOrString(bodyContent);
+          // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
+          if (parseReqBody) {
+            bodyContent = options.reqAsBuffer ?
+              asBuffer(bodyContent, options) :
+              asBufferOrString(bodyContent);
 
-          reqOpt.headers['content-length'] = getContentLength(bodyContent);
+            reqOpt.headers['content-length'] = getContentLength(bodyContent);
 
-          if (bodyEncoding(options)) {
-            reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+            if (bodyEncoding(options)) {
+              reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+            }
           }
-        }
 
-        delete reqOpt.params;
+          delete reqOpt.params;
 
-        // still need to resolve the bodyContent stuff
-        resolve([reqOpt, bodyContent]);
-      });
+          // still need to resolve the bodyContent stuff
+          resolve([reqOpt, bodyContent]);
+        });
     });
   }
 
