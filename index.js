@@ -30,6 +30,7 @@ var isUnset = require('./lib/isUnset');
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
 
+  // move options into an external constructor
   options = options || {};
 
   //var parsedHost;
@@ -40,11 +41,56 @@ module.exports = function proxy(host, options) {
   var intercept = options.intercept;
   var decorateRequest = options.decorateRequest || function(reqOpt) { return reqOpt; };
   var forwardPath = options.forwardPath || defaultForwardPath;
-  var resolveProxyPathAsync = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
+  var decorateReqPath = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
 
   // For backwards compatability, we default to legacy behavior for newly added settings.
   var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
+
+  // need to get decorateReqPath and decorateRequest off this scope so I can move this
+  function decorateRequestWrapper(reqOpt, req, bodyContent) {
+
+    // This is just because of a legacy expectation that decorateRequest be
+    // handed the bodyContent on reqOpts. Split this up next.
+    if (parseReqBody) {
+      reqOpt.bodyContent = bodyContent;
+    }
+
+    return new Promise(function(resolve) {
+      Promise
+        .all([
+          decorateReqPath(req),   // resolve path
+          // split up into bodyContent and reqOpt in future commit
+          decorateRequest(reqOpt, req),  // resolve decorateRequestHook
+        ])
+        .then(function(values) {
+          var path = values[0];
+          var reqOpt = values[1];
+          var bodyContent = reqOpt.bodyContent;
+
+          delete reqOpt.bodyContent;
+          reqOpt.path = path;
+
+          // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
+          if (parseReqBody) {
+            bodyContent = options.reqAsBuffer ?
+              asBuffer(bodyContent, options) :
+              asBufferOrString(bodyContent);
+
+            reqOpt.headers['content-length'] = getContentLength(bodyContent);
+
+            if (bodyEncoding(options)) {
+              reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+            }
+          }
+
+          delete reqOpt.params;
+
+          // still need to resolve the bodyContent stuff
+          resolve([reqOpt, bodyContent]);
+        });
+    });
+  }
 
   return function handleProxy(req, res, next) {
     // Do not proxy request if filter returns false.
@@ -63,56 +109,24 @@ module.exports = function proxy(host, options) {
       var bodyContent = results[0];
       var reqOpt = results[1];
 
-      if (parseReqBody) {
-        reqOpt.bodyContent = bodyContent;
-      }
-
-      // need to get resolveProxyPathAsync and decorateRequest off this scope so I can move this
-      function decorateRequestWrapper(reqOpt, req) {
-        return new Promise(function(resolve) {
-          Promise.all([
-            // resolve path
-            resolveProxyPathAsync(req),
-            // resolve decorateRequestHook
-            decorateRequest(reqOpt, req)
-          ]).then(function(values) {
-            var path = values[0];
-            var reqOpt = values[1];
-            reqOpt.path = path;
-            // still need to resolve the bodyContent stuff
-            resolve(reqOpt);
-          });
-        });
-      }
 
       Promise
         // Pattern:   always call the maybe function; have a default noop.
         // Pattern:   use Promise.resolve here to avoid having to guess if its a promise or not.
-        .resolve(decorateRequestWrapper(reqOpt, req))
-        .then(function(processedReqOpt) {
+        .resolve(decorateRequestWrapper(reqOpt, req, bodyContent))
+        .then(function(responseArray) {
+          var processedReqOpt = responseArray[0];
+          var bodyContent = responseArray[1];
+
           if (typeof processedReqOpt !== 'object') {
             throw new ReferenceError('decorateRequest must return an Object.');
           }
 
-
-          // this can go to an after filter
-          // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
-          if (parseReqBody) {
-            bodyContent = options.reqAsBuffer ?
-              asBuffer(bodyContent, options) :
-              asBufferOrString(bodyContent);
-
-            reqOpt.headers['content-length'] = getContentLength(bodyContent);
-
-            if (bodyEncoding(options)) {
-              reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
-            }
-          }
-
-          delete processedReqOpt.params;
-
           // WIP: req, res, and next are not needed until the callback method.
           // split into a thennable
+          /**** [
+            SEND PROXY REQUEST
+          ] ****/
           sendProxyRequest(req, res, next, bodyContent, processedReqOpt)
             .then(function(proxyResponse) {
               var rsp = proxyResponse[0];
@@ -202,7 +216,6 @@ module.exports = function proxy(host, options) {
           }
         });
 
-        // is this the same as the error I'm checking above as well?
         proxyReq.on('error', function(err) {
           // reject(error);
           if (err.code === 'ECONNRESET') {

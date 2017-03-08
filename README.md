@@ -37,7 +37,7 @@ var proxy = require('express-http-proxy');
 var app = require('express')();
 
 app.use('/proxy', proxy('www.google.com', {
-  forwardPath: function(req, res) {
+  forwardPath: function(req) {
     return require('url').parse(req.url).path;
   }
 }));
