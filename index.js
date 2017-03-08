@@ -43,9 +43,12 @@ module.exports = function proxy(host, options) {
   var forwardPath = options.forwardPath || defaultForwardPath;
   var decorateReqPath = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
-  var decorateRequest = function() { throw new Error('decorateRequest is deprecated; use decorateReqOpt and decorateReqBody instead')};
   var decorateReqOpt = options.decorateReqOpt || function (reqOpt /*, req */) { return reqOpt; };
   var decorateReqBody = options.decorateReqBody || function (bodyContent /*, req*/) { return bodyContent; };
+
+  if (options.decorateRequest) {
+    throw new Error('decorateRequest is deprecated; use decorateReqOpt and decorateReqBody instead');
+  }
 
   // For backwards compatability, we default to legacy behavior for newly added settings.
   var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
@@ -64,7 +67,6 @@ module.exports = function proxy(host, options) {
           decorateReqOpt(reqOpt, req),
           decorateReqBody(bodyContent, req)
         ])
-        //.then(resolve)
         .then(function(values) {
           var path = values[0];
           var reqOpt = values[1];
@@ -92,10 +94,9 @@ module.exports = function proxy(host, options) {
     });
   }
 
-  return function handleProxy(req, res, next) {
-    // Do not proxy request if filter returns false.
-    if (!filter(req, res)) { return next(); }
 
+  // ProxyRequestPair // { settings, body }
+  function buildProxyReq(req, res, options) {
     var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
 
@@ -103,9 +104,14 @@ module.exports = function proxy(host, options) {
       parseBody,
       createReqOptions
     ]);
+    return buildProxyReq;
+  }
 
-    // ProxyRequestPair // { settings, body }
-    buildProxyReq.then(function(results) {
+  return function handleProxy(req, res, next) {
+    // Do not proxy request if filter returns false.
+    if (!filter(req, res)) { return next(); }
+
+    buildProxyReq(req, res, options).then(function(results) {
       var bodyContent = results[0];
       var reqOpt = results[1];
 
