@@ -39,10 +39,12 @@ module.exports = function proxy(host, options) {
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
   var intercept = options.intercept;
-  var decorateRequest = options.decorateRequest || function(reqOpt) { return reqOpt; };
   var forwardPath = options.forwardPath || defaultForwardPath;
   var decorateReqPath = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
+  var decorateRequest = function() { throw new Error('decorateRequest is deprecated; use decorateReqOpt and decorateReqBody instead')};
+  var decorateReqOpt = options.decorateReqOpt || function (reqOpt /*, req */) { return reqOpt; };
+  var decorateReqBody = options.decorateReqBody || function (bodyContent /*, req*/) { return bodyContent; };
 
   // For backwards compatability, we default to legacy behavior for newly added settings.
   var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
@@ -50,29 +52,21 @@ module.exports = function proxy(host, options) {
   // need to get decorateReqPath and decorateRequest off this scope so I can move this
   function decorateRequestWrapper(reqOpt, req, bodyContent) {
 
-    // This is just because of a legacy expectation that decorateRequest be
-    // handed the bodyContent on reqOpts. Split this up next.
-    if (parseReqBody) {
-      reqOpt.bodyContent = bodyContent;
-    }
-
     return new Promise(function(resolve) {
-      Promise
-        .all([
-          decorateReqPath(req),   // resolve path
-          // split up into bodyContent and reqOpt in future commit
-          decorateRequest(reqOpt, req),  // resolve decorateRequestHook
+      Promise.all([
+          decorateReqPath(req),
+          decorateReqOpt(reqOpt, req),
+          decorateReqBody(bodyContent, req)
         ])
+        //.then(resolve)
         .then(function(values) {
           var path = values[0];
           var reqOpt = values[1];
-          var bodyContent = reqOpt.bodyContent;
+          var bodyContent = values[2];
 
-          delete reqOpt.bodyContent;
           reqOpt.path = path;
 
-          // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
-          if (parseReqBody) {
+          if (bodyContent) {
             bodyContent = options.reqAsBuffer ?
               asBuffer(bodyContent, options) :
               asBufferOrString(bodyContent);
