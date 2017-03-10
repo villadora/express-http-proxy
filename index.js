@@ -79,7 +79,9 @@ module.exports = function proxy(host, options) {
         asBuffer(bodyContent, options) :
         asBufferOrString(bodyContent);
 
-      if (Object.keys(bodyContent).length) {
+      // Only set a content length if the body has keys.
+      // Parse is needed as Buffer is interpreted as [{, }] so length is 2.
+      if (Object.keys(JSON.parse(bodyContent)).length) {
         reqOpt.headers['content-length'] = getContentLength(bodyContent);
       }
 
