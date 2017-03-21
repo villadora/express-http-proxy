@@ -112,7 +112,7 @@ module.exports = function proxy(host, options) {
 
       Promise
         // Pattern:   always call the maybe function; have a default noop.
-        // Pattern:   use Promise.resolve here to avoid having to guess if its a promise or not.
+        // Pattern:   use Promise.resolve here to avoid having to sort out if its a promise or not.
         .resolve(decorateRequestWrapper(reqOpt, req, bodyContent))
         .then(function(responseArray) {
           var processedReqOpt = responseArray[0];
@@ -190,7 +190,8 @@ module.exports = function proxy(host, options) {
                   res.send(rspData);
                 }
               }
-            });
+            })
+            .catch(next);
 
 
         })
@@ -198,6 +199,11 @@ module.exports = function proxy(host, options) {
     });
   };
 
+  // WIP: req, res, and next are not needed until the callback method.
+  // split into a thennable
+  /**** [
+    SEND PROXY REQUEST
+  ] ****/
   function sendProxyRequest(req, res, next, bodyContent, reqOpt) {
       return new Promise(function(resolve, reject) {
         var protocol = parseHost(host, req, options).module;
@@ -225,7 +231,7 @@ module.exports = function proxy(host, options) {
             res.writeHead(504, {'Content-Type': 'text/plain'});
             res.end();
           } else {
-            next(err);
+            reject(err);
           }
         });
 
