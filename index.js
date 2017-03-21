@@ -133,7 +133,7 @@ module.exports = function proxy(host, options) {
           /**** [
             SEND PROXY REQUEST
           ] ****/
-          sendProxyRequest(req, res, next, bodyContent, processedReqOpt)
+          sendProxyRequest(req, res, bodyContent, processedReqOpt)
             .then(function(proxyResponse) {
               var rsp = proxyResponse[0];
               var rspData = proxyResponse[1];
@@ -210,7 +210,7 @@ module.exports = function proxy(host, options) {
   /**** [
     SEND PROXY REQUEST
   ] ****/
-  function sendProxyRequest(req, res, next, bodyContent, reqOpt) {
+  function sendProxyRequest(req, res, bodyContent, reqOpt) {
       return new Promise(function(resolve, reject) {
         var protocol = parseHost(host, req, options).module;
         var proxyReq = protocol.request(reqOpt, function(rsp) {
