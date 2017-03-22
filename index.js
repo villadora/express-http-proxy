@@ -39,10 +39,15 @@ module.exports = function proxy(host, options) {
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
   var intercept = options.intercept;
-  var decorateRequest = options.decorateRequest || function(reqOpt) { return reqOpt; };
   var forwardPath = options.forwardPath || defaultForwardPath;
   var decorateReqPath = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
+  var decorateReqOpt = options.decorateReqOpt || function (reqOpt /*, req */) { return reqOpt; };
+  var decorateReqBody = options.decorateReqBody || function (bodyContent /*, req*/) { return bodyContent; };
+
+  if (options.decorateRequest) {
+    throw new Error('decorateRequest is deprecated; use decorateReqOpt and decorateReqBody instead');
+  }
 
   // For backwards compatability, we default to legacy behavior for newly added settings.
   var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
@@ -50,29 +55,20 @@ module.exports = function proxy(host, options) {
   // need to get decorateReqPath and decorateRequest off this scope so I can move this
   function decorateRequestWrapper(reqOpt, req, bodyContent) {
 
-    // This is just because of a legacy expectation that decorateRequest be
-    // handed the bodyContent on reqOpts. Split this up next.
-    if (parseReqBody) {
-      reqOpt.bodyContent = bodyContent;
-    }
-
     return new Promise(function(resolve) {
-      Promise
-        .all([
-          decorateReqPath(req),   // resolve path
-          // split up into bodyContent and reqOpt in future commit
-          decorateRequest(reqOpt, req),  // resolve decorateRequestHook
+      Promise.all([
+          decorateReqPath(req),
+          decorateReqOpt(reqOpt, req),
+          decorateReqBody(bodyContent, req)
         ])
         .then(function(values) {
           var path = values[0];
           var reqOpt = values[1];
-          var bodyContent = reqOpt.bodyContent;
+          var bodyContent = values[2];
 
-          delete reqOpt.bodyContent;
           reqOpt.path = path;
 
-          // NOTE: at this point, if parseReqBody is false, bodyContent is undefined.  could simplify this logic
-          if (parseReqBody) {
+          if (bodyContent) {
             bodyContent = options.reqAsBuffer ?
               asBuffer(bodyContent, options) :
               asBufferOrString(bodyContent);
@@ -92,10 +88,9 @@ module.exports = function proxy(host, options) {
     });
   }
 
-  return function handleProxy(req, res, next) {
-    // Do not proxy request if filter returns false.
-    if (!filter(req, res)) { return next(); }
 
+  // ProxyRequestPair // { settings, body }
+  function buildProxyReq(req, res, options) {
     var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
 
@@ -103,16 +98,21 @@ module.exports = function proxy(host, options) {
       parseBody,
       createReqOptions
     ]);
+    return buildProxyReq;
+  }
 
-    // ProxyRequestPair // { settings, body }
-    buildProxyReq.then(function(results) {
+  return function handleProxy(req, res, next) {
+    // Do not proxy request if filter returns false.
+    if (!filter(req, res)) { return next(); }
+
+    buildProxyReq(req, res, options).then(function(results) {
       var bodyContent = results[0];
       var reqOpt = results[1];
 
 
       Promise
         // Pattern:   always call the maybe function; have a default noop.
-        // Pattern:   use Promise.resolve here to avoid having to guess if its a promise or not.
+        // Pattern:   use Promise.resolve here to avoid having to sort out if its a promise or not.
         .resolve(decorateRequestWrapper(reqOpt, req, bodyContent))
         .then(function(responseArray) {
           var processedReqOpt = responseArray[0];
@@ -127,7 +127,7 @@ module.exports = function proxy(host, options) {
           /**** [
             SEND PROXY REQUEST
           ] ****/
-          sendProxyRequest(req, res, next, bodyContent, processedReqOpt)
+          sendProxyRequest(req, res, bodyContent, processedReqOpt)
             .then(function(proxyResponse) {
               var rsp = proxyResponse[0];
               var rspData = proxyResponse[1];
@@ -190,7 +190,8 @@ module.exports = function proxy(host, options) {
                   res.send(rspData);
                 }
               }
-            });
+            })
+            .catch(next);
 
 
         })
@@ -198,7 +199,12 @@ module.exports = function proxy(host, options) {
     });
   };
 
-  function sendProxyRequest(req, res, next, bodyContent, reqOpt) {
+  // WIP: req, res, and next are not needed until the callback method.
+  // split into a thennable
+  /**** [
+    SEND PROXY REQUEST
+  ] ****/
+  function sendProxyRequest(req, res, bodyContent, reqOpt) {
       return new Promise(function(resolve, reject) {
         var protocol = parseHost(host, req, options).module;
         var proxyReq = protocol.request(reqOpt, function(rsp) {
@@ -225,7 +231,7 @@ module.exports = function proxy(host, options) {
             res.writeHead(504, {'Content-Type': 'text/plain'});
             res.end();
           } else {
-            next(err);
+            reject(err);
           }
         });
 
