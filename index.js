@@ -228,6 +228,7 @@ module.exports = function proxy(host, options) {
           }
         });
 
+        // do reject here and handle this later on
         proxyReq.on('error', function(err) {
           // reject(error);
           if (err.code === 'ECONNRESET') {
