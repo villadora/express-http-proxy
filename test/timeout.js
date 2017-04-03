@@ -2,17 +2,7 @@ var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
-
-function proxyTarget(port, timeout) {
-  'use strict';
-  var other = express();
-  other.get('/', function(req, res) {
-    setTimeout(function() {
-      res.send('Success');
-    },timeout);
-  });
-  return other.listen(port);
-}
+var proxyTarget = require('./support/proxyTarget');
 
 describe('honors timeout option', function() {
   'use strict';

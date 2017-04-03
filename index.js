@@ -26,6 +26,7 @@ var url = require('url');
 var zlib = require('zlib');
 var requestOptions = require('./lib/requestOptions');
 var isUnset = require('./lib/isUnset');
+var chunkLength = require('./lib/chunkLength');
 
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
@@ -49,7 +50,6 @@ module.exports = function proxy(host, options) {
 
   // need to get decorateReqPath and decorateRequest off this scope so I can move this
   function decorateRequestWrapper(reqOpt, req, bodyContent) {
-
     // This is just because of a legacy expectation that decorateRequest be
     // handed the bodyContent on reqOpts. Split this up next.
     if (parseReqBody) {
@@ -299,14 +299,6 @@ function bodyEncoding(options) {
   return options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
 }
 
-
-function chunkLength(chunks) {
-
-
-  return chunks.reduce(function(len, buf) {
-    return len + buf.length;
-  }, 0);
-}
 
 function defaultForwardPathAsync(forwardPath) {
 
