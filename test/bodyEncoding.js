@@ -29,6 +29,7 @@ describe('body encoding', function() {
     app.use(proxy('localhost:8109', {
       reqBodyEncoding: null,
       decorateReqBody: function(bodyContent) {
+        debugger;
         assert((new Buffer(bodyContent).toString('hex')).indexOf(pngData.toString('hex')) >= 0,
           'body should contain same data');
         return bodyContent;
