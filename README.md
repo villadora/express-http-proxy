@@ -130,34 +130,64 @@ first request.
 
 #### decorateRequest
 
-You can change the request options before it is sent to the target.   
+REMOVED:  See ```decorateReqOpt``` and ```decorateReqBody```.
+
+#### decorateReqOpt
+
+You can mutate the request options before sending the proxyRequest.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateRequest: function(proxyReq, originalReq) {
+  decorateReqOpt: function(proxyReq, srcReq) {
     // you can update headers
     proxyReq.headers['Content-Type'] = 'text/html';
     // you can change the method
     proxyReq.method = 'GET';
-    // you can munge the bodyContent.
-    proxyReq.bodyContent = proxyReq.bodyContent.replace(/losing/, 'winning!');
+    // you could change the path
+    proxyReq.path = 'http://dev/null'
     return proxyReq;
   }
 }));
 ```
 
-Use a Promise for async decorations.
+You can use a Promise for async style.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateRequest: function(proxyReq, originalReq) {
+  decorateReqOpt: function(proxyReq, srcReq) {
     return new Promise(function(resolve, reject) {
-      proxyReq.bodyContent = proxyReq.bodyContent.replace(/losing/, 'winning!');
+      proxyReq.headers['Content-Type'] = 'text/html';
       resolve(proxyReq);
     })
   }
 }));
+```
 
+#### decorateReqBody
+
+You can mutate the body content before sending the proxyRequest.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  decorateReqBody: function(bodyContent, srcReq) {
+    return bodyContent.split('').reverse().join('');
+  }
+}));
+```
+
+You can use a Promise for async style.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  decorateReqBody: function(proxyReq, srcReq) {
+    return new Promise(function(resolve, reject) {
+      http.get('http://dev/null', function (err, res) {
+        if (err) { reject(err); }
+        resolve(res);
+      });
+    })
+  }
+}));
 ```
 
 #### https
@@ -276,7 +306,8 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
-| 0.11.1 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
+| UNRELEASED MAJOR REV | REMOVE decorateRequest, ADD decorateReqOpts and decorateReqBody |
+| 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
 | 0.9.1 | Documentation updates.  Set 'Accept-Encoding' header to match bodyEncoding. |
