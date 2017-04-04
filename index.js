@@ -38,7 +38,7 @@ var Container = {
   proxy: {
     req: {},
     res: {},
-    reqBody: {},
+    bodyContent: {},
     reqBuilder: {}
   },
   options: {}
@@ -105,7 +105,7 @@ module.exports = function proxy(host, options) {
           delete reqOpt.params;
 
           Container.proxy.reqBuilder = reqOpt;
-          Container.proxy.reqBody = bodyContent;
+          Container.proxy.bodyContent = bodyContent;
           // still need to resolve the bodyContent stuff
           resolve(Container);
         });
@@ -125,7 +125,7 @@ module.exports = function proxy(host, options) {
      Promise
       .all([parseBody, createReqOptions])
       .then(function(responseArray) {
-        Container.proxy.reqBody = responseArray[0];
+        Container.proxy.bodyContent = responseArray[0];
         Container.proxy.reqBuilder = responseArray[1];
         resolve(Container);
       });
@@ -152,87 +152,80 @@ module.exports = function proxy(host, options) {
     //.catch(next)
 
     buildProxyReq(Container)
-      .then(decorateRequestWrapper)
+      .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
       .then(sendProxyRequest)
+      .then(decorateProxyResponse)
       .then(function(Container) {
-          var processedReqOpt = Container.proxy.reqBuilder;
-          var bodyContent = Container.proxy.reqBody;
+      //.then(function(proxyResponse) {
+        var rsp = Container.proxy.res;
+        var rspData = Container.proxy.resData;
+        var res = Container.user.res;
 
-          // WIP: req, res, and next are not needed until the callback method.
-          // split into a thennable
-          /**** [
-            SEND PROXY REQUEST
-          ] ****/
-          sendProxyRequest(req, res, bodyContent, processedReqOpt)
-            .then(function(proxyResponse) {
-              var rsp = proxyResponse[0];
-              var rspData = proxyResponse[1];
+        if (!res.headersSent) {
+          res.status(rsp.statusCode);
+          Object.keys(rsp.headers)
+            .filter(function(item) { return item !== 'transfer-encoding'; })
+            .forEach(function(item) {
+              res.set(item, rsp.headers[item]);
+            });
+        }
 
-              if (!res.headersSent) {
-                res.status(rsp.statusCode);
-                Object.keys(rsp.headers)
-                  .filter(function(item) { return item !== 'transfer-encoding'; })
-                  .forEach(function(item) {
-                    res.set(item, rsp.headers[item]);
-                  });
-              }
+        function postIntercept(res, next, rspData) {
+          return function(err, rspd, sent) {
+            if (err) {
+              return next(err);
+            }
+            rspd = asBuffer(rspd, options);
+            rspd = maybeZipResponse(rspd, res);
 
-              function postIntercept(res, next, rspData) {
-                return function(err, rspd, sent) {
-                  if (err) {
-                    return next(err);
-                  }
-                  rspd = asBuffer(rspd, options);
-                  rspd = maybeZipResponse(rspd, res);
+            if (!Buffer.isBuffer(rspd)) {
+              next(new Error('intercept should return string or' +
+                    'buffer as data'));
+            }
 
-                  if (!Buffer.isBuffer(rspd)) {
-                    next(new Error('intercept should return string or' +
-                          'buffer as data'));
-                  }
+            // TODO: return rspd here
 
-                  // TODO: return rspd here
+            // afterIntercept
+            if (!res.headersSent) {
+              res.set('content-length', rspd.length);
+            } else if (rspd.length !== rspData.length) {
+              var error = '"Content-Length" is already sent,' +
+                    'the length of response data can not be changed';
+              next(new Error(error));
+            }
 
-                  // afterIntercept
-                  if (!res.headersSent) {
-                    res.set('content-length', rspd.length);
-                  } else if (rspd.length !== rspData.length) {
-                    var error = '"Content-Length" is already sent,' +
-                          'the length of response data can not be changed';
-                    next(new Error(error));
-                  }
+            //  returns res to user
+            if (!sent) {
+              res.send(rspd);
+            }
+          };
+        }
 
-                  //  returns res to user
-                  if (!sent) {
-                    res.send(rspd);
-                  }
-                };
-              }
+        // maybe this should actually use a wrapper pattern.
+        // if (intercept)
+        //   beforeIntercept()
+        //   intercept()
+        //   afterIntercept();
 
-              // maybe this should actually use a wrapper pattern.
-              // if (intercept)
-              //   beforeIntercept()
-              //   intercept()
-              //   afterIntercept();
-
-              if (intercept) {
-                // beforeIntercept
-                rspData = maybeUnzipResponse(rspData, res);
-                var callback = postIntercept(res, next, rspData);
-                intercept(rsp, rspData, req, res, callback);
-              } else {
-                // see issue https://github.com/villadora/express-http-proxy/issues/104
-                // Not sure how to automate tests on this line, so be careful when changing.
-                if (!res.headersSent) {
-                  res.send(rspData);
-                }
-              }
-            })
-            .catch(next);
-
-
-        })
-        .catch(next);
+        if (intercept) {
+          // beforeIntercept
+          rspData = maybeUnzipResponse(rspData, res);
+          var callback = postIntercept(res, next, rspData);
+          intercept(rsp, rspData, req, res, callback);
+        } else {
+          // see issue https://github.com/villadora/express-http-proxy/issues/104
+          // Not sure how to automate tests on this line, so be careful when changing.
+          if (!res.headersSent) {
+            res.send(rspData);
+          }
+        }
+      })
+      .catch(next);
   };
+
+  function decorateProxyResponse(Container) {
+    return Promise.resolve(Container);
+  }
 
   // WIP: req, res, and next are not needed until the callback method.
   // split into a thennable
@@ -283,7 +276,7 @@ module.exports = function proxy(host, options) {
         });
 
 
-        // this shit should go elsewhere, down the chain
+        // this guy should go elsewhere, down the chain
         if (parseReqBody) {
           // We are parsing the body ourselves so we need to write the body content
           // and then manually end the request.
