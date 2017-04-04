@@ -80,7 +80,7 @@ You can intercept the response before sending it back to the client.
 ```js
 app.use('/proxy', proxy('www.google.com', {
   intercept: function(rsp, data, req, res, callback) {
-    // rsp - original response from the target
+    // rsp - original response from the proxy
     data = JSON.parse(data.toString('utf8'));
     callback(null, JSON.stringify(data));
   }
