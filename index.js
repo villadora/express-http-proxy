@@ -19,86 +19,17 @@ var https = require('https');
 var url = require('url');
 var zlib = require('zlib');
 var requestOptions = require('./lib/requestOptions');
-var isUnset = require('./lib/isUnset');
 var chunkLength = require('./lib/chunkLength');
 var Container = require('./lib/scopeContainer');
-
-
-
-function resolveOptions(options) {
-  // resolve user argument to program usable options
-  // currenlty, we use a mix of strageies to allow an over-rider;
-  options = options || {};
-
-  if (options.decorateRequest) {
-    throw new Error(
-      'decorateRequest is REMOVED; use decorateReqOpt and decorateReqBody instead.  see README.md'
-    );
-  }
-
-  var  forwardPath = options.forwardPath || defaultForwardPath;
-
-  return {
-    decorateReqPath: options.forwardPathAsync || defaultForwardPathAsync(forwardPath),
-    filter: options.filter || defaultFilter,
-    decorateReqOpt: options.decorateReqOpt || function(reqOpt /*, req */) { return reqOpt; },
-    decorateReqBody: options.decorateReqBody || function(bodyContent /*, req*/) { return bodyContent; },
-    // For backwards compatability, we default to legacy behavior for newly added settings.
-    parseReqBody: isUnset(options.parseReqBody) ? true : options.parseReqBody,
-    reqBodyEncoding: options.reqBodyEncoding,
-    headers: options.headers,
-    preserveReqSession: options.preserveReqSession,
-    https: options.https,
-    port: options.port,
-    intercept: options.intercept
-  };
-}
+var resolveOptions = require('./lib/resolveOptions');
+var asBuffer = require('./lib/asBuffer').asBuffer;
+var decorateRequestWrapper = require('./lib/decorateRequestWrapper');
 
 module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
   // TODO: lowercase
   Container.options = resolveOptions(userOptions);
 
-  function decorateRequestWrapper(Container) {
-
-    return new Promise(function(resolve) {
-      Promise.all([
-          Container.options.decorateReqPath(Container.user.req),
-          Container.options.decorateReqOpt(Container.proxy.reqBuilder, Container.user.req),
-          Container.options.decorateReqBody(Container.proxy.bodyContent, Container.user.req)
-        ])
-        .then(function(values) {
-          var path = values[0];
-          var reqOpt = values[1];
-          var bodyContent = values[2];
-
-          if (typeof reqOpt !== 'object') {
-            throw new ReferenceError('decorateReqOpt must return an Object.');
-          }
-
-          reqOpt.path = path;
-
-          if (bodyContent) {
-            bodyContent = Container.options.reqAsBuffer ?
-              asBuffer(bodyContent, Container.options) :
-              asBufferOrString(bodyContent);
-
-            reqOpt.headers['content-length'] = getContentLength(bodyContent);
-
-            if (bodyEncoding(Container.options)) {
-              reqOpt.headers['Accept-Charset'] = bodyEncoding(Container.options);
-            }
-          }
-
-          delete reqOpt.params;
-
-          Container.proxy.reqBuilder = reqOpt;
-          Container.proxy.bodyContent = bodyContent;
-          // still need to resolve the bodyContent stuff
-          resolve(Container);
-        });
-    });
-  }
 
   function buildProxyReq(Container) {
     var req = Container.user.req;
@@ -230,74 +161,6 @@ function parseHost(host, req, options) {
   };
 }
 
-function defaultFilter() {
-  // No-op version of filter.  Allows everything!
-
-  return true;
-}
-
-function defaultForwardPath(req) {
-
-  return url.parse(req.url).path;
-}
-
-function bodyEncoding(options) {
-
-
-  /* For reqBodyEncoding, these is a meaningful difference between null and
-   * undefined.  null should be passed forward as the value of reqBodyEncoding,
-   * and undefined should result in utf-8.
-   */
-
-  return options.reqBodyEncoding !== undefined ? options.reqBodyEncoding: 'utf-8';
-}
-
-
-function defaultForwardPathAsync(forwardPath) {
-
-  return function(req, res) {
-    return new Promise(function(resolve) {
-      resolve(forwardPath(req, res));
-    });
-  };
-}
-
-function asBuffer(body, options) {
-
-  var ret;
-  if (Buffer.isBuffer(body)) {
-    ret = body;
-  } else if (typeof body === 'object') {
-    ret = new Buffer(JSON.stringify(body), bodyEncoding(options));
-  } else if (typeof body === 'string') {
-    ret = new Buffer(body, bodyEncoding(options));
-  }
-  return ret;
-}
-
-function asBufferOrString(body) {
-
-  var ret;
-  if (Buffer.isBuffer(body)) {
-    ret = body;
-  } else if (typeof body === 'object') {
-    ret = JSON.stringify(body);
-  } else if (typeof body === 'string') {
-    ret = body;
-  }
-  return ret;
-}
-
-function getContentLength(body) {
-
-  var result;
-  if (Buffer.isBuffer(body)) { // Buffer
-    result = body.length;
-  } else if (typeof body === 'string') {
-    result = Buffer.byteLength(body);
-  }
-  return result;
-}
 
 function isResGzipped(res) {
   return res._headers['content-encoding'] === 'gzip';
