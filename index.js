@@ -56,7 +56,6 @@ module.exports = function proxy(host, options) {
   /**
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
    */
-  var intercept = options.intercept;
   var forwardPath = options.forwardPath || defaultForwardPath;
   var decorateReqPath = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
   var filter = options.filter || defaultFilter;
@@ -155,62 +154,6 @@ module.exports = function proxy(host, options) {
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
       .then(sendProxyRequest)
       .then(decorateProxyResponse)
-      .then(function(Container) {
-      //.then(function(proxyResponse) {
-        var rsp = Container.proxy.res;
-        var rspData = Container.proxy.resData;
-        var res = Container.user.res;
-
-        function postIntercept(res, next, rspData) {
-          return function(err, rspd, sent) {
-            if (err) {
-              return next(err);
-            }
-            rspd = asBuffer(rspd, options);
-            rspd = maybeZipResponse(rspd, res);
-
-            if (!Buffer.isBuffer(rspd)) {
-              next(new Error('intercept should return string or' +
-                    'buffer as data'));
-            }
-
-            // TODO: return rspd here
-
-            // afterIntercept
-            if (!res.headersSent) {
-              res.set('content-length', rspd.length);
-            } else if (rspd.length !== rspData.length) {
-              var error = '"Content-Length" is already sent,' +
-                    'the length of response data can not be changed';
-              next(new Error(error));
-            }
-
-            //  returns res to user
-            if (!sent) {
-              res.send(rspd);
-            }
-          };
-        }
-
-        // maybe this should actually use a wrapper pattern.
-        // if (intercept)
-        //   beforeIntercept()
-        //   intercept()
-        //   afterIntercept();
-
-        if (intercept) {
-          // beforeIntercept
-          rspData = maybeUnzipResponse(rspData, res);
-          var callback = postIntercept(res, next, rspData);
-          intercept(rsp, rspData, req, res, callback);
-        } else {
-          // see issue https://github.com/villadora/express-http-proxy/issues/104
-          // Not sure how to automate tests on this line, so be careful when changing.
-          if (!res.headersSent) {
-            res.send(rspData);
-          }
-        }
-      })
       .catch(next);
   };
 
@@ -400,6 +343,10 @@ var maybeZipResponse = zipOrUnzip('gzipSync');
 function decorateProxyResponse(Container) {
     var rsp = Container.proxy.res;
     var res = Container.user.res;
+    var rspData = Container.proxy.resData;
+    var intercept = Container.options.intercept;
+    var next = Container.user.next;
+    var req = Container.user.req;
 
     if (!res.headersSent) {
         res.status(rsp.statusCode);
@@ -409,6 +356,57 @@ function decorateProxyResponse(Container) {
             res.set(item, rsp.headers[item]);
         });
     }
+
+    function postIntercept(res, next, rspData) {
+        return function(err, rspd, sent) {
+            if (err) {
+                return next(err);
+            }
+            rspd = asBuffer(rspd, Container.options);
+            rspd = maybeZipResponse(rspd, res);
+
+            if (!Buffer.isBuffer(rspd)) {
+                next(new Error('intercept should return string or' +
+                    'buffer as data'));
+            }
+
+            // TODO: return rspd here
+
+            // afterIntercept
+            if (!res.headersSent) {
+                res.set('content-length', rspd.length);
+            } else if (rspd.length !== rspData.length) {
+                var error = '"Content-Length" is already sent,' +
+                    'the length of response data can not be changed';
+                next(new Error(error));
+            }
+
+            //  returns res to user
+            if (!sent) {
+                res.send(rspd);
+            }
+        };
+    }
+
+    // maybe this should actually use a wrapper pattern.
+    // if (intercept)
+    //   beforeIntercept()
+    //   intercept()
+    //   afterIntercept();
+
+    if (intercept) {
+        // beforeIntercept
+        rspData = maybeUnzipResponse(rspData, res);
+        var callback = postIntercept(res, next, rspData);
+        intercept(rsp, rspData, req, res, callback);
+    } else {
+        // see issue https://github.com/villadora/express-http-proxy/issues/104
+        // Not sure how to automate tests on this line, so be careful when changing.
+        if (!res.headersSent) {
+        res.send(rspData);
+        }
+    }
+
 
     return Container;
 }

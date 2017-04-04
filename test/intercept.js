@@ -3,13 +3,14 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('intercept', function() {
+describe.only('intercept', function() {
   'use strict';
 
   it('has access to original response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
       intercept: function(rsp) {
+        debugger;
         assert(rsp.connection);
         assert(rsp.socket);
         assert(rsp.headers);
