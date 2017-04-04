@@ -7,11 +7,11 @@
 // Currently working on identifying through comments the workflow steps.
 
 // Phase 1: in progress, nearly complete: Break workflow into composable steps without changing them much
-// Phase 2: extract workflow methods from main file
-// Phase 3: cleanup workflow methods so they all present as over-rideable thennables
-// Phase 4: cleanup options interface
-// Update/add tests to unit test workflow steps independently
-// Phase 4: update docs and release
+// *: cleanup options interface
+// *: extract workflow methods from main file
+// *: cleanup workflow methods so they all present as over-rideable thennables
+// *: Update/add tests to unit test workflow steps independently
+// *: update docs and release
 
 var assert = require('assert');
 var http = require('http');
@@ -21,56 +21,51 @@ var zlib = require('zlib');
 var requestOptions = require('./lib/requestOptions');
 var isUnset = require('./lib/isUnset');
 var chunkLength = require('./lib/chunkLength');
+var Container = require('./lib/scopeContainer');
 
-// The original program relied on a multi-nested closure to provide access to all these
-// variables in scope.
-// In order to separate them (prior to standarding interfaces), I'm making a scope container.
-// This may be transitional, and I want to hide the details of this from hooks
-var Container = {
-  user: {
-    req: {},
-    res: {},
-    next: null,
-  },
-  proxy: {
-    req: {},
-    res: {},
-    bodyContent: {},
-    reqBuilder: {}
-  },
-  options: {}
-};
 
-module.exports = function proxy(host, options) {
-  assert(host, 'Host should not be empty');
 
-  // move options into an external constructor
+function resolveOptions(options) {
+  // resolve user argument to program usable options
+  // currenlty, we use a mix of strageies to allow an over-rider;
   options = options || {};
 
-  /**
-   * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
-   */
-  var forwardPath = options.forwardPath || defaultForwardPath;
-  var decorateReqPath = options.forwardPathAsync || defaultForwardPathAsync(forwardPath);
-  var filter = options.filter || defaultFilter;
-  var decorateReqOpt = options.decorateReqOpt || function(reqOpt /*, req */) { return reqOpt; };
-  var decorateReqBody = options.decorateReqBody || function(bodyContent /*, req*/) { return bodyContent; };
-
   if (options.decorateRequest) {
-    throw new Error('decorateRequest is deprecated; use decorateReqOpt and decorateReqBody instead');
+    throw new Error(
+      'decorateRequest is REMOVED; use decorateReqOpt and decorateReqBody instead.  see README.md'
+    );
   }
 
-  // For backwards compatability, we default to legacy behavior for newly added settings.
-  var parseReqBody = isUnset(options.parseReqBody) ? true : options.parseReqBody;
+  var  forwardPath = options.forwardPath || defaultForwardPath;
 
-  // need to get decorateReqPath and decorateRequest off this scope so I can move this
+  return {
+    decorateReqPath: options.forwardPathAsync || defaultForwardPathAsync(forwardPath),
+    filter: options.filter || defaultFilter,
+    decorateReqOpt: options.decorateReqOpt || function(reqOpt /*, req */) { return reqOpt; },
+    decorateReqBody: options.decorateReqBody || function(bodyContent /*, req*/) { return bodyContent; },
+    // For backwards compatability, we default to legacy behavior for newly added settings.
+    parseReqBody: isUnset(options.parseReqBody) ? true : options.parseReqBody,
+    reqBodyEncoding: options.reqBodyEncoding,
+    headers: options.headers,
+    preserveReqSession: options.preserveReqSession,
+    https: options.https,
+    port: options.port,
+    intercept: options.intercept
+  };
+}
+
+module.exports = function proxy(host, userOptions) {
+  assert(host, 'Host should not be empty');
+  // TODO: lowercase
+  Container.options = resolveOptions(userOptions);
+
   function decorateRequestWrapper(Container) {
 
     return new Promise(function(resolve) {
       Promise.all([
-          decorateReqPath(Container.user.req),
-          decorateReqOpt(Container.proxy.reqBuilder, Container.user.req),
-          decorateReqBody(Container.proxy.bodyContent, Container.user.req)
+          Container.options.decorateReqPath(Container.user.req),
+          Container.options.decorateReqOpt(Container.proxy.reqBuilder, Container.user.req),
+          Container.options.decorateReqBody(Container.proxy.bodyContent, Container.user.req)
         ])
         .then(function(values) {
           var path = values[0];
@@ -84,14 +79,14 @@ module.exports = function proxy(host, options) {
           reqOpt.path = path;
 
           if (bodyContent) {
-            bodyContent = options.reqAsBuffer ?
-              asBuffer(bodyContent, options) :
+            bodyContent = Container.options.reqAsBuffer ?
+              asBuffer(bodyContent, Container.options) :
               asBufferOrString(bodyContent);
 
             reqOpt.headers['content-length'] = getContentLength(bodyContent);
 
-            if (bodyEncoding(options)) {
-              reqOpt.headers['Accept-Charset'] = bodyEncoding(options);
+            if (bodyEncoding(Container.options)) {
+              reqOpt.headers['Accept-Charset'] = bodyEncoding(Container.options);
             }
           }
 
@@ -110,7 +105,8 @@ module.exports = function proxy(host, options) {
     var res = Container.user.res;
     var options = Container.options;
 
-    var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
+    // TODO: needs to move into resolveOptions
+    var parseBody = (!options.parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
     var createReqOptions = requestOptions.create(req, res, options, host);
 
    return new Promise(function(resolve) {
@@ -125,13 +121,13 @@ module.exports = function proxy(host, options) {
   }
 
   return function handleProxy(req, res, next) {
+    // TODO: give container a constructor instead, i think
     Container.user.req = req;
     Container.user.res = res;
     Container.user.next = next;
-    Container.options = options; // TODO: move up, and capture functionality that coerces hooks to methods
 
     // Do not proxy request if filter returns false.
-    if (!filter(req, res)) { return next(); }
+    if (!Container.options.filter(req, res)) { return next(); }
 
     buildProxyReq(Container)
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
@@ -186,7 +182,7 @@ module.exports = function proxy(host, options) {
         });
 
         // this guy should go elsewhere, down the chain
-        if (parseReqBody) {
+        if (options.parseReqBody) {
           // We are parsing the body ourselves so we need to write the body content
           // and then manually end the request.
           if (bodyContent.length) {
@@ -392,7 +388,6 @@ function decorateUserRes(Container) {
 
 function sendUserRes(Container) {
     Promise.resolve(Container);
-    //debugger;
     if (!Container.user.res.headersSent) {
         Container.user.res.send(Container.proxy.resData);
     }
