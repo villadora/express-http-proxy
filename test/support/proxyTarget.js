@@ -20,7 +20,6 @@ function proxyTarget(port, timeout) {
     //req.on('data', function(chunk) { chunks.push(chunk); });
     //req.on('end', function()       {
       //var upload = Buffer.concat(chunks, chunkLength(chunks));
-      //debugger;
       //res.write(upload);
       //res.end();
       //res.json({

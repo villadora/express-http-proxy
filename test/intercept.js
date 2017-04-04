@@ -133,7 +133,7 @@ describe('test intercept on html response from github',function() {
   'use strict';
 
   it('is able to read and manipulate the response', function(done) {
-    this.timeout(1500);  // give it some extra time to get response
+    this.timeout(15000);  // give it some extra time to get response
     var app = express();
     app.use(proxy('https://github.com/villadora/express-http-proxy', {
       intercept: function(targetResponse, data, req, res, cb) {
