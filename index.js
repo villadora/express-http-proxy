@@ -1,23 +1,17 @@
 'use strict';
 
-// ROADMAP:
+// ROADMAP: Major refactoring April 2017
 // There are a lot of competing strategies in this code.
 // It would be easier to follow if we extract to simpler functions, and used
 // a standard, step-wise set of filters with clearer edges and borders.
 // Currently working on identifying through comments the workflow steps.
 
-// I think I could extract reqBody and reqOpt to classes
-
-// I think this might be a good pattern to work toward.
-// might have to partially apply a lot of arguments up top
-//filterRequest(req)
-  //.then(createProxyRequestOptions)
-  //.then(decorateProxyRequestOptions)
-  //.then(decorateProxyRequestBody)
-  //.then(makeProxyRequest)
-  //.then(decorateProxyResponse)
-  //.then(sendUserResponse);
-  //.catch(next)
+// Phase 1: in progress, nearly complete: Break workflow into composable steps without changing them much
+// Phase 2: extract workflow methods from main file
+// Phase 3: cleanup workflow methods so they all present as over-rideable thennables
+// Phase 4: cleanup options interface
+// Update/add tests to unit test workflow steps independently
+// Phase 4: update docs and release
 
 var assert = require('assert');
 var http = require('http');
@@ -28,7 +22,10 @@ var requestOptions = require('./lib/requestOptions');
 var isUnset = require('./lib/isUnset');
 var chunkLength = require('./lib/chunkLength');
 
-
+// The original program relied on a multi-nested closure to provide access to all these
+// variables in scope.
+// In order to separate them (prior to standarding interfaces), I'm making a scope container.
+// This may be transitional, and I want to hide the details of this from hooks
 var Container = {
   user: {
     req: {},
@@ -44,14 +41,11 @@ var Container = {
   options: {}
 };
 
-
 module.exports = function proxy(host, options) {
   assert(host, 'Host should not be empty');
 
   // move options into an external constructor
   options = options || {};
-
-  //var parsedHost;
 
   /**
    * Function :: intercept(targetResponse, data, res, req, function(err, json, sent));
@@ -111,7 +105,6 @@ module.exports = function proxy(host, options) {
     });
   }
 
-  // ProxyRequestPair // { settings, body }
   function buildProxyReq(Container) {
     var req = Container.user.req;
     var res = Container.user.res;
@@ -131,40 +124,25 @@ module.exports = function proxy(host, options) {
     });
   }
 
-
   return function handleProxy(req, res, next) {
     Container.user.req = req;
     Container.user.res = res;
     Container.user.next = next;
-    Container.options = options; // can be moved way up
+    Container.options = options; // TODO: move up, and capture functionality that coerces hooks to methods
 
     // Do not proxy request if filter returns false.
-    // Fix to work on Container
     if (!filter(req, res)) { return next(); }
-
-    //.then(createProxyRequestOptions)
-    //.then(decorateProxyRequestOptions)
-    //.then(decorateProxyRequestBody)
-    //.then(makeProxyRequest)
-    //.then(decorateProxyResponse)
-    //.then(sendUserResponse);
-    //.catch(next)
 
     buildProxyReq(Container)
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
       .then(sendProxyRequest)
-      .then(decorateProxyResponse)
+      //.then(copyProxyResToUserRes)
+      .then(decorateUserRes)
       .then(sendUserRes)
       .catch(next);
   };
 
 
-  // WIP: req, res, and next are not needed until the callback method.
-  // split into a thennable
-  /**** [
-    SEND PROXY REQUEST
-  ] ****/
-  //function sendProxyRequest(req, res, bodyContent, reqOpt) {
   function sendProxyRequest(Container) {
       var req = Container.user.req;
       var res = Container.user.res;
@@ -193,7 +171,7 @@ module.exports = function proxy(host, options) {
           }
         });
 
-        // do reject here and handle this later on
+        // TODO: do reject here and handle this later on
         proxyReq.on('error', function(err) {
           // reject(error);
           if (err.code === 'ECONNRESET') {
@@ -206,7 +184,6 @@ module.exports = function proxy(host, options) {
             reject(err);
           }
         });
-
 
         // this guy should go elsewhere, down the chain
         if (parseReqBody) {
@@ -339,9 +316,7 @@ function zipOrUnzip(method) {
 var maybeUnzipResponse = zipOrUnzip('gunzipSync');
 var maybeZipResponse = zipOrUnzip('gzipSync');
 
-
-
-function decorateProxyResponse(Container) {
+function decorateUserRes(Container) {
     var rsp = Container.proxy.res;
     var res = Container.user.res;
     var rspData = Container.proxy.resData;
@@ -359,7 +334,8 @@ function decorateProxyResponse(Container) {
     }
 
     function postIntercept(res, next, rspData) {
-        return function(err, rspd, sent) {
+       // TODO: handle sent?  or is res.headersSent enough?
+        return function(err, rspd /*, sent */) {
             if (err) {
                 return next(err);
             }
