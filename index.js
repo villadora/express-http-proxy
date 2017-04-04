@@ -161,15 +161,6 @@ module.exports = function proxy(host, options) {
         var rspData = Container.proxy.resData;
         var res = Container.user.res;
 
-        if (!res.headersSent) {
-          res.status(rsp.statusCode);
-          Object.keys(rsp.headers)
-            .filter(function(item) { return item !== 'transfer-encoding'; })
-            .forEach(function(item) {
-              res.set(item, rsp.headers[item]);
-            });
-        }
-
         function postIntercept(res, next, rspData) {
           return function(err, rspd, sent) {
             if (err) {
@@ -223,9 +214,6 @@ module.exports = function proxy(host, options) {
       .catch(next);
   };
 
-  function decorateProxyResponse(Container) {
-    return Promise.resolve(Container);
-  }
 
   // WIP: req, res, and next are not needed until the callback method.
   // split into a thennable
@@ -406,3 +394,23 @@ function zipOrUnzip(method) {
 
 var maybeUnzipResponse = zipOrUnzip('gunzipSync');
 var maybeZipResponse = zipOrUnzip('gzipSync');
+
+
+
+function decorateProxyResponse(Container) {
+    var rsp = Container.proxy.res;
+    var res = Container.user.res;
+
+    if (!res.headersSent) {
+        res.status(rsp.statusCode);
+        Object.keys(rsp.headers)
+        .filter(function(item) { return item !== 'transfer-encoding'; })
+        .forEach(function(item) {
+            res.set(item, rsp.headers[item]);
+        });
+    }
+
+    return Container;
+}
+
+
