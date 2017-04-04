@@ -13,18 +13,19 @@ describe('host can be a dynamic function', function() {
   var firstPort = Math.floor(Math.random() * 10000);
   var secondPort = Math.floor(Math.random() * 10000);
 
+
   app.use('/proxy/:port', proxy(function(req) {
     return 'localhost:' + req.params.port;
   }, {
     memoizeHost: false
   }));
 
-  firstProxyApp.get('/', function(req, res) {
+  firstProxyApp.use('/', function(req, res) {
     res.sendStatus(204);
   });
   firstProxyApp.listen(firstPort);
 
-  secondProxyApp.get('/', function(req, res) {
+  secondProxyApp.use('/', function(req, res) {
     res.sendStatus(200);
   });
   secondProxyApp.listen(secondPort);

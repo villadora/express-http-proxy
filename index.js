@@ -14,61 +14,49 @@
 // *: update docs and release
 
 var assert = require('assert');
-var http = require('http');
-var https = require('https');
-var url = require('url');
 var zlib = require('zlib');
-var requestOptions = require('./lib/requestOptions');
 var chunkLength = require('./lib/chunkLength');
-var Container = require('./lib/scopeContainer');
-var resolveOptions = require('./lib/resolveOptions');
+var ScopeContainer = require('./lib/scopeContainer');
+var requestOptions = require('./lib/requestOptions');
 var asBuffer = require('./lib/asBuffer').asBuffer;
 var decorateRequestWrapper = require('./lib/decorateRequestWrapper');
+var buildProxyReq = require('./lib/buildProxyReq');
 
 module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
-  // TODO: lowercase
-  Container.options = resolveOptions(userOptions);
-
-
-  function buildProxyReq(Container) {
-    var req = Container.user.req;
-    var res = Container.user.res;
-    var options = Container.options;
-
-    // TODO: needs to move into resolveOptions
-    var parseBody = (!options.parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
-    var createReqOptions = requestOptions.create(req, res, options, host);
-
-   return new Promise(function(resolve) {
-     Promise
-      .all([parseBody, createReqOptions])
-      .then(function(responseArray) {
-        Container.proxy.bodyContent = responseArray[0];
-        Container.proxy.reqBuilder = responseArray[1];
-        resolve(Container);
-      });
-    });
-  }
 
   return function handleProxy(req, res, next) {
-    // TODO: give container a constructor instead, i think
-    Container.user.req = req;
-    Container.user.res = res;
-    Container.user.next = next;
+    // TODO: lowercase
+    var Container = new ScopeContainer(req, res, next, host, userOptions);
 
     // Do not proxy request if filter returns false.
     if (!Container.options.filter(req, res)) { return next(); }
 
     buildProxyReq(Container)
+      //.then(determineProtocol)
+      .then(resolveProxyHost)
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
       .then(sendProxyRequest)
-      //.then(copyProxyResToUserRes)
+      //.then(copyProxyResToUserRes)  // add this step by separaing decorateUserRes
       .then(decorateUserRes)
       .then(sendUserRes)
       .catch(next);
   };
 
+  function resolveProxyHost(Container) {
+      var parsedHost;
+
+      if (Container.options.memoizeHost && Container.options.memoizedHost) {
+        parsedHost = Container.options.memoizedHost;
+      } else {
+        parsedHost = requestOptions.parseHost(Container);
+      }
+
+      Container.proxy.reqBuilder.host = parsedHost.host;
+      Container.proxy.reqBuilder.port = Container.options.port || parsedHost.port;
+      Container.proxy.requestModule = parsedHost.module;
+      return Promise.resolve(Container);
+  }
 
   function sendProxyRequest(Container) {
       var req = Container.user.req;
@@ -78,7 +66,7 @@ module.exports = function proxy(host, userOptions) {
       var options = Container.options;
 
       return new Promise(function(resolve, reject) {
-        var protocol = parseHost(host, req, options).module;
+        var protocol = Container.proxy.requestModule;
         var proxyReq = protocol.request(reqOpt, function(rsp) {
           var chunks = [];
           rsp.on('data', function(chunk) { chunks.push(chunk); });
@@ -134,32 +122,6 @@ module.exports = function proxy(host, userOptions) {
 };
 
 // Utility methods from here on down.
-function parseHost(host, req, options) {
-
-  host = (typeof host === 'function') ? host(req) : host.toString();
-
-  if (!host) {
-    return new Error('Empty host parameter');
-  }
-
-  if (!/http(s)?:\/\//.test(host)) {
-    host = 'http://' + host;
-  }
-
-  var parsed = url.parse(host);
-
-  if (!parsed.hostname) {
-    return new Error('Unable to parse hostname, possibly missing protocol://?');
-  }
-
-  var ishttps = options.https || parsed.protocol === 'https:';
-
-  return {
-    host: parsed.hostname,
-    port: parsed.port || (ishttps ? 443 : 80),
-    module: ishttps ? https : http,
-  };
-}
 
 
 function isResGzipped(res) {

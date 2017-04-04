@@ -7,14 +7,14 @@ describe('proxies status code', function() {
   'use strict';
 
   var proxyServer = express();
-  var port = 21231;
+  var port = 21239;
   var proxiedEndpoint = 'http://localhost:' + port;
   var server;
 
   proxyServer.use(proxy(proxiedEndpoint));
 
   beforeEach(function() {
-    server = mockEndpoint.listen(21231);
+    server = mockEndpoint.listen(21239);
   });
 
   afterEach(function() {
