@@ -154,6 +154,7 @@ module.exports = function proxy(host, options) {
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
       .then(sendProxyRequest)
       .then(decorateProxyResponse)
+      .then(sendUserRes)
       .catch(next);
   };
 
@@ -380,11 +381,12 @@ function decorateProxyResponse(Container) {
                     'the length of response data can not be changed';
                 next(new Error(error));
             }
-
-            //  returns res to user
-            if (!sent) {
-                res.send(rspd);
-            }
+            Container.user.res = res;
+            Container.proxy.resData = rspd;
+            return Container;
+            //if (!sent) {
+                //res.send(rspd);
+            //}
         };
     }
 
@@ -398,17 +400,27 @@ function decorateProxyResponse(Container) {
         // beforeIntercept
         rspData = maybeUnzipResponse(rspData, res);
         var callback = postIntercept(res, next, rspData);
-        intercept(rsp, rspData, req, res, callback);
+        Promise.resolve(intercept(rsp, rspData, req, res, callback));
     } else {
+        Promise.resolve(Container);
         // see issue https://github.com/villadora/express-http-proxy/issues/104
         // Not sure how to automate tests on this line, so be careful when changing.
-        if (!res.headersSent) {
-        res.send(rspData);
-        }
+        //if (!res.headersSent) {
+            //res.send(rspData);
+        //}
     }
 
 
     return Container;
+}
+
+function sendUserRes(Container) {
+    Promise.resolve(Container);
+    //debugger;
+    if (!Container.user.res.headersSent) {
+        Container.user.res.send(Container.proxy.resData);
+    }
+    Promise.resolve(Container);
 }
 
 

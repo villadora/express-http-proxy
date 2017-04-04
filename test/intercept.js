@@ -3,7 +3,7 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe.only('intercept', function() {
+describe('intercept', function() {
   'use strict';
 
   it('has access to original response', function(done) {
@@ -26,6 +26,7 @@ describe.only('intercept', function() {
     var app = express();
     app.use(proxy('httpbin.org', {
       intercept: function(rsp, data, req, res, cb) {
+        debugger;
         data = JSON.parse(data.toString('utf8'));
         data.intercepted = true;
         cb(null, JSON.stringify(data));
@@ -36,6 +37,7 @@ describe.only('intercept', function() {
     .get('/ip')
     .end(function(err, res) {
       if (err) { return done(err); }
+      debugger;
       assert(res.body.intercepted);
       done();
     });
