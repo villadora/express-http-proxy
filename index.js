@@ -17,10 +17,10 @@ var assert = require('assert');
 var zlib = require('zlib');
 var chunkLength = require('./lib/chunkLength');
 var ScopeContainer = require('./lib/scopeContainer');
-var requestOptions = require('./lib/requestOptions');
 var asBuffer = require('./lib/asBuffer').asBuffer;
 var decorateRequestWrapper = require('./lib/decorateRequestWrapper');
 var buildProxyReq = require('./lib/buildProxyReq');
+var resolveProxyHost = require('./lib/resolveProxyHost');
 
 module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
@@ -42,21 +42,6 @@ module.exports = function proxy(host, userOptions) {
       .then(sendUserRes)
       .catch(next);
   };
-
-  function resolveProxyHost(Container) {
-      var parsedHost;
-
-      if (Container.options.memoizeHost && Container.options.memoizedHost) {
-        parsedHost = Container.options.memoizedHost;
-      } else {
-        parsedHost = requestOptions.parseHost(Container);
-      }
-
-      Container.proxy.reqBuilder.host = parsedHost.host;
-      Container.proxy.reqBuilder.port = Container.options.port || parsedHost.port;
-      Container.proxy.requestModule = parsedHost.module;
-      return Promise.resolve(Container);
-  }
 
   function sendProxyRequest(Container) {
       var req = Container.user.req;
