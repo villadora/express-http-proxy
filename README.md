@@ -105,14 +105,16 @@ app.use('/proxy', proxy('www.google.com', {
 
 #### intercept
 
-You can intercept the response before sending it back to the client.
+You can intercept the response before sending it back to the client.   You must
+return the callback at the end of your operation.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
   intercept: function(rsp, data, req, res, callback) {
     // rsp - original response from the proxy
     data = JSON.parse(data.toString('utf8'));
-    callback(null, JSON.stringify(data));
+    // YOU MUST return the callback, or your request will silently die here.
+    return callback(null, JSON.stringify(data));
   }
 }));
 ```
@@ -336,7 +338,7 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
-| UNRELEASED MAJOR REV | REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody |
+| UNRELEASED MAJOR REV | REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody.   intercept hook now REQUIRES you to return the cb method. |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |

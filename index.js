@@ -15,11 +15,14 @@
 var ScopeContainer = require('./lib/scopeContainer');
 var assert = require('assert');
 var buildProxyReq = require('./lib/buildProxyReq');
-var decorateRequestWrapper = require('./lib/decorateRequestWrapper');
 var decorateUserRes = require('./lib/decorateUserRes');
 var resolveProxyHost = require('./lib/resolveProxyHost');
 var sendProxyRequest = require('./lib/sendProxyRequest');
 var sendUserRes = require('./lib/sendUserRes');
+var resolveProxyReqPath = require('./app/steps/resolveProxyReqPath');
+var decorateProxyReqOpts = require('./app/steps/decorateProxyReqOpts');
+var decorateProxyReqBody = require('./app/steps/decorateProxyReqBody');
+var prepareProxyReq = require('./app/steps/prepareProxyReq');
 
 module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
@@ -38,13 +41,11 @@ module.exports = function proxy(host, userOptions) {
     // workflow steps with a Promise or simple function.
     buildProxyReq(Container)
       .then(resolveProxyHost)
-      //.then(resolveProxyPath)
-      //.then(decorateProxyReqOpts)
-      //.then(decorateProxyReqBody)
-      .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
-      //.then(prepareProxyReq)
+      .then(decorateProxyReqOpts)
+      .then(resolveProxyReqPath)
+      .then(decorateProxyReqBody)
+      .then(prepareProxyReq)
       .then(sendProxyRequest)
-      //.then(copyProxyResToUserRes)
       .then(decorateUserRes)
       .then(sendUserRes)
       .catch(next);

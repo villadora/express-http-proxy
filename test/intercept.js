@@ -1,10 +1,11 @@
+'use strict';
+
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
 describe('intercept', function() {
-  'use strict';
 
   it('has access to original response', function(done) {
     var app = express();
@@ -27,7 +28,7 @@ describe('intercept', function() {
       intercept: function(rsp, data, req, res, cb) {
         data = JSON.parse(data.toString('utf8'));
         data.intercepted = true;
-        cb(null, JSON.stringify(data));
+        return cb(null, JSON.stringify(data));
       }
     }));
 
@@ -35,6 +36,7 @@ describe('intercept', function() {
     .get('/ip')
     .end(function(err, res) {
       if (err) { return done(err); }
+
       assert(res.body.intercepted);
       done();
     });
@@ -47,7 +49,7 @@ describe('intercept', function() {
       intercept: function(rsp, data, req, res, cb) {
         res.set('x-wombat-alliance', 'mammels');
         res.set('content-type', 'wiki/wiki');
-        cb(null, data);
+        return cb(null, data);
       }
     }));
 
@@ -67,7 +69,7 @@ describe('intercept', function() {
       intercept: function(rsp, data, req, res, cb) {
         data = data.toString().replace('Oh', '<strong>Hey</strong>');
         assert(data !== '');
-        cb(null, data);
+        return cb(null, data);
       }
     }));
 
@@ -130,8 +132,6 @@ describe('test intercept on html response from github',function() {
      issue.
   */
 
-  'use strict';
-
   it('is able to read and manipulate the response', function(done) {
     this.timeout(15000);  // give it some extra time to get response
     var app = express();
@@ -139,7 +139,7 @@ describe('test intercept on html response from github',function() {
       intercept: function(targetResponse, data, req, res, cb) {
         data = data.toString().replace('DOCTYPE','WINNING');
         assert(data !== '');
-        cb(null, data);
+        return cb(null, data);
       }
     }));
 

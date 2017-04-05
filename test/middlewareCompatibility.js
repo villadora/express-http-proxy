@@ -1,11 +1,32 @@
+'use strict';
+
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var bodyParser = require('body-parser');
 var proxy = require('../');
+var proxyTarget = require('../test/support/proxyTarget');
+
+
+var proxyRouteFn = [{
+  method: 'post',
+  path: '/poster',
+  fn: function(req, res) {
+    res.send(req.body);
+  }
+}];
 
 describe('middleware compatibility', function() {
-  'use strict';
+  var proxyServer;
+
+  beforeEach(function() {
+    proxyServer = proxyTarget(12346, 100, proxyRouteFn);
+  });
+
+  afterEach(function() {
+    proxyServer.close();
+  });
+
   it('should use req.body if defined', function(done) {
     var app = express();
 
@@ -24,23 +45,21 @@ describe('middleware compatibility', function() {
       });
     });
 
-    app.use(proxy('httpbin.org', {
+    app.use(proxy('localhost:12346', {
       intercept: function(rsp, data, req, res, cb) {
         assert(req.body);
         assert.equal(req.body.foo, 1);
         assert.equal(req.body.mypost, 'hello');
-        cb(null, data);
+        return cb(null, data);
       }
     }));
 
     request(app)
-      .post('/post')
-      .send({
-        mypost: 'hello'
-      })
+      .post('/poster')
+      .send({ 'mypost': 'hello'})
       .expect(function(res) {
-        assert.equal(res.body.json.foo, 1);
-        assert.equal(res.body.json.mypost, 'hello');
+        assert.equal(res.body.foo, 1);
+        assert.equal(res.body.mypost, 'hello');
       })
       .end(done);
   });
@@ -51,16 +70,16 @@ describe('middleware compatibility', function() {
     app.use(bodyParser.urlencoded({
       extended: false
     }));
-    app.use(proxy('httpbin.org'));
+    app.use(proxy('localhost:12346'));
     request(app)
-      .post('/post')
+      .post('/poster')
       .send({
         mypost: 'hello',
         doorknob: 'wrect'
       })
       .expect(function(res) {
-        assert.equal(res.body.json.doorknob, 'wrect');
-        assert.equal(res.body.json.mypost, 'hello');
+        assert.equal(res.body.doorknob, 'wrect');
+        assert.equal(res.body.mypost, 'hello');
       })
       .end(done);
   });
@@ -71,18 +90,18 @@ describe('middleware compatibility', function() {
     app.use(bodyParser.urlencoded({
       extended: false
     }));
-    app.use(proxy('httpbin.org', {
+    app.use(proxy('localhost:12346', {
       reqAsBuffer: true
     }));
     request(app)
-      .post('/post')
+      .post('/poster')
       .send({
         mypost: 'hello',
         doorknob: 'wrect'
       })
       .expect(function(res) {
-        assert.equal(res.body.json.doorknob, 'wrect');
-        assert.equal(res.body.json.mypost, 'hello');
+        assert.equal(res.body.doorknob, 'wrect');
+        assert.equal(res.body.mypost, 'hello');
       })
       .end(done);
   });
