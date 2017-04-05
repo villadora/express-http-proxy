@@ -160,15 +160,15 @@ first request.
 
 #### decorateRequest
 
-REMOVED:  See ```decorateReqOpt``` and ```decorateReqBody```.
+REMOVED:  See ```decorateProxyReqOpt``` and ```decorateReqBody```.
 
-#### decorateReqOpt
+#### decorateProxyReqOpt
 
 You can mutate the request options before sending the proxyRequest.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateReqOpt: function(proxyReq, srcReq) {
+  decorateProxyReqOpt: function(proxyReq, srcReq) {
     // you can update headers
     proxyReq.headers['Content-Type'] = 'text/html';
     // you can change the method
@@ -184,7 +184,7 @@ You can use a Promise for async style.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateReqOpt: function(proxyReq, srcReq) {
+  decorateProxyReqOpt: function(proxyReq, srcReq) {
     return new Promise(function(resolve, reject) {
       proxyReq.headers['Content-Type'] = 'text/html';
       resolve(proxyReq);
@@ -336,7 +336,7 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
-| UNRELEASED MAJOR REV | REMOVE decorateRequest, ADD decorateReqOpts and decorateReqBody |
+| UNRELEASED MAJOR REV | REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateReqBody |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
