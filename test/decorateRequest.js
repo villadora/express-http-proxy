@@ -18,11 +18,11 @@ describe('decorateRequest', function() {
 
   describe('Supports Promise and non-Promise forms', function() {
 
-    describe('when decorateReqOpts is a simple function (non Promise)', function() {
+    describe('when decorateProxyReqOpts is a simple function (non Promise)', function() {
       it('should mutate the proxied request', function(done) {
         var app = express();
         app.use(proxy('httpbin.org', {
-          decorateReqOpt: function(reqOpt, req) {
+          decorateProxyReqOpt: function(reqOpt, req) {
             reqOpt.headers['user-agent'] = 'test user agent';
             assert(req instanceof http.IncomingMessage);
             return reqOpt;
@@ -39,11 +39,11 @@ describe('decorateRequest', function() {
       });
     });
 
-    describe('when decorateReqOpt is a Promise', function() {
+    describe('when decorateProxyReqOpt is a Promise', function() {
       it('should mutate the proxied request', function(done) {
         var app = express();
         app.use(proxy('httpbin.org', {
-          decorateReqOpt: function(reqOpt, req) {
+          decorateProxyReqOpt: function(reqOpt, req) {
             assert(req instanceof http.IncomingMessage);
             return new Promise(function(resolve) {
               reqOpt.headers['user-agent'] = 'test user agent';
@@ -63,11 +63,11 @@ describe('decorateRequest', function() {
     });
   });
 
-  describe('decorateReqOpt has access to the source request\'s data', function() {
+  describe('decorateProxyReqOpt has access to the source request\'s data', function() {
     it('should have access to ip', function(done) {
       var app = express();
       app.use(proxy('httpbin.org', {
-        decorateReqOpt: function(reqOpts, req) {
+        decorateProxyReqOpt: function(reqOpts, req) {
           assert(req instanceof http.IncomingMessage);
           assert(req.ip);
           return reqOpts;
