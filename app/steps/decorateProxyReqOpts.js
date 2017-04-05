@@ -1,6 +1,6 @@
 'use strict';
 
-function defaultDecorator(proxyReqOptBuilder, userReq) {
+function defaultDecorator(proxyReqOptBuilder /*, userReq */) {
   return proxyReqOptBuilder;
 }
 

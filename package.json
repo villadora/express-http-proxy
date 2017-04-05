@@ -11,8 +11,8 @@
     "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
     "test:debug": "mocha debug -R spec test --recursive",
     "mocha": "mocha -R spec test --recursive",
-    "lint": "jshint index.js test/*.js",
-    "jscs": "jscs index.js test/*.js"
+    "lint": "jshint index.js test/*.js test/**/*js lib/*js app/**/*js ",
+    "jscs": "jscs index.js test/*.js test/**/*js lib/*js app/**/*js"
   },
   "repository": {
     "type": "git",
