@@ -38,11 +38,15 @@ module.exports = function proxy(host, userOptions) {
     // workflow steps with a Promise or simple function.
     buildProxyReq(Container)
       .then(resolveProxyHost)
+      //.then(resolveProxyPath)
+      //.then(decorateProxyReqOpts)
+      //.then(decorateProxyReqBody)
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
+      //.then(prepareProxyReq)
       .then(sendProxyRequest)
+      //.then(copyProxyResToUserRes)
       .then(decorateUserRes)
       .then(sendUserRes)
       .catch(next);
   };
-
 };
