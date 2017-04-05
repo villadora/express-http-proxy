@@ -30,7 +30,7 @@ module.exports = function proxy(host, userOptions) {
 
     // Skip proxy if filter is falsey.  Loose equality so filters can return
     // false, null, undefined, etc.
-    if (Container.options.filter(req, res) == false) { return next(); }
+    if (!Container.options.filter(req, res)) { return next(); }
 
     // The Container object is passed down the chain of Promises, with each one
     // of them mutating and returning Container.  The goal is that (eventually)
