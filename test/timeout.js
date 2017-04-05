@@ -12,7 +12,7 @@ describe('honors timeout option', function() {
     other = proxyTarget(8080, 1000, [{
       method: 'get',
       path: '/',
-      fn: function(req, res) { res.sendStats(200); }
+      fn: function(req, res) { res.sendStatus(200); }
     }]);
   });
 
