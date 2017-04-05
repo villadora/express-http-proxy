@@ -4,8 +4,8 @@ var assert = require('assert');
 var express = require('express');
 var http = require('http');
 var request = require('supertest');
-var proxy = require('../');
-var proxyTarget = require('../test/support/proxyTarget');
+var proxy = require('../../');
+var proxyTarget = require('../../test/support/proxyTarget');
 
 var aliases = ['forwardPath', 'forwardPathAsync', 'proxyReqPathResolver'];
 
