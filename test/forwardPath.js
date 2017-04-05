@@ -1,145 +1,64 @@
+'use strict';
+
 var assert = require('assert');
 var express = require('express');
 var http = require('http');
 var request = require('supertest');
 var proxy = require('../');
-var promise = require('es6-promise');
+var proxyTarget = require('../test/support/proxyTarget');
 
-describe('forwardPath', function() {
-  'use strict';
+var aliases = ['forwardPath', 'forwardPathAsync', 'proxyReqPathResolver'];
+
+describe('resolveProxyReqPath', function() {
+  var server;
+
   this.timeout(10000);
 
-  it('test post to unknown path yields 404', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org'));
-
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 404);
-        done(err);
-      });
-  });
-
-  it('test forwardPath to known path yields 200', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org', {
-      forwardPath: function() {
-        return '/post';
+  before(function() {
+    var handlers = [{
+      method: 'get',
+      path: '/working',
+      fn: function(req, res) {
+        res.sendStatus(200);
       }
-    }));
+    }];
 
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 200);
-        done(err);
-      });
+    server = proxyTarget(12345, 100, handlers);
   });
 
-  it('forwardPath has access to request object', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org', {
-      forwardPath: function(req) {
-        assert.ok(req instanceof http.IncomingMessage);
-        return '/post';
-      }
-    }));
-
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 200);
-        done(err);
-      });
+  after(function() {
+    server.close();
   });
 
-  it('test forwardPath to undefined yields 404', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org', {
-      forwardPath: undefined
-    }));
+  aliases.forEach(function(alias) {
+    describe('when author uses option ' + alias, function() {
+      it('the proxy request path is the result of the function', function(done) {
+        var app = express();
+        var opts = {};
+        opts[alias] = function() { return '/working'; };
+        app.use(proxy('localhost:12345', opts));
 
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 404);
-        done(err);
+        request(app)
+          .get('/failing')
+          .expect(200)
+          .end(done);
       });
-  });
 
-  it('test forwardPath as an async function should not work', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org', {
-      forwardPath: function() {
-        setTimeout(function() {
-          return '/post';
-        }, 100);
-      }
-    }));
+      it('the ' + alias + ' method has access to request object', function(done) {
+        var app = express();
+        app.use(proxy('localhost:12345', {
+          forwardPath: function(req) {
+            assert.ok(req instanceof http.IncomingMessage);
+            return '/working';
+          }
+        }));
 
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 405);
-        done(err);
+        request(app)
+          .get('/foobar')
+          .expect(200)
+          .end(done);
       });
-  });
 
-  it('test forwardPathAsync to known path yields 200', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org', {
-      forwardPathAsync: function() {
-        return new promise.Promise(function(resolve) {
-          setTimeout(function() {
-            resolve('/post');
-          }, 250);
-        });
-      }}
-    ));
-
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 200);
-        done(err);
-      });
-  });
-
-  it('test forwardPathAsync to known path (as function) yields 200', function(done) {
-    var app = express();
-    app.use(proxy('httpbin.org', {
-      forwardPath: function() {
-        return ('/post');
-      }
-    }));
-
-    request(app)
-      .post('/foobar')
-      .send({
-        mypost: 'hello'
-      })
-      .end(function(err, res) {
-        assert.equal(res.statusCode, 200);
-        done(err);
-      });
+    });
   });
 });

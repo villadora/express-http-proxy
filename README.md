@@ -26,8 +26,36 @@ app.use('/proxy', proxy('www.google.com'));
 ### Options
 
 
+#### proxyReqPathResolver
+
+Provide a proxyReqPathResolver function if you'd like to
+operate on the path before issuing the proxy request.  Use a Promise for async
+operations.
+
+```js
+app.use('/proxy', proxy('localhost:12345', {
+  proxyReqPathResolver: function(req) {
+    return require('url').parse(req.url).path;
+  }
+}));
+```
+
+Promise form
+
+```js
+app.use('/proxy', proxy('localhost:12345', {
+  proxyReqPathResolver: function(req) {
+    return new Promise(function (resolve, reject) {
+      // do asyncness
+      resolve(fancyResults);
+    });
+  }
+}));
+```
 
 #### forwardPath
+
+DEPRECATED.  See proxyReqPathResolver
 
 The ```forwardPath``` option allows you to modify the path prior to proxying the request.
 
@@ -43,6 +71,8 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 #### forwardPathAsync
+
+DEPRECATED. See proxyReqPathResolver
 
 The ```forwardPathAsync``` options allows you to modify the path asyncronously prior to proxying the request, using Promises.
 

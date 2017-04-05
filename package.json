@@ -9,8 +9,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
-    "test:debug": "mocha debug -R spec test/*.js",
-    "mocha": "mocha -R spec test/*.js",
+    "test:debug": "mocha debug -R spec test --recursive",
+    "mocha": "mocha -R spec test --recursive",
     "lint": "jshint index.js test/*.js",
     "jscs": "jscs index.js test/*.js"
   },
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "body-parser": "^1.15.2",
+    "chai": "^3.5.0",
     "express": "^4.3.1",
     "jscs": "^3.0.7",
     "jshint": "^2.5.5",
