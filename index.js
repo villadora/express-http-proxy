@@ -28,13 +28,14 @@ module.exports = function proxy(host, userOptions) {
     // TODO: lowercase
     var Container = new ScopeContainer(req, res, next, host, userOptions);
 
-    // Do not proxy request if filter returns false.
-    if (!Container.options.filter(req, res)) { return next(); }
+    // Skip proxy if filter is falsey.  Loose equality so filters can return
+    // false, null, undefined, etc.
+    if (Container.options.filter(req, res) == false) { return next(); }
 
     // The Container object is passed down the chain of Promises, with each one
-    // of them mutating and returning Container.  The goal is to (eventually)
-    // present an interface of swappable promises; IOW, author using this library
-    // could replace/override any of these workflow steps
+    // of them mutating and returning Container.  The goal is that (eventually)
+    // author using this library // could hook into/override any of these
+    // workflow steps with a Promise or simple function.
     buildProxyReq(Container)
       .then(resolveProxyHost)
       .then(decorateRequestWrapper) // the wrapper around request decorators.  this could use a better name
