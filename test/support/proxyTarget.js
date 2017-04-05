@@ -1,7 +1,6 @@
 'use strict';
 
-var express = require('express')
-var chunkLength = require('../../lib/chunkLength');
+var express = require('express');
 
 function proxyTarget(port, timeout, handlers) {
   var target = express();
@@ -15,20 +14,20 @@ function proxyTarget(port, timeout, handlers) {
   });
 
   if (handlers) {
-    handlers.forEach(function (handler) {
+    handlers.forEach(function(handler) {
       target[handler.method](handler.path, handler.fn);
     });
   }
 
-  target.post('/post', function (req, res, next) {
+  target.post('/post', function(req, res) {
     req.pipe(res);
   });
 
-  target.use(function (err, req, res, next) {
+  target.use(function(err, req, res) {
     res.send(err);
   });
 
-  target.use(function (req, res, next) {
+  target.use(function(req, res) {
     res.sendStatus(404);
   });
 
