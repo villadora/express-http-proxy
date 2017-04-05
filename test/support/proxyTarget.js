@@ -3,35 +3,35 @@
 var express = require('express')
 var chunkLength = require('../../lib/chunkLength');
 
-function proxyTarget(port, timeout) {
+function proxyTarget(port, timeout, handlers) {
   var target = express();
 
   timeout = 1000 || timeout;
 
-  target.get('/', function(req, res) {
+  target.use(function(req, res, next) {
     setTimeout(function() {
-      res.send('Success');
+      next();
     },timeout);
   });
 
+  if (handlers) {
+    handlers.forEach(function (handler) {
+      target[handler.method](handler.path, handler.fn);
+    });
+  }
+
   target.post('/post', function (req, res, next) {
     req.pipe(res);
-    //var chunks = [];
-    //req.on('data', function(chunk) { chunks.push(chunk); });
-    //req.on('end', function()       {
-      //var upload = Buffer.concat(chunks, chunkLength(chunks));
-      //res.write(upload);
-      //res.end();
-      //res.json({
-        //attachment: upload
-      //});
-    //});
-    //req.on('error', function(err)  { next(err); });
+  });
+
+  target.use(function (err, req, res, next) {
+    res.send(err);
   });
 
   target.use(function (req, res, next) {
-    res.send('Failure');
+    res.sendStatus(404);
   });
+
 
   return target.listen(port);
 }
