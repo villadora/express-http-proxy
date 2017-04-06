@@ -10,6 +10,7 @@ function decorateProxyReqOpt(container) {
   return Promise
     .resolve(resolverFn(container.proxy.reqBuilder, container.user.req))
     .then(function(processedReqOpts) {
+        delete processedReqOpts.params;
         container.proxy.reqBuilder = processedReqOpts;
         return Promise.resolve(container);
     });
