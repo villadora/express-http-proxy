@@ -8,7 +8,7 @@
 
 // complete: Break workflow into composable steps without changing them much
 // complete: extract workflow methods from main file
-// started: cleanup options interface
+// complete: cleanup options interface
 // *: cleanup workflow methods so they all present as over-rideable thennables
 // *: Update/add tests to unit test workflow steps independently
 // *: update docs and release
