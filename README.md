@@ -2,6 +2,11 @@
 
 Express proxy middleware to forward request to another host and pass response back
 
+## NOTE
+
+Breaking changes in version 1.0 include several workflow steps.   Nik, please update this documentation before cutting the release.
+
+
 ## Install
 
 ```bash
@@ -103,7 +108,7 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
-#### decorateUserRes (was: intercept)
+#### decorateUserRes (was: intercept) (supports Promises)
 
 You can modify the proxy's response before sending it to the client.
 
@@ -135,6 +140,19 @@ app.use('/proxy', proxy('www.google.com', {
     data = JSON.parse(proxyResData.toString('utf8'));
     data.newProperty = 'exciting data';
     return JSON.stringify(data);
+  }
+}));
+```
+
+```js
+app.use(proxy('httpbin.org', {
+  decorateUserRes: function(proxyRes, proxyResData) {
+    return new Promise(function(resolve) {
+      proxyResData.funkyMessage = 'oi io oo ii';
+      setTimeout(function() {
+        resolve(proxyResData);
+      }, 200);
+    });
   }
 }));
 ```
