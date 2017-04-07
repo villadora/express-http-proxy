@@ -10,25 +10,25 @@ describe('intercept', function() {
   it('has access to original response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp) {
+      intercept: function(rsp, proxyResData) {
         assert(rsp.connection);
         assert(rsp.socket);
         assert(rsp.headers);
         assert(rsp.headers['content-type']);
-        done();
+        return proxyResData;
       }
     }));
 
-    request(app).get('/').end();
+    request(app).get('/').end(done);
   });
 
   it('can modify the response data', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, data, req, res, cb) {
+      intercept: function(rsp, data) {
         data = JSON.parse(data.toString('utf8'));
         data.intercepted = true;
-        return cb(null, JSON.stringify(data));
+        return JSON.stringify(data);
       }
     }));
 
@@ -43,13 +43,13 @@ describe('intercept', function() {
   });
 
 
-  it('can modify the response headers', function(done) {
+  it('can modify the response headers [deviant case]', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, data, req, res, cb) {
+      intercept: function(rsp, data, req, res) {
         res.set('x-wombat-alliance', 'mammels');
         res.set('content-type', 'wiki/wiki');
-        return cb(null, data);
+        return data;
       }
     }));
 
@@ -66,10 +66,10 @@ describe('intercept', function() {
   it('can mutuate an html response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, data, req, res, cb) {
+      intercept: function(rsp, data) {
         data = data.toString().replace('Oh', '<strong>Hey</strong>');
         assert(data !== '');
-        return cb(null, data);
+        return data;
       }
     }));
 
@@ -103,10 +103,10 @@ describe('intercept', function() {
     var preferredPort = 3000;
 
     proxyApp.use(proxy(redirectingServerOrigin, {
-      intercept: function(rsp, data, req, res, cb) {
+      intercept: function(rsp, data, req, res) {
         var proxyReturnedLocation = res._headers.location;
         res.location(proxyReturnedLocation.replace(redirectingServerPort, preferredPort));
-        cb(null, data);
+        return data;
       }
     }));
 
@@ -136,10 +136,10 @@ describe('test intercept on html response from github',function() {
     this.timeout(15000);  // give it some extra time to get response
     var app = express();
     app.use(proxy('https://github.com/villadora/express-http-proxy', {
-      intercept: function(targetResponse, data, req, res, cb) {
+      intercept: function(targetResponse, data) {
         data = data.toString().replace('DOCTYPE','WINNING');
         assert(data !== '');
-        return cb(null, data);
+        return data;
       }
     }));
 

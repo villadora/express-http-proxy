@@ -1,6 +1,6 @@
 'use strict';
 
-var chunkLength = require('../lib/chunkLength');
+var chunkLength = require('../../lib/chunkLength');
 
 function sendProxyRequest(Container) {
   var req = Container.user.req;

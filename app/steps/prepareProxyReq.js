@@ -20,7 +20,6 @@ function prepareProxyReq(container) {
     var reqOpt = container.proxy.reqBuilder;
 
     if (bodyContent) {
-
       bodyContent = container.options.reqAsBuffer ?
         as.buffer(bodyContent, container.options) :
         as.bufferOrString(bodyContent);
@@ -31,7 +30,6 @@ function prepareProxyReq(container) {
         reqOpt.headers['Accept-Charset'] = container.options.reqBodyEncoding;
       }
     }
-
 
     container.proxy.bodyContent = bodyContent;
     resolve(container);
