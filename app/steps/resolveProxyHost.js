@@ -1,19 +1,19 @@
 'use strict';
 var requestOptions = require('../../lib/requestOptions');
 
-function resolveProxyHost(Container) {
+function resolveProxyHost(container) {
   var parsedHost;
 
-  if (Container.options.memoizeHost && Container.options.memoizedHost) {
-    parsedHost = Container.options.memoizedHost;
+  if (container.options.memoizeHost && container.options.memoizedHost) {
+    parsedHost = container.options.memoizedHost;
   } else {
-    parsedHost = requestOptions.parseHost(Container);
+    parsedHost = requestOptions.parseHost(container);
   }
 
-  Container.proxy.reqBuilder.host = parsedHost.host;
-  Container.proxy.reqBuilder.port = Container.options.port || parsedHost.port;
-  Container.proxy.requestModule = parsedHost.module;
-  return Promise.resolve(Container);
+  container.proxy.reqBuilder.host = parsedHost.host;
+  container.proxy.reqBuilder.port = container.options.port || parsedHost.port;
+  container.proxy.requestModule = parsedHost.module;
+  return Promise.resolve(container);
 }
 
 module.exports = resolveProxyHost;
