@@ -2,6 +2,7 @@
 
 var express = require('express');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 
 function proxyTarget(port, timeout, handlers) {
   var target = express();
@@ -13,6 +14,7 @@ function proxyTarget(port, timeout, handlers) {
 
   // parse application/json
   target.use(bodyParser.json());
+  target.use(cookieParser());
 
   target.use(function(req, res, next) {
     setTimeout(function() {
