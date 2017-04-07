@@ -5,16 +5,16 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('intercept', function() {
+describe('decorateUserRes', function() {
 
   it('has access to original response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, proxyResData) {
-        assert(rsp.connection);
-        assert(rsp.socket);
-        assert(rsp.headers);
-        assert(rsp.headers['content-type']);
+      decorateUserRes: function(proxyRes, proxyResData) {
+        assert(proxyRes.connection);
+        assert(proxyRes.socket);
+        assert(proxyRes.headers);
+        assert(proxyRes.headers['content-type']);
         return proxyResData;
       }
     }));
@@ -22,13 +22,37 @@ describe('intercept', function() {
     request(app).get('/').end(done);
   });
 
+  it('works with promises', function(done) {
+    var app = express();
+    app.use(proxy('httpbin.org', {
+      decorateUserRes: function(proxyRes, proxyResData) {
+        return new Promise(function(resolve) {
+          proxyResData.funkyMessage = 'oi io oo ii';
+          setTimeout(function() {
+            resolve(proxyResData);
+          }, 200);
+        });
+      }
+    }));
+
+    request(app)
+    .get('/ip')
+    .end(function(err, res) {
+      if (err) { return done(err); }
+
+      assert(res.body.funkyMessage = 'oi io oo ii');
+      done();
+    });
+
+  });
+
   it('can modify the response data', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, data) {
-        data = JSON.parse(data.toString('utf8'));
-        data.intercepted = true;
-        return JSON.stringify(data);
+      decorateUserRes: function(proxyRes, proxyResData) {
+        proxyResData = JSON.parse(proxyResData.toString('utf8'));
+        proxyResData.intercepted = true;
+        return JSON.stringify(proxyResData);
       }
     }));
 
@@ -43,10 +67,10 @@ describe('intercept', function() {
   });
 
 
-  it('can modify the response headers [deviant case]', function(done) {
+  it('can modify the response headers, [deviant case, supported by pass-by-reference atm]', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, data, req, res) {
+      decorateUserRes: function(rsp, data, req, res) {
         res.set('x-wombat-alliance', 'mammels');
         res.set('content-type', 'wiki/wiki');
         return data;
@@ -66,7 +90,7 @@ describe('intercept', function() {
   it('can mutuate an html response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      intercept: function(rsp, data) {
+      decorateUserRes: function(rsp, data) {
         data = data.toString().replace('Oh', '<strong>Hey</strong>');
         assert(data !== '');
         return data;
@@ -103,7 +127,7 @@ describe('intercept', function() {
     var preferredPort = 3000;
 
     proxyApp.use(proxy(redirectingServerOrigin, {
-      intercept: function(rsp, data, req, res) {
+      decorateUserRes: function(rsp, data, req, res) {
         var proxyReturnedLocation = res._headers.location;
         res.location(proxyReturnedLocation.replace(redirectingServerPort, preferredPort));
         return data;
@@ -123,7 +147,7 @@ describe('intercept', function() {
 });
 
 
-describe('test intercept on html response from github',function() {
+describe('test decorateUserRes on html response from github',function() {
   /*
      Github provided a unique situation where the encoding was different than
      utf-8 when we didn't explicitly ask for utf-8.  This test helped sort out
@@ -136,7 +160,7 @@ describe('test intercept on html response from github',function() {
     this.timeout(15000);  // give it some extra time to get response
     var app = express();
     app.use(proxy('https://github.com/villadora/express-http-proxy', {
-      intercept: function(targetResponse, data) {
+      decorateUserRes: function(targetResponse, data) {
         data = data.toString().replace('DOCTYPE','WINNING');
         assert(data !== '');
         return data;
