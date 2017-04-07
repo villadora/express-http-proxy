@@ -105,16 +105,36 @@ app.use('/proxy', proxy('www.google.com', {
 
 #### intercept
 
+INTERFACE CHANGED in version 1.
+
+Prior to version 1.0, exit by calling callback.
+Version 1.0, return the modified response data.
+
 You can intercept the response before sending it back to the client.   You must
 return the callback at the end of your operation.
 
+##### exploiting references
+The intent is that this be used to modify the proxy response data only.
+
+Note:
+The other arguments are passed by reference, so you *can* currently exploit this to modify either request's headers, for instance, but this
+is not a reliable interface, and I expect to close this exploit in a future
+release, while providing an additional hook for mutating the userRes before
+sending.
+
+
+##### gzip responses
+
+If your proxy response is gzipped, then this program will automatically unzip
+it before passing to your function, then zip it back up before piping it to the
+user response.  There is currently no way to short-circuit this behavior.
+
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  intercept: function(rsp, data, req, res, callback) {
-    // rsp - original response from the proxy
-    data = JSON.parse(data.toString('utf8'));
-    // YOU MUST return the callback, or your request will silently die here.
-    return callback(null, JSON.stringify(data));
+  intercept: function(proxyRes, proxyResData, userReq, userRes) {
+    data = JSON.parse(proxyResData.toString('utf8'));
+    data.newProperty = 'exciting data';
+    return JSON.stringify(data);
   }
 }));
 ```

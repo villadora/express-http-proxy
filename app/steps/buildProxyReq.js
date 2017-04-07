@@ -1,6 +1,6 @@
 'use strict';
 
-var requestOptions = require('../lib/requestOptions');
+var requestOptions = require('../../lib/requestOptions');
 
 function buildProxyReq(Container) {
   var req = Container.user.req;
