@@ -103,15 +103,15 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
-#### intercept
+#### decorateUserRes (was: intercept)
+
+You can modify the proxy's response before sending it to the client.
 
 INTERFACE CHANGED in version 1.
 
-Prior to version 1.0, exit by calling callback.
+Prior to version 1.0, intercept would exit by passing modified response to a callback.
 Version 1.0, return the modified response data.
 
-You can intercept the response before sending it back to the client.   You must
-return the callback at the end of your operation.
 
 ##### exploiting references
 The intent is that this be used to modify the proxy response data only.
@@ -131,7 +131,7 @@ user response.  There is currently no way to short-circuit this behavior.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  intercept: function(proxyRes, proxyResData, userReq, userRes) {
+  decorateUserRes: function(proxyRes, proxyResData, userReq, userRes) {
     data = JSON.parse(proxyResData.toString('utf8'));
     data.newProperty = 'exciting data';
     return JSON.stringify(data);
@@ -358,7 +358,7 @@ Then inside the decorateRequest method, add the agent to the request:
 
 | Release | Notes |
 | --- | --- |
-| UNRELEASED MAJOR REV | REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody.   intercept hook now REQUIRES you to return the cb method. |
+| UNRELEASED MAJOR REV | Breaking changes: REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody.   intercept hook now REQUIRES you to return the cb method. |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
