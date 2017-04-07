@@ -15,7 +15,7 @@
 var ScopeContainer = require('./lib/scopeContainer');
 var assert = require('assert');
 var buildProxyReq = require('./lib/buildProxyReq');
-var decorateUserRes = require('./lib/decorateUserRes');
+var decorateUserRes = require('./app/steps/decorateUserRes');
 var resolveProxyHost = require('./lib/resolveProxyHost');
 var sendProxyRequest = require('./lib/sendProxyRequest');
 var sendUserRes = require('./lib/sendUserRes');
@@ -23,6 +23,7 @@ var resolveProxyReqPath = require('./app/steps/resolveProxyReqPath');
 var decorateProxyReqOpts = require('./app/steps/decorateProxyReqOpts');
 var decorateProxyReqBody = require('./app/steps/decorateProxyReqBody');
 var prepareProxyReq = require('./app/steps/prepareProxyReq');
+var copyProxyResHeadersToUserRes = require('./app/steps/copyProxyResHeadersToUserRes');
 
 module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
@@ -46,6 +47,7 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateProxyReqBody)
       .then(prepareProxyReq)
       .then(sendProxyRequest)
+      .then(copyProxyResHeadersToUserRes)
       .then(decorateUserRes)
       .then(sendUserRes)
       .catch(next);
