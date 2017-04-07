@@ -18,7 +18,7 @@ var maybeZipResponse = zipOrUnzip('gzipSync');
 
 function verifyBuffer(rspd, reject) {
   if (!Buffer.isBuffer(rspd)) {
-    return reject(new Error('intercept should return string or buffer as data'));
+    return reject(new Error('decorateUserRes should return string or buffer as data'));
   }
 }
 
@@ -33,7 +33,7 @@ function updateHeaders(res, rspdBefore, rspdAfter, reject) {
 }
 
 function decorateProxyResBody(container) {
-  var resolverFn = container.options.intercept;
+  var resolverFn = container.options.decorateUserRes;
 
   if (!resolverFn) {
     return Promise.resolve(container);
