@@ -1,11 +1,14 @@
 # express-http-proxy [![NPM version](https://badge.fury.io/js/express-http-proxy.svg)](http://badge.fury.io/js/express-http-proxy) [![Build Status](https://travis-ci.org/villadora/express-http-proxy.svg?branch=master)](https://travis-ci.org/villadora/express-http-proxy) [![Dependency Status](https://gemnasium.com/villadora/express-http-proxy.svg)](https://gemnasium.com/villadora/express-http-proxy)
 
-Express proxy middleware to forward request to another host and pass response back
+Express middleware to proxy request to another host and pass response back
 
-## NOTE
+## NOTE: Breaking changes for version 1.0
 
-Breaking changes in version 1.0 include several workflow steps.   Nik, please update this documentation before cutting the release.
+```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```decorateProxyReqOpts``` and ```decorateProxyReqBody```.
+```intercept``` has been REMOVED, and will generate an error when called.  See ```decorateUserRes```.
+```forwardPath``` and ```forwardPathAsync``` have been DEPRECATED and will generate a warning when called.  See ```proxyReqPathResolver```.
 
+DEPRECATED.  See proxyReqPathResolver
 
 ## Install
 
@@ -30,8 +33,7 @@ app.use('/proxy', proxy('www.google.com'));
 
 ### Options
 
-
-#### proxyReqPathResolver
+#### proxyReqPathResolver (supports Promises)
 
 Provide a proxyReqPathResolver function if you'd like to
 operate on the path before issuing the proxy request.  Use a Promise for async
@@ -51,8 +53,9 @@ Promise form
 app.use('/proxy', proxy('localhost:12345', {
   proxyReqPathResolver: function(req) {
     return new Promise(function (resolve, reject) {
-      // do asyncness
-      resolve(fancyResults);
+      setTimeout(function () {   // do asyncness
+        resolve(fancyResults);
+      }, 200);
     });
   }
 }));
@@ -62,75 +65,41 @@ app.use('/proxy', proxy('localhost:12345', {
 
 DEPRECATED.  See proxyReqPathResolver
 
-The ```forwardPath``` option allows you to modify the path prior to proxying the request.
-
-```js
-var proxy = require('express-http-proxy');
-
-var app = require('express')();
-
-app.use('/proxy', proxy('www.google.com', {
-  forwardPath: function(req) {
-    return require('url').parse(req.url).path;
-  }
-}));
-```
 #### forwardPathAsync
 
 DEPRECATED. See proxyReqPathResolver
 
-The ```forwardPathAsync``` options allows you to modify the path asyncronously prior to proxying the request, using Promises.
-
-```js
-app.use(proxy('httpbin.org', {
-  forwardPathAsync: function() {
-    return new Promise(function(resolve, reject) {
-      // ...
-      // eventually
-      resolve( /* your resolved forwardPath as string */ )
-    });
-  }
-}));
-```
-
 #### filter
 
-The ```filter``` option can be used to limit what requests are proxied. For example, if you only want to proxy get request
+The ```filter``` option can be used to limit what requests are proxied.  Return ```true``` to execute proxy.
+
+For example, if you only want to proxy get request:
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
   filter: function(req, res) {
      return req.method == 'GET';
-  },
-  forwardPath: function(req, res) {
-    return require('url').parse(req.url).path;
   }
 }));
 ```
 
-#### decorateUserRes (was: intercept) (supports Promises)
+#### decorateUserRes (was: intercept) (supports Promise)
 
 You can modify the proxy's response before sending it to the client.
-
-INTERFACE CHANGED in version 1.
-
-Prior to version 1.0, intercept would exit by passing modified response to a callback.
-Version 1.0, return the modified response data.
-
 
 ##### exploiting references
 The intent is that this be used to modify the proxy response data only.
 
 Note:
-The other arguments are passed by reference, so you *can* currently exploit this to modify either request's headers, for instance, but this
-is not a reliable interface, and I expect to close this exploit in a future
-release, while providing an additional hook for mutating the userRes before
-sending.
-
+The other arguments (proxyRes, userReq, userRes) are passed by reference, so
+you *can* currently exploit this to modify either response's headers, for
+instance, but this is not a reliable interface. I expect to close this
+exploit in a future release, while providing an additional hook for mutating
+the userRes before sending.
 
 ##### gzip responses
 
-If your proxy response is gzipped, then this program will automatically unzip
+If your proxy response is gzipped, this program will automatically unzip
 it before passing to your function, then zip it back up before piping it to the
 user response.  There is currently no way to short-circuit this behavior.
 
@@ -174,7 +143,7 @@ app.use('/proxy', proxy('www.google.com', {
 Defaults to ```true```.
 
 When true, the ```host``` argument will be parsed on first request, and
-memoized for all subsequent requests.
+memoized for subsequent requests.
 
 When ```false```, ```host``` argument will be parsed on each request.
 
@@ -202,20 +171,22 @@ first request.
 
 REMOVED:  See ```decorateProxyReqOpt``` and ```decorateProxyReqBody```.
 
-#### decorateProxyReqOpt
+#### decorateProxyReqOpt  (supports Promise form)
 
 You can mutate the request options before sending the proxyRequest.
+proxyReqOpt represents the options argument passed to the (http|https).request
+module.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateProxyReqOpt: function(proxyReq, srcReq) {
+  decorateProxyReqOpt: function(proxyReqOpts, srcReq) {
     // you can update headers
-    proxyReq.headers['Content-Type'] = 'text/html';
+    proxyReqOpts.headers['Content-Type'] = 'text/html';
     // you can change the method
-    proxyReq.method = 'GET';
+    proxyReqOpts.method = 'GET';
     // you could change the path
-    proxyReq.path = 'http://dev/null'
-    return proxyReq;
+    proxyReqOpts.path = 'http://dev/null'
+    return proxyReqOpts;
   }
 }));
 ```
@@ -224,16 +195,16 @@ You can use a Promise for async style.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateProxyReqOpt: function(proxyReq, srcReq) {
+  decorateProxyReqOpt: function(proxyReqOpts, srcReq) {
     return new Promise(function(resolve, reject) {
-      proxyReq.headers['Content-Type'] = 'text/html';
-      resolve(proxyReq);
+      proxyReqOpts.headers['Content-Type'] = 'text/html';
+      resolve(proxyReqOpts);
     })
   }
 }));
 ```
 
-#### decorateProxyReqBody
+#### decorateProxyReqBody  (supports Promise form)
 
 You can mutate the body content before sending the proxyRequest.
 
@@ -285,10 +256,12 @@ app.use('/proxy', proxy('www.google.com', {
 #### parseReqBody
 
 The ```parseReqBody``` option allows you to control parsing the request body.
-Disabling body parsing is useful for large uploads where it would be inefficient
+For example, disabling body parsing is useful for large uploads where it would be inefficient
 to hold the data in memory.
 
-This defaults to true in order to preserve legacy behavior. When false, no action will be taken on the body and accordingly ```req.bodyContent``` will no longer be set.
+This defaults to true in order to preserve legacy behavior. 
+
+When false, no action will be taken on the body and accordingly ```req.body``` will no longer be set.
 
 Note that setting this to false overrides ```reqAsBuffer``` and ```reqBodyEncoding``` below.
 
@@ -297,7 +270,6 @@ app.use('/proxy', proxy('www.google.com', {
   parseReqBody: false
 }));
 ```
-
 
 #### reqAsBuffer
 
@@ -338,7 +310,9 @@ app.use('/post', proxy('httpbin.org', {
 
 #### timeout
 
-By default, node does not express a timeout on connections.   Use timeout option to impose a specific timeout.    Timed-out requests will respond with 504 status code and a X-Timeout-Reason header.
+By default, node does not express a timeout on connections.   
+Use timeout option to impose a specific timeout.    
+Timed-out requests will respond with 504 status code and a X-Timeout-Reason header.
 
 ```js
 app.use('/', proxy('httpbin.org', {
@@ -346,37 +320,19 @@ app.use('/', proxy('httpbin.org', {
 }));
 ```
 
-
 ## Questions
 
-### Q: Can it support https proxy?
+### Q: Does it support https proxy?
 
-The library will use https if the provided path has 'https://' or ':443'.   You can use decorateRequest to ammend any auth or challenge headers required to succeed https.
+The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to alwyas use https.
 
-
-Here is an older answer about using the https-proxy-agent package.   It may be useful if the included functionality in ```http-express-proxy``` does not solve your use case.
-
-A:  Yes, you can use the 'https-proxy-agent' package. Something like this:
-
-```js
-var corporateProxyServer = process.env.HTTP_PROXY || process.env.http_proxy || process.env.HTTPS_PROXY || process.env.https_proxy;
-
-if (corporateProxyServer) {
-  corporateProxyAgent = new HttpsProxyAgent(corporateProxyServer);
-}
-```
-
-Then inside the decorateRequest method, add the agent to the request:
-
-```js
-  req.agent = corporateProxyAgent;
-```
+You can use ```decorateProxyReqOpts``` to ammend any auth or challenge headers required to succeed https.
 
 ## Release Notes
 
 | Release | Notes |
 | --- | --- |
-| UNRELEASED MAJOR REV | Breaking changes: REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody.   intercept hook now REQUIRES you to return the cb method. |
+| 1.0.0 (not yet published)  | Major revision.  REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody. <br />  REMOVE intercept, ADD decorateUserRes <br />  decorateUserRes supports a Promise form for async operations.  <br /> |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
