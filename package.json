@@ -40,8 +40,11 @@
     "supertest": "^1.2.0"
   },
   "dependencies": {
-    "es6-promise": "^3.2.1",
-    "raw-body": "^2.1.7",
+    "body-parser": "^1.17.1",
+    "es6-promise": "^3.3.1",
+    "express": "^4.15.2",
+    "jshint": "^2.9.4",
+    "raw-body": "^2.2.0",
     "winston": "^2.3.1"
   },
   "contributors": [
