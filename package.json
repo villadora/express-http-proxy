@@ -30,20 +30,17 @@
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
   "devDependencies": {
-    "body-parser": "^1.15.2",
+    "body-parser": "^1.17.1",
     "chai": "^3.5.0",
     "cookie-parser": "^1.4.3",
-    "express": "^4.3.1",
+    "express": "^4.15.2",
     "jscs": "^3.0.7",
-    "jshint": "^2.5.5",
+    "jshint": "^2.9.4",
     "mocha": "^2.1.0",
     "supertest": "^1.2.0"
   },
   "dependencies": {
-    "body-parser": "^1.17.1",
     "es6-promise": "^3.3.1",
-    "express": "^4.15.2",
-    "jshint": "^2.9.4",
     "raw-body": "^2.2.0",
     "winston": "^2.3.1"
   },
