@@ -2,13 +2,50 @@
 
 Express middleware to proxy request to another host and pass response back
 
-## NOTE: Breaking changes for version 1.0
+## NOTE: Breaking changes for version 1.0.0
+## NOTE: Interface for 1.0.0 is still iterating on master. 
 
+1.
 ```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```decorateProxyReqOpts``` and ```decorateProxyReqBody```.
+
+Resolution:  Most authors will simply need to change the method name for their
+decorateRequest method;  if author was decorating reqOpts and reqBody in the
+same method, this will need to be split up.
+
+
+2.
 ```intercept``` has been REMOVED, and will generate an error when called.  See ```decorateUserRes```.
+
+Resolution:  Most authors will simply need to change the method name from ```intercept``` to ```decorateUserRes```, and exit the method by returning the value, rather than passing it to a callback.   E.g.:
+
+Before:
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  intercept: function(proxyRes, proxyResData, userReq, userRes, cb) {
+    data = JSON.parse(proxyResData.toString('utf8'));
+    data.newProperty = 'exciting data';
+    cb(null,  JSON.stringify(data));
+  }
+}));
+```
+
+Now:
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  decorateUserRes: function(proxyRes, proxyResData, userReq, userRes) {
+    data = JSON.parse(proxyResData.toString('utf8'));
+    data.newProperty = 'exciting data';
+    return JSON.stringify(data);
+  }
+}));
+```
+
+3.
 ```forwardPath``` and ```forwardPathAsync``` have been DEPRECATED and will generate a warning when called.  See ```proxyReqPathResolver```.
 
-DEPRECATED.  See proxyReqPathResolver
+Resolution:  Simple update the name of either ```forwardPath``` or ```forwardPathAsync``` to ```proxyReqPathResolver```.
 
 ## Install
 
@@ -327,6 +364,21 @@ app.use('/', proxy('httpbin.org', {
 The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to alwyas use https.
 
 You can use ```decorateProxyReqOpts``` to ammend any auth or challenge headers required to succeed https.
+
+### Q: How can I support non-standard certificate chains?
+
+You can use the ability to decorate the proxy request prior to sending.    See ```decorateProxyReqOpts``` for more details.
+
+```js
+app.use('/', proxy('internalhost.example.com', {
+  decorateProxyReqOpts: function(proxyReqOpts, originalReq) {
+    proxyReqOpts.ca =  [caCert, intermediaryCert]
+    return proxyReqOpts;
+  }
+})
+```
+
+
 
 ## Release Notes
 
