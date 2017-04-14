@@ -5,7 +5,7 @@ function defaultDecorator(proxyReqOptBuilder /*, userReq */) {
 }
 
 function decorateProxyReqOpt(container) {
-  var resolverFn = container.options.decorateProxyReqOpt || defaultDecorator;
+  var resolverFn = container.options.proxyReqOptDecorator || defaultDecorator;
 
   return Promise
     .resolve(resolverFn(container.proxy.reqBuilder, container.user.req))

@@ -6,7 +6,7 @@ Express middleware to proxy request to another host and pass response back
 ## NOTE: Interface for 1.0.0 is still iterating on master. 
 
 1.
-```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```decorateProxyReqOpts``` and ```decorateProxyReqBody```.
+```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```proxyReqOptDecorator``` and ```decorateProxyReqBody```.
 
 Resolution:  Most authors will simply need to change the method name for their
 decorateRequest method;  if author was decorating reqOpts and reqBody in the
@@ -206,9 +206,9 @@ first request.
 
 #### decorateRequest
 
-REMOVED:  See ```decorateProxyReqOpt``` and ```decorateProxyReqBody```.
+REMOVED:  See ```proxyReqOptDecorator``` and ```decorateProxyReqBody```.
 
-#### decorateProxyReqOpt  (supports Promise form)
+#### proxyReqOptDecorator  (supports Promise form)
 
 You can mutate the request options before sending the proxyRequest.
 proxyReqOpt represents the options argument passed to the (http|https).request
@@ -216,7 +216,7 @@ module.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateProxyReqOpt: function(proxyReqOpts, srcReq) {
+  proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
     // you can update headers
     proxyReqOpts.headers['Content-Type'] = 'text/html';
     // you can change the method
@@ -232,7 +232,7 @@ You can use a Promise for async style.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateProxyReqOpt: function(proxyReqOpts, srcReq) {
+  proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
     return new Promise(function(resolve, reject) {
       proxyReqOpts.headers['Content-Type'] = 'text/html';
       resolve(proxyReqOpts);
@@ -363,15 +363,15 @@ app.use('/', proxy('httpbin.org', {
 
 The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to alwyas use https.
 
-You can use ```decorateProxyReqOpts``` to ammend any auth or challenge headers required to succeed https.
+You can use ```proxyReqOptDecorator``` to ammend any auth or challenge headers required to succeed https.
 
 ### Q: How can I support non-standard certificate chains?
 
-You can use the ability to decorate the proxy request prior to sending.    See ```decorateProxyReqOpts``` for more details.
+You can use the ability to decorate the proxy request prior to sending.    See ```proxyReqOptDecorators``` for more details.
 
 ```js
 app.use('/', proxy('internalhost.example.com', {
-  decorateProxyReqOpts: function(proxyReqOpts, originalReq) {
+  proxyReqOptDecorators: function(proxyReqOpts, originalReq) {
     proxyReqOpts.ca =  [caCert, intermediaryCert]
     return proxyReqOpts;
   }
@@ -384,7 +384,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
-| 1.0.0 (not yet published)  | Major revision.  REMOVE decorateRequest, ADD decorateProxyReqOpts and decorateProxyReqBody. <br />  REMOVE intercept, ADD decorateUserRes <br />  decorateUserRes supports a Promise form for async operations.  <br /> |
+| 1.0.0 (not yet published)  | Major revision.  REMOVE decorateRequest, ADD proxyReqOptDecorator and decorateProxyReqBody. <br />  REMOVE intercept, ADD decorateUserRes <br />  decorateUserRes supports a Promise form for async operations.  <br /> |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
