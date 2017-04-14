@@ -14,9 +14,9 @@ same method, this will need to be split up.
 
 
 2.
-```intercept``` has been REMOVED, and will generate an error when called.  See ```decorateUserRes```.
+```intercept``` has been REMOVED, and will generate an error when called.  See ```userResDecorator```.
 
-Resolution:  Most authors will simply need to change the method name from ```intercept``` to ```decorateUserRes```, and exit the method by returning the value, rather than passing it to a callback.   E.g.:
+Resolution:  Most authors will simply need to change the method name from ```intercept``` to ```userResDecorator```, and exit the method by returning the value, rather than passing it to a callback.   E.g.:
 
 Before:
 
@@ -34,7 +34,7 @@ Now:
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateUserRes: function(proxyRes, proxyResData, userReq, userRes) {
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
     data = JSON.parse(proxyResData.toString('utf8'));
     data.newProperty = 'exciting data';
     return JSON.stringify(data);
@@ -120,7 +120,7 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
-#### decorateUserRes (was: intercept) (supports Promise)
+#### userResDecorator (was: intercept) (supports Promise)
 
 You can modify the proxy's response before sending it to the client.
 
@@ -142,7 +142,7 @@ user response.  There is currently no way to short-circuit this behavior.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateUserRes: function(proxyRes, proxyResData, userReq, userRes) {
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
     data = JSON.parse(proxyResData.toString('utf8'));
     data.newProperty = 'exciting data';
     return JSON.stringify(data);
@@ -152,7 +152,7 @@ app.use('/proxy', proxy('www.google.com', {
 
 ```js
 app.use(proxy('httpbin.org', {
-  decorateUserRes: function(proxyRes, proxyResData) {
+  userResDecorator: function(proxyRes, proxyResData) {
     return new Promise(function(resolve) {
       proxyResData.funkyMessage = 'oi io oo ii';
       setTimeout(function() {
@@ -384,7 +384,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
-| 1.0.0 (not yet published)  | Major revision.  REMOVE decorateRequest, ADD proxyReqOptDecorator and decorateProxyReqBody. <br />  REMOVE intercept, ADD decorateUserRes <br />  decorateUserRes supports a Promise form for async operations.  <br /> |
+| 1.0.0 (not yet published)  | Major revision.  REMOVE decorateRequest, ADD proxyReqOptDecorator and decorateProxyReqBody. <br />  REMOVE intercept, ADD userResDecorator <br />  userResDecorator supports a Promise form for async operations.  <br /> |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
