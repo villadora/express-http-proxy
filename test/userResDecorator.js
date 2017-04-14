@@ -5,12 +5,12 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('decorateUserRes', function() {
+describe('userResDecorator', function() {
 
   it('has access to original response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      decorateUserRes: function(proxyRes, proxyResData) {
+      userResDecorator: function(proxyRes, proxyResData) {
         assert(proxyRes.connection);
         assert(proxyRes.socket);
         assert(proxyRes.headers);
@@ -25,7 +25,7 @@ describe('decorateUserRes', function() {
   it('works with promises', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      decorateUserRes: function(proxyRes, proxyResData) {
+      userResDecorator: function(proxyRes, proxyResData) {
         return new Promise(function(resolve) {
           proxyResData.funkyMessage = 'oi io oo ii';
           setTimeout(function() {
@@ -49,7 +49,7 @@ describe('decorateUserRes', function() {
   it('can modify the response data', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      decorateUserRes: function(proxyRes, proxyResData) {
+      userResDecorator: function(proxyRes, proxyResData) {
         proxyResData = JSON.parse(proxyResData.toString('utf8'));
         proxyResData.intercepted = true;
         return JSON.stringify(proxyResData);
@@ -70,7 +70,7 @@ describe('decorateUserRes', function() {
   it('can modify the response headers, [deviant case, supported by pass-by-reference atm]', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      decorateUserRes: function(rsp, data, req, res) {
+      userResDecorator: function(rsp, data, req, res) {
         res.set('x-wombat-alliance', 'mammels');
         res.set('content-type', 'wiki/wiki');
         return data;
@@ -90,7 +90,7 @@ describe('decorateUserRes', function() {
   it('can mutuate an html response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
-      decorateUserRes: function(rsp, data) {
+      userResDecorator: function(rsp, data) {
         data = data.toString().replace('Oh', '<strong>Hey</strong>');
         assert(data !== '');
         return data;
@@ -127,7 +127,7 @@ describe('decorateUserRes', function() {
     var preferredPort = 3000;
 
     proxyApp.use(proxy(redirectingServerOrigin, {
-      decorateUserRes: function(rsp, data, req, res) {
+      userResDecorator: function(rsp, data, req, res) {
         var proxyReturnedLocation = res._headers.location;
         res.location(proxyReturnedLocation.replace(redirectingServerPort, preferredPort));
         return data;
@@ -147,7 +147,7 @@ describe('decorateUserRes', function() {
 });
 
 
-describe('test decorateUserRes on html response from github',function() {
+describe('test userResDecorator on html response from github',function() {
   /*
      Github provided a unique situation where the encoding was different than
      utf-8 when we didn't explicitly ask for utf-8.  This test helped sort out
@@ -160,7 +160,7 @@ describe('test decorateUserRes on html response from github',function() {
     this.timeout(15000);  // give it some extra time to get response
     var app = express();
     app.use(proxy('https://github.com/villadora/express-http-proxy', {
-      decorateUserRes: function(targetResponse, data) {
+      userResDecorator: function(targetResponse, data) {
         data = data.toString().replace('DOCTYPE','WINNING');
         assert(data !== '');
         return data;
