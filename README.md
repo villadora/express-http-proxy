@@ -1,51 +1,8 @@
 # express-http-proxy [![NPM version](https://badge.fury.io/js/express-http-proxy.svg)](http://badge.fury.io/js/express-http-proxy) [![Build Status](https://travis-ci.org/villadora/express-http-proxy.svg?branch=master)](https://travis-ci.org/villadora/express-http-proxy) [![Dependency Status](https://gemnasium.com/villadora/express-http-proxy.svg)](https://gemnasium.com/villadora/express-http-proxy)
 
-Express middleware to proxy request to another host and pass response back
+Express middleware to proxy request to another host and pass response back to original caller.
 
-## NOTE: Breaking changes for version 1.0.0
-## NOTE: Interface for 1.0.0 is still iterating on master. 
-
-1.
-```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```proxyReqOptDecorator``` and ```decorateProxyReqBody```.
-
-Resolution:  Most authors will simply need to change the method name for their
-decorateRequest method;  if author was decorating reqOpts and reqBody in the
-same method, this will need to be split up.
-
-
-2.
-```intercept``` has been REMOVED, and will generate an error when called.  See ```userResDecorator```.
-
-Resolution:  Most authors will simply need to change the method name from ```intercept``` to ```userResDecorator```, and exit the method by returning the value, rather than passing it to a callback.   E.g.:
-
-Before:
-
-```js
-app.use('/proxy', proxy('www.google.com', {
-  intercept: function(proxyRes, proxyResData, userReq, userRes, cb) {
-    data = JSON.parse(proxyResData.toString('utf8'));
-    data.newProperty = 'exciting data';
-    cb(null,  JSON.stringify(data));
-  }
-}));
-```
-
-Now:
-
-```js
-app.use('/proxy', proxy('www.google.com', {
-  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
-    data = JSON.parse(proxyResData.toString('utf8'));
-    data.newProperty = 'exciting data';
-    return JSON.stringify(data);
-  }
-}));
-```
-
-3.
-```forwardPath``` and ```forwardPathAsync``` have been DEPRECATED and will generate a warning when called.  See ```proxyReqPathResolver```.
-
-Resolution:  Simple update the name of either ```forwardPath``` or ```forwardPathAsync``` to ```proxyReqPathResolver```.
+## NOTE: version 1.0.0 released: breaking changes, transition guide at bottom of doc. 
 
 ## Install
 
@@ -357,6 +314,50 @@ app.use('/', proxy('httpbin.org', {
 }));
 ```
 
+## Upgrade to 1.0, transition guide and breaking changes
+
+1.
+```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```proxyReqOptDecorator``` and ```decorateProxyReqBody```.
+
+Resolution:  Most authors will simply need to change the method name for their
+decorateRequest method;  if author was decorating reqOpts and reqBody in the
+same method, this will need to be split up.
+
+
+2.
+```intercept``` has been REMOVED, and will generate an error when called.  See ```userResDecorator```.
+
+Resolution:  Most authors will simply need to change the method name from ```intercept``` to ```userResDecorator```, and exit the method by returning the value, rather than passing it to a callback.   E.g.:
+
+Before:
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  intercept: function(proxyRes, proxyResData, userReq, userRes, cb) {
+    data = JSON.parse(proxyResData.toString('utf8'));
+    data.newProperty = 'exciting data';
+    cb(null,  JSON.stringify(data));
+  }
+}));
+```
+
+Now:
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    data = JSON.parse(proxyResData.toString('utf8'));
+    data.newProperty = 'exciting data';
+    return JSON.stringify(data);
+  }
+}));
+```
+
+3.
+```forwardPath``` and ```forwardPathAsync``` have been DEPRECATED and will generate a warning when called.  See ```proxyReqPathResolver```.
+
+Resolution:  Simple update the name of either ```forwardPath``` or ```forwardPathAsync``` to ```proxyReqPathResolver```.
+
 ## Questions
 
 ### Q: Does it support https proxy?
@@ -384,6 +385,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.1 | Minor docs adjustments. |
 | 1.0.0 | Major revision.  <br > REMOVE decorateRequest, ADD proxyReqOptDecorator and decorateProxyReqBody. <br />  REMOVE intercept, ADD userResDecorator <br />  userResDecorator supports a Promise form for async operations.  <br /> General cleanup of structure and application of hooks.  Documentation improvements.   Update all dependencies.  Re-organize code as a series of workflow steps, each (potentially) supporting a promise, and creating a reusable pattern for future development. |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
