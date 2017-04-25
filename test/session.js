@@ -23,9 +23,9 @@ describe('preserveReqSession', function() {
     });
     app.use(proxy('httpbin.org', {
       preserveReqSession: true,
-      proxyReqOptDecorator: function(reqOpts, req) {
+      proxyReqOptDecorator: function(reqOpts) {
         assert(reqOpts.session, 'hola');
-        return req;
+        return reqOpts;
       }
     }));
 

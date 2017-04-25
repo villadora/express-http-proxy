@@ -1,5 +1,6 @@
 'use strict';
 
+var debug = require('debug')('express-http-proxy');
 var requestOptions = require('../../lib/requestOptions');
 
 function buildProxyReq(Container) {
@@ -17,6 +18,7 @@ function buildProxyReq(Container) {
     .then(function(responseArray) {
       Container.proxy.bodyContent = responseArray[0];
       Container.proxy.reqBuilder = responseArray[1];
+      debug('proxy request options:\n', Container.proxy.reqBuilder);
       resolve(Container);
     });
   });

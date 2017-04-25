@@ -1,11 +1,18 @@
 'use strict';
 
+var debug = require('debug')('express-http-proxy');
+
 function defaultDecorator(proxyReqOptBody/*, userReq */) {
   return proxyReqOptBody;
 }
 
 function decorateProxyReqBody(container) {
-  var resolverFn = container.options.proxyReqBodyDecorator || defaultDecorator;
+  var userDecorator = container.options.proxyReqBodyDecorator;
+  var resolverFn = userDecorator || defaultDecorator;
+
+  if (userDecorator) {
+    debug('using custom proxyReqBodyDecorator');
+  }
 
   return Promise
     .resolve(resolverFn(container.proxy.bodyContent, container.user.req))
