@@ -12,8 +12,8 @@ function resolveProxyReqPath(container) {
   return Promise
     .resolve(resolverFn(container.user.req))
     .then(function(resolvedPath) {
-        container.proxy.reqBuilder.path = resolvedPath;
-        return Promise.resolve(container);
+      container.proxy.reqBuilder.path = resolvedPath;
+      return Promise.resolve(container);
     });
 }
 

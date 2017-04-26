@@ -314,6 +314,20 @@ app.use('/', proxy('httpbin.org', {
 }));
 ```
 
+##  Trace debugging
+
+The node-debug module is used to provide a trace debugging capability.
+
+```
+DEBUG=express-http-proxy npm run YOUR_PROGRAM
+DEBUG=express-http-proxy npm run YOUR_PROGRAM  | grep 'express-http-proxy'   # to filter down to just these messages
+```
+
+Will trace the execution of the express-http-proxy module in order to aide debugging.
+
+
+
+
 ## Upgrade to 1.0, transition guide and breaking changes
 
 1.
