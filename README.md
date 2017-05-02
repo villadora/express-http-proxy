@@ -163,7 +163,7 @@ first request.
 
 #### decorateRequest
 
-REMOVED:  See ```proxyReqOptDecorator``` and ```decorateProxyReqBody```.
+REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
 #### proxyReqOptDecorator  (supports Promise form)
 
@@ -198,13 +198,13 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
-#### decorateProxyReqBody  (supports Promise form)
+#### proxyReqBodyDecorator  (supports Promise form)
 
 You can mutate the body content before sending the proxyRequest.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateProxyReqBody: function(bodyContent, srcReq) {
+  proxyReqBodyDecorator: function(bodyContent, srcReq) {
     return bodyContent.split('').reverse().join('');
   }
 }));
@@ -214,7 +214,7 @@ You can use a Promise for async style.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  decorateProxyReqBody: function(proxyReq, srcReq) {
+  proxyReqBodyDecorator: function(proxyReq, srcReq) {
     return new Promise(function(resolve, reject) {
       http.get('http://dev/null', function (err, res) {
         if (err) { reject(err); }
@@ -331,7 +331,7 @@ Will trace the execution of the express-http-proxy module in order to aide debug
 ## Upgrade to 1.0, transition guide and breaking changes
 
 1.
-```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```proxyReqOptDecorator``` and ```decorateProxyReqBody```.
+```decorateRequest``` has been REMOVED, and will generate an error when called.  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
 Resolution:  Most authors will simply need to change the method name for their
 decorateRequest method;  if author was decorating reqOpts and reqBody in the
@@ -399,8 +399,9 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.2 | Minor docs corrections. |
 | 1.0.1 | Minor docs adjustments. |
-| 1.0.0 | Major revision.  <br > REMOVE decorateRequest, ADD proxyReqOptDecorator and decorateProxyReqBody. <br />  REMOVE intercept, ADD userResDecorator <br />  userResDecorator supports a Promise form for async operations.  <br /> General cleanup of structure and application of hooks.  Documentation improvements.   Update all dependencies.  Re-organize code as a series of workflow steps, each (potentially) supporting a promise, and creating a reusable pattern for future development. |
+| 1.0.0 | Major revision.  <br > REMOVE decorateRequest, ADD proxyReqOptDecorator and proxyReqBodyDecorator. <br />  REMOVE intercept, ADD userResDecorator <br />  userResDecorator supports a Promise form for async operations.  <br /> General cleanup of structure and application of hooks.  Documentation improvements.   Update all dependencies.  Re-organize code as a series of workflow steps, each (potentially) supporting a promise, and creating a reusable pattern for future development. |
 | 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
 | 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
 | 0.10.0 | Fix regression in forwardPath implementation. |
