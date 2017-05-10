@@ -399,6 +399,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.3 | Fixes 'limit option is not taken into account |
 | 1.0.2 | Minor docs corrections. |
 | 1.0.1 | Minor docs adjustments. |
 | 1.0.0 | Major revision.  <br > REMOVE decorateRequest, ADD proxyReqOptDecorator and proxyReqBodyDecorator. <br />  REMOVE intercept, ADD userResDecorator <br />  userResDecorator supports a Promise form for async operations.  <br /> General cleanup of structure and application of hooks.  Documentation improvements.   Update all dependencies.  Re-organize code as a series of workflow steps, each (potentially) supporting a promise, and creating a reusable pattern for future development. |
