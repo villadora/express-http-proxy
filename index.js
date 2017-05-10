@@ -9,11 +9,11 @@
 // complete: Break workflow into composable steps without changing them much
 // complete: extract workflow methods from main file
 // complete: cleanup options interface
-// *: change hook names to be different than the workflow steps.
+// complete: change hook names to be different than the workflow steps.
 // *: cleanup host is processed twice
 // *: cleanup workflow methods so they all present as over-rideable thennables
 // *: Update/add tests to unit test workflow steps independently
-// *: update docs and release
+// complete: update docs and release
 
 var ScopeContainer = require('./lib/scopeContainer');
 var assert = require('assert');
