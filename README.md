@@ -382,11 +382,11 @@ You can use ```proxyReqOptDecorator``` to ammend any auth or challenge headers r
 
 ### Q: How can I support non-standard certificate chains?
 
-You can use the ability to decorate the proxy request prior to sending.    See ```proxyReqOptDecorators``` for more details.
+You can use the ability to decorate the proxy request prior to sending.    See ```proxyReqOptDecorator``` for more details.
 
 ```js
 app.use('/', proxy('internalhost.example.com', {
-  proxyReqOptDecorators: function(proxyReqOpts, originalReq) {
+  proxyReqOptDecorator: function(proxyReqOpts, originalReq) {
     proxyReqOpts.ca =  [caCert, intermediaryCert]
     return proxyReqOpts;
   }
