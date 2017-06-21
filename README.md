@@ -47,8 +47,9 @@ Promise form
 app.use('/proxy', proxy('localhost:12345', {
   proxyReqPathResolver: function(req) {
     return new Promise(function (resolve, reject) {
-      setTimeout(function () {   // do asyncness
-        resolve(fancyResults);
+      setTimeout(function () {   // simulate async
+        var resolvedPathValue = "http://google.com";
+        resolve(resolvedPathValue);
       }, 200);
     });
   }
@@ -167,9 +168,11 @@ REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
 #### proxyReqOptDecorator  (supports Promise form)
 
-You can mutate the request options before sending the proxyRequest.
+You can override most request options before issuing the proxyRequest.
 proxyReqOpt represents the options argument passed to the (http|https).request
 module.
+
+NOTE:  req.path cannot be changed via this method;  use ```proxyReqPathResolver``` instead.   (see https://github.com/villadora/express-http-proxy/issues/243)
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -178,8 +181,6 @@ app.use('/proxy', proxy('www.google.com', {
     proxyReqOpts.headers['Content-Type'] = 'text/html';
     // you can change the method
     proxyReqOpts.method = 'GET';
-    // you could change the path
-    proxyReqOpts.path = 'http://dev/null'
     return proxyReqOpts;
   }
 }));
