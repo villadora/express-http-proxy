@@ -166,6 +166,22 @@ first request.
 
 REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
+
+#### maybeSkipToNextHandler (supports Promise form)
+(experimental: this interface may change in upcoming versions) 
+
+Allows you to inspect the proxy response, and decide if you want to continue processing (via express-http-proxy) or call ```next()``` to return control to express.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  maybeSkipToNextHandler: function(proxyRes) {
+    return proxyRes.statusCode === 404;
+  }
+}));
+```
+
+
+
 #### proxyReqOptDecorator  (supports Promise form)
 
 You can override most request options before issuing the proxyRequest.
