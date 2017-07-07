@@ -4,7 +4,7 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe.only('when skipToNextHandlerFilter is defined', function() {
+describe('when skipToNextHandlerFilter is defined', function() {
 
   this.timeout(10000);
 
