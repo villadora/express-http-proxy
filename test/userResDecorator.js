@@ -7,6 +7,36 @@ var proxy = require('../');
 
 describe('userResDecorator', function() {
 
+  describe('when handling a 304', function() {
+    this.timeout(10000);
+
+    var app, slowTarget, serverReference;
+
+    beforeEach(function() {
+      app = express();
+      slowTarget = express();
+      slowTarget.use(function(req, res) { res.sendStatus(304); });
+      serverReference = slowTarget.listen(12345);
+    });
+
+    afterEach(function() {
+      serverReference.close();
+    });
+
+    it('skips any handling', function(done) {
+      app.use('/proxy', proxy('http://127.0.0.1:12345', {
+        userResDecorator: function(/*res*/) {
+          throw new Error('expected to never get here because this step should be skipped for 304');
+        }
+      }));
+
+      request(app)
+        .get('/proxy')
+        .expect(304)
+        .end(done);
+    });
+  });
+
   it('has access to original response', function(done) {
     var app = express();
     app.use(proxy('httpbin.org', {
