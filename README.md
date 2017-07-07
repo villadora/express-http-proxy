@@ -82,22 +82,6 @@ app.use('/proxy', proxy('www.google.com', {
 
 You can modify the proxy's response before sending it to the client.
 
-##### exploiting references
-The intent is that this be used to modify the proxy response data only.
-
-Note:
-The other arguments (proxyRes, userReq, userRes) are passed by reference, so
-you *can* currently exploit this to modify either response's headers, for
-instance, but this is not a reliable interface. I expect to close this
-exploit in a future release, while providing an additional hook for mutating
-the userRes before sending.
-
-##### gzip responses
-
-If your proxy response is gzipped, this program will automatically unzip
-it before passing to your function, then zip it back up before piping it to the
-user response.  There is currently no way to short-circuit this behavior.
-
 ```js
 app.use('/proxy', proxy('www.google.com', {
   userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
@@ -120,6 +104,26 @@ app.use(proxy('httpbin.org', {
   }
 }));
 ```
+
+##### 304 - Not Modified
+
+When your proxied service returns 304, not modified, this step will be skipped, since there is no body to decorate.
+
+##### exploiting references
+The intent is that this be used to modify the proxy response data only.
+
+Note:
+The other arguments (proxyRes, userReq, userRes) are passed by reference, so
+you *can* currently exploit this to modify either response's headers, for
+instance, but this is not a reliable interface. I expect to close this
+exploit in a future release, while providing an additional hook for mutating
+the userRes before sending.
+
+##### gzip responses
+
+If your proxy response is gzipped, this program will automatically unzip
+it before passing to your function, then zip it back up before piping it to the
+user response.  There is currently no way to short-circuit this behavior.
 
 #### limit
 
