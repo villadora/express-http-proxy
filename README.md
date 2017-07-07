@@ -407,6 +407,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.5 | Minor documentation and  test patches |
 | 1.0.4 | Minor documentation, test, and package fixes |
 | 1.0.3 | Fixes 'limit option is not taken into account |
 | 1.0.2 | Minor docs corrections. |
