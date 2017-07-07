@@ -373,6 +373,13 @@ app.use('/proxy', proxy('www.google.com', {
 
 Resolution:  Simple update the name of either ```forwardPath``` or ```forwardPathAsync``` to ```proxyReqPathResolver```.
 
+## When errors occur on your proxy server
+
+When your proxy server responds with an error, express-http-proxy returns a response with the same status code.  See ```test/catchingErrors``` for syntax details.
+
+When your proxy server times out, express-http-proxy will continue to wait indefinitely for a response, unless you define a ```timeout``` as described above.
+
+
 ## Questions
 
 ### Q: Does it support https proxy?
@@ -400,6 +407,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.4 | Minor documentation, test, and package fixes |
 | 1.0.3 | Fixes 'limit option is not taken into account |
 | 1.0.2 | Minor docs corrections. |
 | 1.0.1 | Minor docs adjustments. |
