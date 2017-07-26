@@ -20,7 +20,7 @@ describe('honors timeout option', function() {
   var other, http;
   beforeEach(function() {
     http = express();
-    other = proxyTarget(8080, 1000);
+    other = proxyTarget(56001, 1000);
   });
 
   afterEach(function() {
@@ -51,7 +51,7 @@ describe('honors timeout option', function() {
   describe('when timeout option is set lower than server response time', function() {
     it('should fail with CONNECTION TIMEOUT', function(done) {
 
-      http.use(proxy('http://localhost:8080', {
+      http.use(proxy('http://localhost:56001', {
         timeout: 100,
       }));
 
@@ -62,7 +62,7 @@ describe('honors timeout option', function() {
   describe('when timeout option is set higher than server response time', function() {
     it('should succeed', function(done) {
 
-      http.use(proxy('http://localhost:8080', {
+      http.use(proxy('http://localhost:56001', {
         timeout: 1200,
       }));
 
