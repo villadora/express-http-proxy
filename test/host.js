@@ -18,7 +18,7 @@ describe('host can be a dynamic function', function() {
 
       var hostFn = function(req) {
         return 'localhost:' + req.params.port;
-      }
+      };
 
       app.use('/proxy/:port', proxy(hostFn, { memoizeHost: false }));
 
