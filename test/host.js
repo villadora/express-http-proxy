@@ -9,7 +9,7 @@ describe('host can be a dynamic function', function() {
   this.timeout(10000);
 
   var app = express();
-  describe('and memoization can be disabled', function () {
+  describe('and memoization can be disabled', function() {
       var firstProxyApp = express();
       var secondProxyApp = express();
       // TODO: This seems like a bug factory.  We will have intermittent port conflicts, yeah?
