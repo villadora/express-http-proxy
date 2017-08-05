@@ -404,7 +404,7 @@ When your proxy server times out, express-http-proxy will continue to wait indef
 
 ### Q: Does it support https proxy?
 
-The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to alwyas use https.
+The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to always use https.
 
 You can use ```proxyReqOptDecorator``` to ammend any auth or challenge headers required to succeed https.
 
