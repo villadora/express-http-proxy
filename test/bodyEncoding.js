@@ -117,6 +117,23 @@ describe('body encoding', function() {
           });
       });
     });
+    it('should fail with an error when exceeding limit', function(done) {
+      var app = express();
+      app.use(proxy('localhost:8109', {
+        limit: 1,
+      }));
+      // silence jshint warning about unused vars - express error handler *needs* 4 args
+      app.use(function(err, req, res, next) {// jshint ignore:line
+        res.json(err);
+      });
+      request(app)
+        .post('/post')
+        .send({ some: 'json' })
+        .end(function(err, response) {
+          assert(response.body.message === 'request entity too large');
+          done();
+        });
+    });
   });
 
 
