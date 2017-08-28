@@ -58,7 +58,6 @@ function decorateProxyResBody(container) {
         verifyBuffer(rspd, reject);
         updateHeaders(res, proxyResData, rspd, reject);
         container.proxy.resData = maybeZipResponse(rspd, container.proxy.res);
-        res.rspd = rspd;
         resolve(container);
       });
     });
