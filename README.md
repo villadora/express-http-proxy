@@ -25,6 +25,11 @@ var app = require('express')();
 app.use('/proxy', proxy('www.google.com'));
 ```
 
+### Promises
+
+Many function hooks support Promises.    
+If any Promise is rejected, ```next(x)``` is called in the hosting application, where ```x``` is the value of Promise.reject(x).
+
 ### Options
 
 #### proxyReqPathResolver (supports Promises)
