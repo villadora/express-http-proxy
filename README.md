@@ -25,6 +25,27 @@ var app = require('express')();
 app.use('/proxy', proxy('www.google.com'));
 ```
 
+### Promises
+
+Many function hooks support Promises.    
+If any Promise is rejected, ```next(x)``` is called in the hosting application, where ```x``` is whatever you pass to ```Promise.reject```;
+
+
+e.g.
+```
+  app.use(proxy('/reject-promise', {
+    proxyReqOptDecorator: function() {
+      return Promise.reject('An arbitrary rejection message.');
+    }
+  }));
+```
+
+eventually calls
+
+```
+next('An arbitrary rejection messasage');
+```
+
 ### Options
 
 #### proxyReqPathResolver (supports Promises)
@@ -171,14 +192,14 @@ first request.
 REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
 
-#### maybeSkipToNextHandler (supports Promise form)
+#### skipToNextHandlerFilter(supports Promise form)
 (experimental: this interface may change in upcoming versions) 
 
 Allows you to inspect the proxy response, and decide if you want to continue processing (via express-http-proxy) or call ```next()``` to return control to express.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  maybeSkipToNextHandler: function(proxyRes) {
+  skipToNextHandlerFilter: function(proxyRes) {
     return proxyRes.statusCode === 404;
   }
 }));
