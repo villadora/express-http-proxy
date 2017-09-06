@@ -427,6 +427,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
 | 1.0.5 | Minor documentation and  test patches |
 | 1.0.4 | Minor documentation, test, and package fixes |
 | 1.0.3 | Fixes 'limit option is not taken into account |
