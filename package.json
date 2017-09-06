@@ -1,6 +1,6 @@
 {
   "name": "express-http-proxy",
-  "version": "0.10.1",
+  "version": "1.0.6",
   "description": "http proxy middleware for express",
   "engines": {
     "node": ">=4.0.0"
@@ -9,10 +9,10 @@
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
-    "test:debug": "mocha debug -R spec test/*.js",
-    "mocha": "mocha -R spec test/*.js",
-    "lint": "jshint index.js test/*.js",
-    "jscs": "jscs index.js test/*.js"
+    "test:debug": "mocha debug -R spec test --recursive",
+    "mocha": "mocha -R spec test --recursive",
+    "lint": "jshint index.js test/*.js test/**/*js lib/*js app/**/*js ",
+    "jscs": "jscs index.js test/*.js test/**/*js lib/*js app/**/*js"
   },
   "repository": {
     "type": "git",
@@ -30,16 +30,19 @@
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
   "devDependencies": {
-    "body-parser": "^1.15.2",
-    "express": "^4.3.1",
+    "body-parser": "^1.17.1",
+    "chai": "^3.5.0",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.15.2",
     "jscs": "^3.0.7",
-    "jshint": "^2.5.5",
+    "jshint": "^2.9.4",
     "mocha": "^2.1.0",
     "supertest": "^1.2.0"
   },
   "dependencies": {
-    "es6-promise": "^3.2.1",
-    "raw-body": "^2.1.7"
+    "debug": "^2.6.4",
+    "es6-promise": "^3.3.1",
+    "raw-body": "^2.2.0"
   },
   "contributors": [
     {

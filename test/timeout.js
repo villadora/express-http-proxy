@@ -1,18 +1,7 @@
-var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
-
-function proxyTarget(port, timeout) {
-  'use strict';
-  var other = express();
-  other.get('/', function(req, res) {
-    setTimeout(function() {
-      res.send('Success');
-    },timeout);
-  });
-  return other.listen(port);
-}
+var proxyTarget = require('./support/proxyTarget');
 
 describe('honors timeout option', function() {
   'use strict';
@@ -20,7 +9,11 @@ describe('honors timeout option', function() {
   var other, http;
   beforeEach(function() {
     http = express();
-    other = proxyTarget(56001, 1000);
+    other = proxyTarget(56001, 1000, [{
+      method: 'get',
+      path: '/',
+      fn: function(req, res) { res.sendStatus(200); }
+    }]);
   });
 
   afterEach(function() {
@@ -31,11 +24,7 @@ describe('honors timeout option', function() {
     request(http)
       .get('/')
       .expect(200)
-      .end(function(err, res) {
-        if (err) { return done(err); }
-        assert(res.text === 'Success');
-        done();
-      });
+      .end(done);
   }
 
   function assertConnectionTimeout(server, done) {
