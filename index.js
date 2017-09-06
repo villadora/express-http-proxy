@@ -35,7 +35,7 @@ module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
 
   return function handleProxy(req, res, next) {
-    debug('handleProxy called on ' + req.path);
+    debug('[start proxy] ' + req.path);
     var container = new ScopeContainer(req, res, next, host, userOptions);
 
     // Skip proxy if filter is falsey.  Loose equality so filters can return

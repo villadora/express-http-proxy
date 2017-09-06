@@ -17,7 +17,7 @@ function buildProxyReq(Container) {
     .then(function(responseArray) {
       Container.proxy.bodyContent = responseArray[0];
       Container.proxy.reqBuilder = responseArray[1];
-      debug('proxy request options:\n', Container.proxy.reqBuilder);
+      debug('proxy request options:', Container.proxy.reqBuilder);
       return Container;
     });
 }
