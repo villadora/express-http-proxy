@@ -15,14 +15,35 @@ $ npm install express-http-proxy --save
 proxy(host, options);
 ```
 
+### Example:
 To proxy URLS starting with '/proxy' to the host 'www.google.com':
 
 ```js
 var proxy = require('express-http-proxy');
-
 var app = require('express')();
 
 app.use('/proxy', proxy('www.google.com'));
+```
+
+### Promises
+
+Many function hooks support Promises.    
+If any Promise is rejected, ```next(x)``` is called in the hosting application, where ```x``` is whatever you pass to ```Promise.reject```;
+
+
+e.g.
+```
+  app.use(proxy('/reject-promise', {
+    proxyReqOptDecorator: function() {
+      return Promise.reject('An arbitrary rejection message.');
+    }
+  }));
+```
+
+eventually calls
+
+```
+next('An arbitrary rejection messasage');
 ```
 
 ### Options
@@ -47,8 +68,9 @@ Promise form
 app.use('/proxy', proxy('localhost:12345', {
   proxyReqPathResolver: function(req) {
     return new Promise(function (resolve, reject) {
-      setTimeout(function () {   // do asyncness
-        resolve(fancyResults);
+      setTimeout(function () {   // simulate async
+        var resolvedPathValue = "http://google.com";
+        resolve(resolvedPathValue);
       }, 200);
     });
   }
@@ -81,22 +103,6 @@ app.use('/proxy', proxy('www.google.com', {
 
 You can modify the proxy's response before sending it to the client.
 
-##### exploiting references
-The intent is that this be used to modify the proxy response data only.
-
-Note:
-The other arguments (proxyRes, userReq, userRes) are passed by reference, so
-you *can* currently exploit this to modify either response's headers, for
-instance, but this is not a reliable interface. I expect to close this
-exploit in a future release, while providing an additional hook for mutating
-the userRes before sending.
-
-##### gzip responses
-
-If your proxy response is gzipped, this program will automatically unzip
-it before passing to your function, then zip it back up before piping it to the
-user response.  There is currently no way to short-circuit this behavior.
-
 ```js
 app.use('/proxy', proxy('www.google.com', {
   userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
@@ -119,6 +125,26 @@ app.use(proxy('httpbin.org', {
   }
 }));
 ```
+
+##### 304 - Not Modified
+
+When your proxied service returns 304, not modified, this step will be skipped, since there is no body to decorate.
+
+##### exploiting references
+The intent is that this be used to modify the proxy response data only.
+
+Note:
+The other arguments (proxyRes, userReq, userRes) are passed by reference, so
+you *can* currently exploit this to modify either response's headers, for
+instance, but this is not a reliable interface. I expect to close this
+exploit in a future release, while providing an additional hook for mutating
+the userRes before sending.
+
+##### gzip responses
+
+If your proxy response is gzipped, this program will automatically unzip
+it before passing to your function, then zip it back up before piping it to the
+user response.  There is currently no way to short-circuit this behavior.
 
 #### limit
 
@@ -165,11 +191,29 @@ first request.
 
 REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
+
+#### skipToNextHandlerFilter(supports Promise form)
+(experimental: this interface may change in upcoming versions) 
+
+Allows you to inspect the proxy response, and decide if you want to continue processing (via express-http-proxy) or call ```next()``` to return control to express.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  skipToNextHandlerFilter: function(proxyRes) {
+    return proxyRes.statusCode === 404;
+  }
+}));
+```
+
+
+
 #### proxyReqOptDecorator  (supports Promise form)
 
-You can mutate the request options before sending the proxyRequest.
+You can override most request options before issuing the proxyRequest.
 proxyReqOpt represents the options argument passed to the (http|https).request
 module.
+
+NOTE:  req.path cannot be changed via this method;  use ```proxyReqPathResolver``` instead.   (see https://github.com/villadora/express-http-proxy/issues/243)
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -178,8 +222,6 @@ app.use('/proxy', proxy('www.google.com', {
     proxyReqOpts.headers['Content-Type'] = 'text/html';
     // you can change the method
     proxyReqOpts.method = 'GET';
-    // you could change the path
-    proxyReqOpts.path = 'http://dev/null'
     return proxyReqOpts;
   }
 }));
@@ -372,11 +414,18 @@ app.use('/proxy', proxy('www.google.com', {
 
 Resolution:  Simple update the name of either ```forwardPath``` or ```forwardPathAsync``` to ```proxyReqPathResolver```.
 
+## When errors occur on your proxy server
+
+When your proxy server responds with an error, express-http-proxy returns a response with the same status code.  See ```test/catchingErrors``` for syntax details.
+
+When your proxy server times out, express-http-proxy will continue to wait indefinitely for a response, unless you define a ```timeout``` as described above.
+
+
 ## Questions
 
 ### Q: Does it support https proxy?
 
-The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to alwyas use https.
+The library will automatically use https if the provided path has 'https://' or ':443'.  You may also set option ```https``` to true to always use https.
 
 You can use ```proxyReqOptDecorator``` to ammend any auth or challenge headers required to succeed https.
 
@@ -399,6 +448,10 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.7 |  Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
+| 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
+| 1.0.5 | Minor documentation and  test patches |
+| 1.0.4 | Minor documentation, test, and package fixes |
 | 1.0.3 | Fixes 'limit option is not taken into account |
 | 1.0.2 | Minor docs corrections. |
 | 1.0.1 | Minor docs adjustments. |

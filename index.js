@@ -24,6 +24,7 @@ var copyProxyResHeadersToUserRes = require('./app/steps/copyProxyResHeadersToUse
 var decorateProxyReqBody         = require('./app/steps/decorateProxyReqBody');
 var decorateProxyReqOpts         = require('./app/steps/decorateProxyReqOpts');
 var decorateUserRes              = require('./app/steps/decorateUserRes');
+var maybeSkipToNextHandler       = require('./app/steps/maybeSkipToNextHandler');
 var prepareProxyReq              = require('./app/steps/prepareProxyReq');
 var resolveProxyHost             = require('./app/steps/resolveProxyHost');
 var resolveProxyReqPath          = require('./app/steps/resolveProxyReqPath');
@@ -34,7 +35,7 @@ module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
 
   return function handleProxy(req, res, next) {
-    debug('handleProxy called on ' + req.path);
+    debug('[start proxy] ' + req.path);
     var container = new ScopeContainer(req, res, next, host, userOptions);
 
     // Skip proxy if filter is falsey.  Loose equality so filters can return
@@ -48,6 +49,7 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateProxyReqBody)
       .then(prepareProxyReq)
       .then(sendProxyRequest)
+      .then(maybeSkipToNextHandler)
       .then(copyProxyResHeadersToUserRes)
       .then(decorateUserRes)
       .then(sendUserRes)

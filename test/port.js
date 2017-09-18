@@ -19,7 +19,7 @@ describe('proxies to requested port', function() {
   var other, http;
   beforeEach(function() {
     http = express();
-    other = proxyTarget(8080);
+    other = proxyTarget(56001);
   });
 
   afterEach(function() {
@@ -42,7 +42,7 @@ describe('proxies to requested port', function() {
     it('when passed as an option', function(done) {
 
       http.use(proxy('http://localhost', {
-        port: 8080
+        port: 56001
       }));
 
       assertSuccess(http, done);
@@ -50,7 +50,7 @@ describe('proxies to requested port', function() {
 
     it('when passed on the host string', function(done) {
 
-      http.use(proxy('http://localhost:8080'));
+      http.use(proxy('http://localhost:56001'));
 
       assertSuccess(http, done);
     });
@@ -63,7 +63,7 @@ describe('proxies to requested port', function() {
     it('and port is on the String returned', function(done) {
 
       http.use(proxy(
-          function() { return 'http://localhost:8080'; }
+          function() { return 'http://localhost:56001'; }
       ));
 
       assertSuccess(http, done);
@@ -73,7 +73,7 @@ describe('proxies to requested port', function() {
 
       http.use(proxy(
         function() { return 'http://localhost'; },
-        { port: 8080 }
+        { port: 56001 }
       ));
 
       assertSuccess(http, done);

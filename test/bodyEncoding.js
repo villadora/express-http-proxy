@@ -1,3 +1,4 @@
+'use strict';
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
@@ -6,10 +7,18 @@ var os = require('os');
 var proxy = require('../');
 var startProxyTarget = require('./support/proxyTarget');
 
-startProxyTarget(8109, 1000);
 
 describe('body encoding', function() {
-  'use strict';
+  var server;
+
+  before(function() {
+    server = startProxyTarget(8109, 1000);
+  });
+
+  after(function() {
+    server.close();
+  });
+
   this.timeout(10000);
 
   var pngHex = '89504e470d0a1a0a0' +
@@ -107,6 +116,23 @@ describe('body encoding', function() {
             done(err);
           });
       });
+    });
+    it('should fail with an error when exceeding limit', function(done) {
+      var app = express();
+      app.use(proxy('localhost:8109', {
+        limit: 1,
+      }));
+      // silence jshint warning about unused vars - express error handler *needs* 4 args
+      app.use(function(err, req, res, next) {// jshint ignore:line
+        res.json(err);
+      });
+      request(app)
+        .post('/post')
+        .send({ some: 'json' })
+        .end(function(err, response) {
+          assert(response.body.message === 'request entity too large');
+          done();
+        });
     });
   });
 

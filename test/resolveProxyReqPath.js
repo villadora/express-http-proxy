@@ -1,8 +1,8 @@
 'use strict';
 
 var assert = require('assert');
-var ScopeContainer = require('../../lib/scopeContainer');
-var resolveProxyReqPath = require('../../app/steps/resolveProxyReqPath');
+var ScopeContainer = require('../lib/scopeContainer');
+var resolveProxyReqPath = require('../app/steps/resolveProxyReqPath');
 var expect = require('chai').expect;
 
 

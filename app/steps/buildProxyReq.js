@@ -12,16 +12,14 @@ function buildProxyReq(Container) {
   var parseBody = (!options.parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
   var createReqOptions = requestOptions.create(req, res, options, host);
 
-  return new Promise(function(resolve) {
-    Promise
+  return Promise
     .all([parseBody, createReqOptions])
     .then(function(responseArray) {
       Container.proxy.bodyContent = responseArray[0];
       Container.proxy.reqBuilder = responseArray[1];
-      debug('proxy request options:\n', Container.proxy.reqBuilder);
-      resolve(Container);
+      debug('proxy request options:', Container.proxy.reqBuilder);
+      return Container;
     });
-  });
 }
 
 module.exports = buildProxyReq;
