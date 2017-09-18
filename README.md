@@ -15,11 +15,11 @@ $ npm install express-http-proxy --save
 proxy(host, options);
 ```
 
+### Example:
 To proxy URLS starting with '/proxy' to the host 'www.google.com':
 
 ```js
 var proxy = require('express-http-proxy');
-
 var app = require('express')();
 
 app.use('/proxy', proxy('www.google.com'));
@@ -448,6 +448,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.0.7 |  Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
 | 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
 | 1.0.5 | Minor documentation and  test patches |
 | 1.0.4 | Minor documentation, test, and package fixes |
