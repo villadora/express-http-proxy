@@ -50,9 +50,11 @@ next('An arbitrary rejection messasage');
 
 #### proxyReqPathResolver (supports Promises)
 
-Provide a proxyReqPathResolver function if you'd like to
-operate on the path before issuing the proxy request.  Use a Promise for async
+Provide a method to resolve the path to request from the proxy. If you'd like to
+operate on the path before issuing the proxy request, here can be done. Use a Promise for async
 operations.
+
+Example where the path of the requested url is added to the proxied url.
 
 ```js
 app.use('/proxy', proxy('localhost:12345', {
