@@ -187,6 +187,18 @@ request, and all additional requests would return the value resolved on the
 first request.
 
 
+### userResHeaderDecorator
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
+    // recieves an Object of headers, returns an Object of headers.
+    return headers;
+  }
+}));
+```
+
+
 #### decorateRequest
 
 REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
