@@ -2,7 +2,11 @@
 
 function sendUserRes(Container) {
   if (!Container.user.res.headersSent) {
-    Container.user.res.send(Container.proxy.resData);
+    if (Container.options.stream) {
+      Container.proxy.res.pipe(Container.user.res);
+    } else {
+      Container.user.res.send(Container.proxy.resData);
+    }
   }
   return Promise.resolve(Container);
 }
