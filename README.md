@@ -172,8 +172,11 @@ E.g.,
 ```js
 
   function coinToss() { return Math.random() > .5 }
-  function getHost() { return coinToss() ? 'http://yahoo.com' : 'http://google.com' }
-
+  function getHost() {
+    var host = coinToss() ? 'http://yahoo.com' : 'http://google.com';
+    return coinToss() ? Promise.resolve(host) : host;
+  }
+  
   app.use(proxy(getHost, {
     memoizeHost: false
   }))
@@ -451,7 +454,7 @@ app.use('/', proxy('internalhost.example.com', {
     proxyReqOpts.ca =  [caCert, intermediaryCert]
     return proxyReqOpts;
   }
-})
+}))
 ```
 
 
