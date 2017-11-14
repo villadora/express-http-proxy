@@ -460,7 +460,8 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
-| 1.0.7 |  Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
+| 1.0.8 | Add step to allow response headers to be modified.
+| 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
 | 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
 | 1.0.5 | Minor documentation and  test patches |
 | 1.0.4 | Minor documentation, test, and package fixes |
