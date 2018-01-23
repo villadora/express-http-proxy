@@ -307,6 +307,8 @@ The ```parseReqBody``` option allows you to control parsing the request body.
 For example, disabling body parsing is useful for large uploads where it would be inefficient
 to hold the data in memory.
 
+##### Note: this setting is required for binary uploads.   A future version of this library may handle this for you.
+
 This defaults to true in order to preserve legacy behavior. 
 
 When false, no action will be taken on the body and accordingly ```req.body``` will no longer be set.
