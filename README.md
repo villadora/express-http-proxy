@@ -187,6 +187,18 @@ request, and all additional requests would return the value resolved on the
 first request.
 
 
+### userResHeaderDecorator
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
+    // recieves an Object of headers, returns an Object of headers.
+    return headers;
+  }
+}));
+```
+
+
 #### decorateRequest
 
 REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
@@ -295,7 +307,9 @@ The ```parseReqBody``` option allows you to control parsing the request body.
 For example, disabling body parsing is useful for large uploads where it would be inefficient
 to hold the data in memory.
 
-This defaults to true in order to preserve legacy behavior.
+##### Note: this setting is required for binary uploads.   A future version of this library may handle this for you.
+
+This defaults to true in order to preserve legacy behavior. 
 
 When false, no action will be taken on the body and accordingly ```req.body``` will no longer be set.
 
@@ -452,7 +466,8 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
-| 1.0.7 |  Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
+| 1.1.0 | Add step to allow response headers to be modified.
+| 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
 | 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
 | 1.0.5 | Minor documentation and  test patches |
 | 1.0.4 | Minor documentation, test, and package fixes |
