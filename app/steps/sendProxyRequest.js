@@ -8,6 +8,23 @@ function sendProxyRequest(Container) {
   var bodyContent = Container.proxy.bodyContent;
   var reqOpt = Container.proxy.reqBuilder;
   var options = Container.options;
+  // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+  var corporateProxyServer = process.env.http_proxy || process.env.HTTP_PROXY ||
+        process.env.https_proxy || process.env.HTTPS_PROXY;
+  var noProxyVal = process.env.no_proxy;
+  // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+  var noProxy = [];
+  if (noProxyVal) {
+    noProxy = noProxyVal.split(',');
+  }
+
+  function isHostOutside() {
+    return !noProxy.includes(reqOpt.host);
+  }
+  if (corporateProxyServer && isHostOutside()) {
+    var HttpsProxyAgent = require('https-proxy-agent');
+    reqOpt.agent =  new HttpsProxyAgent(corporateProxyServer);
+  }
 
   return new Promise(function(resolve, reject) {
     var protocol = Container.proxy.requestModule;

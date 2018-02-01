@@ -9,6 +9,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
+    "pretest:corp-firewall": "if [ -z \"$http_proxy\" ]; then echo 'ERROR: you must set http_proxy first'; exit 1; else exit 0; fi",
+    "test:corp-firewall": "NODE_TLS_REJECT_UNAUTHORIZED=0 no_proxy='127.0.0.1,localhost' npm test",
     "test:debug": "mocha debug -R spec test --recursive",
     "mocha": "mocha -R spec test --recursive",
     "lint": "jshint index.js test/*.js test/**/*js lib/*js app/**/*js ",
@@ -42,6 +44,7 @@
   "dependencies": {
     "debug": "^3.0.1",
     "es6-promise": "^4.1.1",
+    "https-proxy-agent": "^2.1.0",
     "raw-body": "^2.3.0"
   },
   "contributors": [
