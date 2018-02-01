@@ -2,8 +2,6 @@
 
 Express middleware to proxy request to another host and pass response back to original caller.
 
-## NOTE: version 1.0.0 released: breaking changes, transition guide at bottom of doc. 
-
 ## Install
 
 ```bash
@@ -25,9 +23,18 @@ var app = require('express')();
 app.use('/proxy', proxy('www.google.com'));
 ```
 
+### Streaming
+
+Proxy requests and user responses are piped/streamed/chunked by default. 
+
+If you define a response modifier (userResDecorator, userResHeaderDecorator),
+or need to inspect the response before continuing (maybeSkipToNext), streaming
+is disabled, and the request and response are buffered.  
+This can cause performance issues with large payloads.
+
 ### Promises
 
-Many function hooks support Promises.    
+Many function hooks support Promises.
 If any Promise is rejected, ```next(x)``` is called in the hosting application, where ```x``` is whatever you pass to ```Promise.reject```;
 
 
@@ -45,6 +52,9 @@ eventually calls
 ```
 next('An arbitrary rejection messasage');
 ```
+
+
+
 
 ### Options
 
@@ -205,7 +215,7 @@ REMOVED:  See ```proxyReqOptDecorator``` and ```proxyReqBodyDecorator```.
 
 
 #### skipToNextHandlerFilter(supports Promise form)
-(experimental: this interface may change in upcoming versions) 
+(experimental: this interface may change in upcoming versions)
 
 Allows you to inspect the proxy response, and decide if you want to continue processing (via express-http-proxy) or call ```next()``` to return control to express.
 
@@ -309,7 +319,7 @@ to hold the data in memory.
 
 ##### Note: this setting is required for binary uploads.   A future version of this library may handle this for you.
 
-This defaults to true in order to preserve legacy behavior. 
+This defaults to true in order to preserve legacy behavior.
 
 When false, no action will be taken on the body and accordingly ```req.body``` will no longer be set.
 
@@ -357,11 +367,10 @@ app.use('/post', proxy('httpbin.org', {
 }));
 ```
 
-
 #### timeout
 
-By default, node does not express a timeout on connections.   
-Use timeout option to impose a specific timeout.    
+By default, node does not express a timeout on connections.
+Use timeout option to impose a specific timeout.
 Timed-out requests will respond with 504 status code and a X-Timeout-Reason header.
 
 ```js
