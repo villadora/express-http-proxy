@@ -10,7 +10,7 @@ function isResGzipped(res) {
 
 function zipOrUnzip(method) {
   return function(rspData, res) {
-    return (isResGzipped(res)) ? zlib[method](rspData) : rspData;
+    return (isResGzipped(res) && rspData.length) ? zlib[method](rspData) : rspData;
   };
 }
 
