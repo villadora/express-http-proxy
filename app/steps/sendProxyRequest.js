@@ -4,7 +4,6 @@ var chunkLength = require('../../lib/chunkLength');
 
 function sendProxyRequest(Container) {
   var req = Container.user.req;
-  var res = Container.user.res;
   var bodyContent = Container.proxy.bodyContent;
   var reqOpt = Container.proxy.reqBuilder;
   var options = Container.options;
@@ -35,19 +34,7 @@ function sendProxyRequest(Container) {
       }
     });
 
-    // TODO: do reject here and handle this later on
-    proxyReq.on('error', function(err) {
-    // reject(error);
-      if (err.code === 'ECONNRESET') {
-        res.setHeader('X-Timout-Reason',
-          'express-http-proxy timed out your request after ' +
-        options.timeout + 'ms.');
-        res.writeHead(504, {'Content-Type': 'text/plain'});
-        res.end();
-      } else {
-        reject(err);
-      }
-    });
+    proxyReq.on('error', reject);
 
     // this guy should go elsewhere, down the chain
     if (options.parseReqBody) {

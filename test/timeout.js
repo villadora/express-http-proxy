@@ -30,11 +30,9 @@ describe('honors timeout option', function() {
   function assertConnectionTimeout(server, done) {
     request(http)
       .get('/')
-      .expect(408)
-      .expect('X-Timout-Reason', 'express-http-proxy timed out your request after 100 ms.')
-      .end(function() {
-        done();
-      });
+      .expect(504)
+      .expect('X-Timout-Reason', 'express-http-proxy reset the request.')
+      .end(done);
   }
 
   describe('when timeout option is set lower than server response time', function() {
