@@ -11,11 +11,6 @@ function sendProxyRequest(Container) {
   return new Promise(function(resolve, reject) {
     var protocol = Container.proxy.requestModule;
     var proxyReq = protocol.request(reqOpt, function(rsp) {
-      if (options.stream) {
-        Container.proxy.res = rsp;
-        return resolve(Container);
-      }
-
       var chunks = [];
       rsp.on('data', function(chunk) { chunks.push(chunk); });
       rsp.on('end', function() {
