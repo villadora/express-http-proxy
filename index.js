@@ -1,19 +1,9 @@
 'use strict';
 
-// ROADMAP: Major refactoring April 2017
-// It would be easier to follow if we extract to simpler functions, and used
-// a standard, step-wise set of filters with clearer edges and borders.  It
-// would be more useful if authors could use Promises for all over-rideable
-// steps.
+// * Breaks proxying into a series of discrete steps, many of which can be swapped out by authors.
+// * Uses Promises to support async.
+// * Uses a quasi-Global called Container to tidy up the argument passing between the major work-flow steps.
 
-// complete: Break workflow into composable steps without changing them much
-// complete: extract workflow methods from main file
-// complete: cleanup options interface
-// complete: change hook names to be different than the workflow steps.
-// *: cleanup host is processed twice
-// *: cleanup workflow methods so they all present as over-rideable thennables
-// *: Update/add tests to unit test workflow steps independently
-// complete: update docs and release
 
 var ScopeContainer = require('./lib/scopeContainer');
 var assert = require('assert');
