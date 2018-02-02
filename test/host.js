@@ -13,8 +13,11 @@ describe('host can be a dynamic function', function() {
       var firstProxyApp = express();
       var secondProxyApp = express();
       // TODO: This seems like a bug factory.  We will have intermittent port conflicts, yeah?
-      var firstPort = Math.floor(Math.random() * 10000);
-      var secondPort = Math.floor(Math.random() * 10000);
+      function randomNumberInPortRange() {
+        return Math.floor(Math.random() * 48000) + 1024;
+      }
+      var firstPort = randomNumberInPortRange();
+      var secondPort = randomNumberInPortRange();
 
       var hostFn = function(req) {
         return 'localhost:' + req.params.port;

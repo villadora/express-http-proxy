@@ -15,6 +15,7 @@ var decorateProxyReqBody         = require('./app/steps/decorateProxyReqBody');
 var decorateProxyReqOpts         = require('./app/steps/decorateProxyReqOpts');
 var decorateUserRes              = require('./app/steps/decorateUserRes');
 var decorateUserResHeaders       = require('./app/steps/decorateUserResHeaders');
+var decorateProxyErrors          = require('./app/steps/decorateProxyErrors');
 var maybeSkipToNextHandler       = require('./app/steps/maybeSkipToNextHandler');
 var prepareProxyReq              = require('./app/steps/prepareProxyReq');
 var resolveProxyHost             = require('./app/steps/resolveProxyHost');
@@ -45,6 +46,9 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateUserResHeaders)
       .then(decorateUserRes)
       .then(sendUserRes)
-      .catch(next);
+      .catch(function(err) {
+        decorateProxyErrors(err, res, next);
+      });
   };
 };
+
