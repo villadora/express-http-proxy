@@ -25,11 +25,11 @@ app.use('/proxy', proxy('www.google.com'));
 
 ### Streaming
 
-Proxy requests and user responses are piped/streamed/chunked by default. 
+Proxy requests and user responses are piped/streamed/chunked by default.
 
 If you define a response modifier (userResDecorator, userResHeaderDecorator),
 or need to inspect the response before continuing (maybeSkipToNext), streaming
-is disabled, and the request and response are buffered.  
+is disabled, and the request and response are buffered.
 This can cause performance issues with large payloads.
 
 ### Promises
