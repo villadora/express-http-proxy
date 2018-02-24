@@ -50,7 +50,7 @@ describe('body encoding', function() {
         .post('/post')
         .attach('image', filename)
         .end(function(err) {
-          fs.unlink(filename);
+          fs.unlinkSync(filename);
           // This test is both broken and I think unnecessary.
           // Its broken because http.bin no longer supports /post, but this test assertion is based on the old
           // httpbin behavior.
@@ -81,7 +81,7 @@ describe('body encoding', function() {
           .post('/post')
           .attach('image', filename)
           .end(function(err) {
-            fs.unlink(filename);
+            fs.unlinkSync(filename);
             // This test is both broken and I think unnecessary.
             // Its broken because http.bin no longer supports /post, but this test assertion is based on the old
             // httpbin behavior.
@@ -105,7 +105,7 @@ describe('body encoding', function() {
           .post('/post')
           .attach('image', filename)
           .end(function(err) {
-            fs.unlink(filename);
+            fs.unlinkSync(filename);
             assert(err === null);
             // This test is both broken and I think unnecessary.
             // Its broken because http.bin no longer supports /post, but this test assertion is based on the old
