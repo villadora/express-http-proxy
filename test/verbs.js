@@ -1,5 +1,6 @@
 var assert = require('assert');
 var express = require('express');
+var bodyParser = require('body-parser');
 var request = require('supertest');
 var proxy = require('../');
 
@@ -11,6 +12,8 @@ describe('http verbs', function() {
 
   beforeEach(function() {
     app = express();
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: false }));
     app.use(proxy('httpbin.org'));
   });
 
