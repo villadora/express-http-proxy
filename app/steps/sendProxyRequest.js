@@ -48,7 +48,18 @@ function sendProxyRequest(Container) {
       //}
 
       if (bodyContent.length) {
-        proxyReq.write(bodyContent);
+        var body = bodyContent;
+        var contentType = proxyReq.getHeader('Content-Type');
+        if (contentType === 'x-www-form-urlencoded') {
+          try {
+            var params = JSON.parse(body);
+            body = Object.keys(params).map(function(k) { return k + '=' + params[k]; }).join('&');
+          } catch (e) {
+            // bodyContent is not json-format
+          }
+        }
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
+        proxyReq.write(body);
       }
       proxyReq.end();
     } else {

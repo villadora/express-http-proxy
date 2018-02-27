@@ -37,6 +37,17 @@ describe('http verbs', function() {
       });
   });
 
+  it('test proxy post by x-www-form-urlencoded', function(done) {
+    request(app)
+      .post('/post')
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .send('mypost=hello')
+      .end(function(err, res) {
+        assert.equal(JSON.stringify(res.body.form), '{"mypost":"hello"}');
+        done(err);
+      });
+  });
+
   it('test proxy put', function(done) {
     request(app)
       .put('/put')
