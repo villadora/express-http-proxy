@@ -1,5 +1,6 @@
 var assert = require('assert');
 var express = require('express');
+var bodyParser = require('body-parser');
 var request = require('supertest');
 var proxy = require('../');
 
@@ -11,6 +12,8 @@ describe('http verbs', function() {
 
   beforeEach(function() {
     app = express();
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: false }));
     app.use(proxy('httpbin.org'));
   });
 
@@ -33,6 +36,17 @@ describe('http verbs', function() {
       })
       .end(function(err, res) {
         assert.equal(res.body.data, '{"mypost":"hello"}');
+        done(err);
+      });
+  });
+
+  it('test proxy post by x-www-form-urlencoded', function(done) {
+    request(app)
+      .post('/post')
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .send('mypost=hello')
+      .end(function(err, res) {
+        assert.equal(JSON.stringify(res.body.form), '{"mypost":"hello"}');
         done(err);
       });
   });
