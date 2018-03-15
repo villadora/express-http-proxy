@@ -53,12 +53,34 @@ eventually calls
 next('An arbitrary rejection messasage');
 ```
 
+### Host
 
+The first positional argument is for the proxy host;  in many cases you will use a static string here, eg.
 
+```
+app.use('/', proxy('http://google.com'))
+```
+
+However, this argument can also be a function, and that function can be
+memoized or computed on each request, based on the setting of
+```memoizeHost```.
+
+```
+function selectProxyHost() {
+  return (new Date() % 2) ? 'http://google.com' : 'http://altavista,com';
+}
+
+app.use('/', proxy(selectProxyHost);
+```
 
 ### Options
 
 #### proxyReqPathResolver (supports Promises)
+
+Note: In ```express-http-proxy```, the ```path``` is considered the portion of
+the url after the host, and including all query params.  E.g. for the URL
+```http://smoogle.com/search/path?q=123```; the path is
+```/search/path?q=123```.
 
 Provide a proxyReqPathResolver function if you'd like to
 operate on the path before issuing the proxy request.  Use a Promise for async
@@ -79,7 +101,8 @@ app.use('/proxy', proxy('localhost:12345', {
   proxyReqPathResolver: function(req) {
     return new Promise(function (resolve, reject) {
       setTimeout(function () {   // simulate async
-        var resolvedPathValue = "http://google.com";
+        // in this case I expect a request to /proxy => localhost:12345/a/different/path
+        var resolvedPathValue = "/a/different/path";
         resolve(resolvedPathValue);
       }, 200);
     });
