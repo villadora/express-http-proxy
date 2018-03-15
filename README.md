@@ -67,7 +67,7 @@ memoized or computed on each request, based on the setting of
 
 ```
 function selectProxyHost() {
-  return (new Date() % 2) ? 'http://google.com' : 'http://altavista,com';
+  return (new Date() % 2) ? 'http://google.com' : 'http://altavista.com';
 }
 
 app.use('/', proxy(selectProxyHost);
