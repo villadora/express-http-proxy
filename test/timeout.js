@@ -31,7 +31,7 @@ describe('honors timeout option', function() {
     request(http)
       .get('/')
       .expect(504)
-      .expect('X-Timout-Reason', 'express-http-proxy reset the request.')
+      .expect('X-Timeout-Reason', 'express-http-proxy reset the request.')
       .end(done);
   }
 
