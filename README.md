@@ -488,6 +488,18 @@ app.use('/', proxy('internalhost.example.com', {
 })
 ```
 
+### Q: How to ignore self-signed certificates ?
+
+You can set the `rejectUnauthorized` value in proxy request options prior to sending.    See ```proxyReqOptDecorator``` for more details.
+
+```js
+app.use('/', proxy('internalhost.example.com', {
+  proxyReqOptDecorator: function(proxyReqOpts, originalReq) {
+    proxyReqOpts.rejectUnauthorized = false
+    return proxyReqOpts;
+  }
+})
+```
 
 
 ## Release Notes
