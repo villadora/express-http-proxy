@@ -104,7 +104,6 @@ describe('error handling can be over-ridden by user', function() {
       app.use(proxy('localhost:12346', {
         timeout: 1,
         proxyErrorHandler: function(err, res, next) {
-          console.log('bet its here');
           switch (err && err.code) {
             case 'ECONNRESET':    { return res.status(405).send('504 became 405'); }
             case 'ECONNREFUSED':  { return res.status(200).send('gotcher back'); }
