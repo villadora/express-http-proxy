@@ -9,16 +9,16 @@ var proxyTarget = require('../test/support/proxyTarget');
 
 var aliases = ['forwardPath', 'forwardPathAsync', 'proxyReqPathResolver'];
 
-describe('resolveProxyReqPath', function() {
+describe('resolveProxyReqPath', function () {
   var server;
 
   this.timeout(10000);
 
-  before(function() {
+  before(function () {
     var handlers = [{
       method: 'get',
       path: '/working',
-      fn: function(req, res) {
+      fn: function (req, res) {
         res.sendStatus(200);
       }
     }];
@@ -26,16 +26,16 @@ describe('resolveProxyReqPath', function() {
     server = proxyTarget(12345, 100, handlers);
   });
 
-  after(function() {
+  after(function () {
     server.close();
   });
 
-  aliases.forEach(function(alias) {
-    describe('when author uses option ' + alias, function() {
-      it('the proxy request path is the result of the function', function(done) {
+  aliases.forEach(function (alias) {
+    describe('when author uses option ' + alias, function () {
+      it('the proxy request path is the result of the function', function (done) {
         var app = express();
         var opts = {};
-        opts[alias] = function() { return '/working'; };
+        opts[alias] = function () { return '/working'; };
         app.use(proxy('localhost:12345', opts));
 
         request(app)
@@ -44,10 +44,10 @@ describe('resolveProxyReqPath', function() {
           .end(done);
       });
 
-      it('the ' + alias + ' method has access to request object', function(done) {
+      it('the ' + alias + ' method has access to request object', function (done) {
         var app = express();
         app.use(proxy('localhost:12345', {
-          forwardPath: function(req) {
+          forwardPath: function (req) {
             assert.ok(req instanceof http.IncomingMessage);
             return '/working';
           }

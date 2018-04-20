@@ -9,31 +9,31 @@ var proxyTarget = require('../test/support/proxyTarget');
 var proxyRouteFn = [{
   method: 'get',
   path: '/test',
-  fn: function(req, res) {
+  fn: function (req, res) {
     res.send(req.url);
   }
 }];
 
-describe('proxies query parameters', function() {
+describe('proxies query parameters', function () {
   this.timeout(10000);
 
   var app;
   var proxyServer;
 
-  beforeEach(function() {
+  beforeEach(function () {
     proxyServer = proxyTarget(12346, 100, proxyRouteFn);
     app = express();
     app.use(proxy('localhost:12346'));
   });
 
-  afterEach(function() {
+  afterEach(function () {
     proxyServer.close();
   });
 
-  it('set cookie', function(done) {
+  it('set cookie', function (done) {
     request(app)
       .get('/test?a=1&b=2&c=3')
-      .end(function(err, res) {
+      .end(function (err, res) {
         assert(res.text === '/test?a=1&b=2&c=3');
         done(err);
       });

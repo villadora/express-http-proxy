@@ -4,20 +4,22 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('when skipToNextHandlerFilter is defined', function() {
+describe('when skipToNextHandlerFilter is defined', function () {
 
   this.timeout(10000);
 
-  var app, slowTarget, serverReference;
+  var app;
+  var  slowTarget;
+  var  serverReference;
 
-  beforeEach(function() {
+  beforeEach(function () {
     app = express();
     slowTarget = express();
-    slowTarget.use(function(req, res) { res.sendStatus(404); });
+    slowTarget.use(function (req, res) { res.sendStatus(404); });
     serverReference = slowTarget.listen(12345);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     serverReference.close();
   });
 
@@ -26,17 +28,17 @@ describe('when skipToNextHandlerFilter is defined', function() {
     { shouldSkip: false, expectedStatus: 404 }
   ];
 
-  OUTCOMES.forEach(function(outcome) {
-    describe('and returns ' + outcome.shouldSkip, function() {
-      it('express-http-proxy' + (outcome.shouldSkip ? ' skips ' : ' doesnt skip ') + 'to next()', function(done) {
+  OUTCOMES.forEach(function (outcome) {
+    describe('and returns ' + outcome.shouldSkip, function () {
+      it('express-http-proxy' + (outcome.shouldSkip ? ' skips ' : ' doesnt skip ') + 'to next()', function (done) {
 
         app.use('/proxy', proxy('http://127.0.0.1:12345', {
-          skipToNextHandlerFilter: function(/*res*/) {
+          skipToNextHandlerFilter: function (/*res*/) {
             return outcome.shouldSkip;
           }
         }));
 
-        app.use(function(req, res) {
+        app.use(function (req, res) {
           res.sendStatus(200);
         });
 

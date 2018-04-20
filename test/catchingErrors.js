@@ -5,17 +5,19 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('when server responds with an error', function() {
+describe('when server responds with an error', function () {
 
   this.timeout(10000);
 
-  var app, slowTarget, serverReference;
+  var app;
+  var slowTarget;
+  var serverReference;
 
-  beforeEach(function() {
+  beforeEach(function () {
     app = express();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     serverReference.close();
   });
 
@@ -25,11 +27,11 @@ describe('when server responds with an error', function() {
     { code: 500, text: 'Internal Server Error', toString: 'Error: cannot GET /proxy (500)' }
   ];
 
-  STATUS_CODES.forEach(function(statusCode) {
+  STATUS_CODES.forEach(function (statusCode) {
     it('express-http-proxy responds with ' + statusCode.text +
-      'when proxy server responds ' + statusCode.code, function(done) {
+      'when proxy server responds ' + statusCode.code, function (done) {
       slowTarget = express();
-      slowTarget.use(function(req, res) { res.sendStatus(statusCode.code); });
+      slowTarget.use(function (req, res) { res.sendStatus(statusCode.code); });
       serverReference = slowTarget.listen(12345);
 
       app.use('/proxy', proxy('http://127.0.0.1:12345', {
@@ -41,7 +43,7 @@ describe('when server responds with an error', function() {
       request(app)
         .get('/proxy')
         .expect(statusCode.code)
-        .end(function(err, res) {
+        .end(function (err, res) {
           assert(err === null);
           assert(res.error);
           assert(res.error.text === statusCode.text);

@@ -32,6 +32,7 @@ module.exports = function proxy(host, userOptions) {
 
     // Skip proxy if filter is falsey.  Loose equality so filters can return
     // false, null, undefined, etc.
+
     if (!container.options.filter(req, res)) { return next(); }
 
     buildProxyReq(container)
@@ -46,7 +47,7 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateUserResHeaders)
       .then(decorateUserRes)
       .then(sendUserRes)
-      .catch(function(err) {
+      .catch(function (err) {
         var resolver = (container.options.proxyErrorHandler) ?
           container.options.proxyErrorHandler :
           handleProxyErrors;

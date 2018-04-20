@@ -1,28 +1,29 @@
+'use strict';
+
 var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
 function proxyTarget(port) {
-  'use strict';
 
   var other = express();
-  other.get('/', function(req, res) {
+  other.get('/', function (req, res) {
     res.send('Success');
   });
   return other.listen(port);
 }
 
-describe('proxies to requested port', function() {
-  'use strict';
+describe('proxies to requested port', function () {
+  var other;
+  var  http;
 
-  var other, http;
-  beforeEach(function() {
+  beforeEach(function () {
     http = express();
     other = proxyTarget(56001);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     other.close();
   });
 
@@ -31,15 +32,15 @@ describe('proxies to requested port', function() {
     request(http)
       .get('/')
       .expect(200)
-      .end(function(err, res) {
+      .end(function (err, res) {
         if (err) { return done(err); }
         assert(res.text === 'Success');
         done();
       });
   }
 
-  describe('when host is a String', function() {
-    it('when passed as an option', function(done) {
+  describe('when host is a String', function () {
+    it('when passed as an option', function (done) {
 
       http.use(proxy('http://localhost', {
         port: 56001
@@ -48,7 +49,7 @@ describe('proxies to requested port', function() {
       assertSuccess(http, done);
     });
 
-    it('when passed on the host string', function(done) {
+    it('when passed on the host string', function (done) {
 
       http.use(proxy('http://localhost:56001'));
 
@@ -57,22 +58,22 @@ describe('proxies to requested port', function() {
 
   });
 
-  describe('when host is a function', function() {
+  describe('when host is a function', function () {
 
 
-    it('and port is on the String returned', function(done) {
+    it('and port is on the String returned', function (done) {
 
       http.use(proxy(
-          function() { return 'http://localhost:56001'; }
+        function () { return 'http://localhost:56001'; }
       ));
 
       assertSuccess(http, done);
     });
 
-    it('and port passed as an option', function(done) {
+    it('and port passed as an option', function (done) {
 
       http.use(proxy(
-        function() { return 'http://localhost'; },
+        function () { return 'http://localhost'; },
         { port: 56001 }
       ));
 
