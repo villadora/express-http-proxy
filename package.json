@@ -8,11 +8,10 @@
   "engineStrict": true,
   "main": "index.js",
   "scripts": {
-    "test": "npm -s run mocha && npm run -s lint && npm run -s jscs",
+    "test": "npm -s run mocha && npm run -s lint",
     "test:debug": "mocha debug -R spec test --recursive",
     "mocha": "mocha -R spec test --recursive",
-    "lint": "jshint index.js test/*.js test/**/*js lib/*js app/**/*js ",
-    "jscs": "jscs index.js test/*.js test/**/*js lib/*js app/**/*js"
+    "lint": "eslint index.js **/*js"
   },
   "repository": {
     "type": "git",
@@ -33,6 +32,7 @@
     "body-parser": "^1.17.2",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
+    "eslint": "^4.19.1",
     "express": "^4.15.4",
     "jscs": "^3.0.7",
     "jshint": "^2.9.5",

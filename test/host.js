@@ -4,47 +4,48 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 
-describe('host can be a dynamic function', function() {
+describe('host can be a dynamic function', function () {
 
   this.timeout(10000);
 
   var app = express();
-  describe('and memoization can be disabled', function() {
-      var firstProxyApp = express();
-      var secondProxyApp = express();
-      // TODO: This seems like a bug factory.  We will have intermittent port conflicts, yeah?
-      function randomNumberInPortRange() {
-        return Math.floor(Math.random() * 48000) + 1024;
-      }
-      var firstPort = randomNumberInPortRange();
-      var secondPort = randomNumberInPortRange();
+  describe('and memoization can be disabled', function () {
+    var firstProxyApp = express();
+    var secondProxyApp = express();
+    // TODO: This seems like a bug factory.  We will have intermittent port conflicts, yeah?
 
-      var hostFn = function(req) {
-        return 'localhost:' + req.params.port;
-      };
+    function randomNumberInPortRange() {
+      return Math.floor(Math.random() * 48000) + 1024;
+    }
+    var firstPort = randomNumberInPortRange();
+    var secondPort = randomNumberInPortRange();
 
-      app.use('/proxy/:port', proxy(hostFn, { memoizeHost: false }));
+    var hostFn = function (req) {
+      return 'localhost:' + req.params.port;
+    };
 
-      firstProxyApp
-          .get('/', function(req, res) { res.sendStatus(204); })
-          .listen(firstPort);
+    app.use('/proxy/:port', proxy(hostFn, { memoizeHost: false }));
 
-      secondProxyApp
-          .get('/', function(req, res) { res.sendStatus(200); })
-          .listen(secondPort);
+    firstProxyApp
+      .get('/', function (req, res) { res.sendStatus(204); })
+      .listen(firstPort);
 
-      it('when not memoized, host resolves to a second value on the seecond call', function(done) {
-        request(app)
-          .get('/proxy/' + firstPort)
-          .expect(204)
-          .end(function(err) {
-            if (err) {
-              return done(err);
-            }
-            request(app)
-                .get('/proxy/' + secondPort)
-                .expect(200, done);
-          });
-      });
+    secondProxyApp
+      .get('/', function (req, res) { res.sendStatus(200); })
+      .listen(secondPort);
+
+    it('when not memoized, host resolves to a second value on the seecond call', function (done) {
+      request(app)
+        .get('/proxy/' + firstPort)
+        .expect(204)
+        .end(function (err) {
+          if (err) {
+            return done(err);
+          }
+          request(app)
+            .get('/proxy/' + secondPort)
+            .expect(200, done);
+        });
+    });
   });
 });

@@ -11,27 +11,28 @@ var proxyTarget = require('../test/support/proxyTarget');
 var proxyRouteFn = [{
   method: 'post',
   path: '/poster',
-  fn: function(req, res) {
+  fn: function (req, res) {
     res.send(req.body);
   }
 }];
 
-describe('middleware compatibility', function() {
+describe('middleware compatibility', function () {
   var proxyServer;
 
-  beforeEach(function() {
+  beforeEach(function () {
     proxyServer = proxyTarget(12346, 100, proxyRouteFn);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     proxyServer.close();
   });
 
-  it('should use req.body if defined', function(done) {
+  it('should use req.body if defined', function (done) {
     var app = express();
 
     // Simulate another middleware that puts req stream into the body
-    app.use(function(req, res, next) {
+
+    app.use(function (req, res, next) {
       var received = [];
       req.on('data', function onData(chunk) {
         if (!chunk) { return; }
@@ -46,7 +47,7 @@ describe('middleware compatibility', function() {
     });
 
     app.use(proxy('localhost:12346', {
-      intercept: function(rsp, data, req) {
+      intercept: function (rsp, data, req) {
         assert(req.body);
         assert.equal(req.body.foo, 1);
         assert.equal(req.body.mypost, 'hello');
@@ -56,15 +57,15 @@ describe('middleware compatibility', function() {
 
     request(app)
       .post('/poster')
-      .send({ 'mypost': 'hello'})
-      .expect(function(res) {
+      .send({ mypost: 'hello' })
+      .expect(function (res) {
         assert.equal(res.body.foo, 1);
         assert.equal(res.body.mypost, 'hello');
       })
       .end(done);
   });
 
-  it('should stringify req.body when it is a json body so it is written to proxy request', function(done) {
+  it('should stringify req.body when it is a json body so it is written to proxy request', function (done) {
     var app = express();
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({
@@ -77,14 +78,14 @@ describe('middleware compatibility', function() {
         mypost: 'hello',
         doorknob: 'wrect'
       })
-      .expect(function(res) {
+      .expect(function (res) {
         assert.equal(res.body.doorknob, 'wrect');
         assert.equal(res.body.mypost, 'hello');
       })
       .end(done);
   });
 
-  it('should convert req.body to a Buffer when reqAsBuffer is set', function(done) {
+  it('should convert req.body to a Buffer when reqAsBuffer is set', function (done) {
     var app = express();
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({
@@ -99,7 +100,7 @@ describe('middleware compatibility', function() {
         mypost: 'hello',
         doorknob: 'wrect'
       })
-      .expect(function(res) {
+      .expect(function (res) {
         assert.equal(res.body.doorknob, 'wrect');
         assert.equal(res.body.mypost, 'hello');
       })

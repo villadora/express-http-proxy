@@ -10,12 +10,12 @@ function chunkingProxyServer() {
   var proxyRouteFn = [{
     method: 'get',
     path: '/stream',
-    fn: function(req, res) {
+    fn: function (req, res) {
       res.write('0');
-      setTimeout(function() { res.write('1'); }, 100);
-      setTimeout(function() {  res.write('2'); }, 200);
-      setTimeout(function() { res.write('3'); }, 300);
-      setTimeout(function() { res.end(); }, 500);
+      setTimeout(function () { res.write('1'); }, 100);
+      setTimeout(function () {  res.write('2'); }, 200);
+      setTimeout(function () { res.write('3'); }, 300);
+      setTimeout(function () { res.end(); }, 500);
     }
   }];
 
@@ -23,14 +23,14 @@ function chunkingProxyServer() {
 }
 
 function simulateUserRequest() {
-  return new Promise(function(resolve, reject) {
-    var req = http.request({ hostname: 'localhost', port: 8308, path: '/stream' }, function(res) {
+  return new Promise(function (resolve, reject) {
+    var req = http.request({ hostname: 'localhost', port: 8308, path: '/stream' }, function (res) {
       var chunks = [];
-      res.on('data', function(chunk) { chunks.push(chunk.toString()); });
-      res.on('end', function() { resolve(chunks); });
+      res.on('data', function (chunk) { chunks.push(chunk.toString()); });
+      res.on('end', function () { resolve(chunks); });
     });
 
-    req.on('error', function(e) {
+    req.on('error', function (e) {
       reject('problem with request:', e.message);
     });
 
@@ -44,28 +44,30 @@ function startLocalServer(proxyOptions) {
   return app.listen(8308);
 }
 
-describe('streams', function() {
+describe('streams', function () {
   this.timeout(3000);
 
-  var server, targetServer;
+  var server;
+  var  targetServer;
 
-  beforeEach(function() {
+  beforeEach(function () {
     targetServer = chunkingProxyServer();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     server.close();
     targetServer.close();
   });
 
-  describe('when streaming options are truthy', function() {
-    it('chunks are received without any buffering, e.g. before request end', function(done) {
+  describe('when streaming options are truthy', function () {
+    it('chunks are received without any buffering, e.g. before request end', function (done) {
 
       server = startLocalServer();
 
       simulateUserRequest()
-        .then(function(res) {
+        .then(function (res) {
           // Assume that if I'm getting a chunked response, it will be an array of length > 1;
+
           assert(res instanceof Array && res.length === 4);
           done();
         })
@@ -73,13 +75,14 @@ describe('streams', function() {
     });
   });
 
-  describe('when streaming options are falsey', function() {
-    it('response arrives in one large chunk', function(done) {
-      server = startLocalServer({ skipToNextHandlerFilter: function() { return false; } });
+  describe('when streaming options are falsey', function () {
+    it('response arrives in one large chunk', function (done) {
+      server = startLocalServer({ skipToNextHandlerFilter: function () { return false; } });
 
       simulateUserRequest()
-        .then(function(res) {
+        .then(function (res) {
           // Assume that if I'm getting a un-chunked response, it will be an array of length = 1;
+
           assert(res instanceof Array && res.length === 1);
           done();
         })
