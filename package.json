@@ -3,9 +3,8 @@
   "version": "1.2.0",
   "description": "http proxy middleware for express",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=6.0.0"
   },
-  "engineStrict": true,
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint",
