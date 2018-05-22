@@ -4,8 +4,8 @@ var requestOptions = require('../../lib/requestOptions');
 function resolveProxyHost(container) {
   var parsedHost;
 
-  if (container.options.memoizeHost && container.options.memoizedHost) {
-    parsedHost = container.options.memoizedHost;
+  if (container.options.agent) {
+    parsedHost = container.options.agent;
   } else {
     parsedHost = requestOptions.parseHost(container);
   }
