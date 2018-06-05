@@ -4,7 +4,6 @@
 // * Uses Promises to support async.
 // * Uses a quasi-Global called Container to tidy up the argument passing between the major work-flow steps.
 
-
 var ScopeContainer = require('./lib/scopeContainer');
 var assert = require('assert');
 var debug = require('debug')('express-http-proxy');
@@ -15,7 +14,8 @@ var decorateProxyReqBody         = require('./app/steps/decorateProxyReqBody');
 var decorateProxyReqOpts         = require('./app/steps/decorateProxyReqOpts');
 var decorateUserRes              = require('./app/steps/decorateUserRes');
 var decorateUserResHeaders       = require('./app/steps/decorateUserResHeaders');
-var handleProxyErrors          = require('./app/steps/handleProxyErrors');
+var filterUserRequest            = require('./app/steps/filterUserRequest');
+var handleProxyErrors            = require('./app/steps/handleProxyErrors');
 var maybeSkipToNextHandler       = require('./app/steps/maybeSkipToNextHandler');
 var prepareProxyReq              = require('./app/steps/prepareProxyReq');
 var resolveProxyHost             = require('./app/steps/resolveProxyHost');
@@ -33,9 +33,10 @@ module.exports = function proxy(host, userOptions) {
     // Skip proxy if filter is falsey.  Loose equality so filters can return
     // false, null, undefined, etc.
 
-    if (!container.options.filter(req, res)) { return next(); }
+    //if (!container.options.filter(req, res)) { return next(); }
 
-    buildProxyReq(container)
+    filterUserRequest(container)
+      .then(buildProxyReq)
       .then(resolveProxyHost)
       .then(decorateProxyReqOpts)
       .then(resolveProxyReqPath)
@@ -48,10 +49,17 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateUserRes)
       .then(sendUserRes)
       .catch(function (err) {
-        var resolver = (container.options.proxyErrorHandler) ?
-          container.options.proxyErrorHandler :
-          handleProxyErrors;
-        resolver(err, res, next);
+        // I sometimes reject without an error to shortcircuit the remaining
+        // steps and return control to the host application.
+
+        if (err) {
+          var resolver = (container.options.proxyErrorHandler) ?
+            container.options.proxyErrorHandler :
+            handleProxyErrors;
+          resolver(err, res, next);
+        } else {
+          next();
+        }
       });
   };
 };
