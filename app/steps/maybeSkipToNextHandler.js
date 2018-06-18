@@ -8,8 +8,8 @@ function maybeSkipToNextHandler(container) {
   var resolverFn = container.options.skipToNextHandlerFilter || defaultSkipFilter;
 
   return Promise
-    .resolve(resolverFn(container.proxy.res))
-    .then(function(shouldSkipToNext) {
+    .resolve(resolverFn(container.proxy.res, container))
+    .then(function (shouldSkipToNext) {
       return (shouldSkipToNext) ? container.user.next() : Promise.resolve(container);
     })
     .catch(Promise.reject);
