@@ -50,7 +50,7 @@ function sendProxyRequest(Container) {
       if (bodyContent.length) {
         var body = bodyContent;
         var contentType = proxyReq.getHeader('Content-Type');
-        if (contentType === 'x-www-form-urlencoded' || contentType === 'application/x-www-form-urlencoded') {
+        if (contentType && (contentType.indexOf('x-www-form-urlencoded')>=0 || contentType.indexOf('application/x-www-form-urlencoded')>=0)) {
           try {
             var params = JSON.parse(body);
             body = Object.keys(params).map(function(k) { return k + '=' + params[k]; }).join('&');
