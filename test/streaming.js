@@ -44,7 +44,7 @@ function startLocalServer(proxyOptions) {
   return app.listen(8308);
 }
 
-describe('streams', function () {
+describe('streams / piped requests', function () {
   this.timeout(3000);
 
   var server;
@@ -60,33 +60,62 @@ describe('streams', function () {
   });
 
   describe('when streaming options are truthy', function () {
-    it('chunks are received without any buffering, e.g. before request end', function (done) {
+    var TEST_CASES = [{
+      name: 'vanilla, no options defined',
+      options: {}
+    }, {
+      name: 'proxyReqOptDecorator is defined',
+      options: { proxyReqOptDecorator: function (reqBuilder) { return reqBuilder; } }
+    }, {
+      //// Keep around this case for manually testing that this for sure fails for a few cycles.   2018 NMK
+      //name: 'proxyReqOptDecorator never returns',
+      //options: { proxyReqOptDecorator: function () { return new Promise(function () {}); } }
+    //}, {
 
-      server = startLocalServer();
+      name: 'proxyReqOptDecorator is a Promise',
+      options: { proxyReqOptDecorator: function (reqBuilder) { return Promise.resolve(reqBuilder); } }
+    }];
 
-      simulateUserRequest()
-        .then(function (res) {
-          // Assume that if I'm getting a chunked response, it will be an array of length > 1;
+    TEST_CASES.forEach(function (testCase) {
+      describe(testCase.name, function () {
+        it('chunks are received without any buffering, e.g. before request end', function (done) {
+          server = startLocalServer(testCase.options);
+          simulateUserRequest()
+            .then(function (res) {
+              // Assume that if I'm getting a chunked response, it will be an array of length > 1;
 
-          assert(res instanceof Array && res.length === 4);
-          done();
-        })
-        .catch(done);
+              assert(res instanceof Array, 'res is an Array');
+              assert.equal(res.length, 4);
+              done();
+            })
+            .catch(done);
+        });
+      });
     });
   });
 
   describe('when streaming options are falsey', function () {
-    it('response arrives in one large chunk', function (done) {
-      server = startLocalServer({ skipToNextHandlerFilter: function () { return false; } });
+    var TEST_CASES = [{
+      name: 'skipToNextHandler is defined',
+      options: { skipToNextHandlerFilter: function () { return false; } }
+    }];
 
-      simulateUserRequest()
-        .then(function (res) {
-          // Assume that if I'm getting a un-chunked response, it will be an array of length = 1;
+    TEST_CASES.forEach(function (testCase) {
+      describe(testCase.name, function () {
+        it('response arrives in one large chunk', function (done) {
+          server = startLocalServer(testCase.options);
 
-          assert(res instanceof Array && res.length === 1);
-          done();
-        })
-        .catch(done);
+          simulateUserRequest()
+            .then(function (res) {
+              // Assume that if I'm getting a un-chunked response, it will be an array of length = 1;
+
+              assert(res instanceof Array);
+              assert.equal(res.length, 1);
+              done();
+            })
+            .catch(done);
+        });
+      });
     });
   });
 });
