@@ -30,11 +30,11 @@ describe('proxies query parameters', function () {
     proxyServer.close();
   });
 
-  it('repeats query params to proxy server', function (done) {
+  it('set cookie', function (done) {
     request(app)
       .get('/test?a=1&b=2&c=3')
       .end(function (err, res) {
-        assert.equal(res.text, '/test?a=1&b=2&c=3');
+        assert(res.text === '/test?a=1&b=2&c=3');
         done(err);
       });
   });

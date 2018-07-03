@@ -4,9 +4,6 @@ var assert = require('assert');
 var ScopeContainer = require('../lib/scopeContainer');
 var resolveProxyReqPath = require('../app/steps/resolveProxyReqPath');
 var expect = require('chai').expect;
-var express = require('express');
-var request = require('supertest');
-var proxy = require('../');
 
 
 describe('resolveProxyReqPath', function () {
@@ -80,37 +77,4 @@ describe('resolveProxyReqPath', function () {
     });
 
   });
-
-  describe('testing example code in docs', function () {
-    it('works as advertised', function (done) {
-      var proxyTarget = require('../test/support/proxyTarget');
-      var proxyRouteFn = [{
-        method: 'get',
-        path: '/tent',
-        fn: function (req, res) {
-          res.send(req.url);
-        }
-      }];
-
-      var proxyServer = proxyTarget(12345, 100, proxyRouteFn);
-      var app = express();
-      app.use(proxy('localhost:12345', {
-        proxyReqPathResolver: function (req) {
-          var parts = req.url.split('?');
-          var queryString = parts[1];
-          var updatedPath = parts[0].replace(/test/, 'tent');
-          return updatedPath + (queryString ? '?' + queryString : '');
-        }
-      }));
-
-      request(app)
-        .get('/test?a=1&b=2&c=3')
-        .end(function (err, res) {
-          assert.equal(res.text, '/tent?a=1&b=2&c=3');
-          proxyServer.close();
-          done(err);
-        });
-    });
-  });
-
 });

@@ -80,22 +80,20 @@ app.use('/', proxy(selectProxyHost);
 Note: In ```express-http-proxy```, the ```path``` is considered the portion of
 the url after the host, and including all query params.  E.g. for the URL
 ```http://smoogle.com/search/path?q=123```; the path is
-```/search/path?q=123```.   Authors using this resolver must also handle the query parameter portion of the path.
+```/search/path?q=123```.
 
 Provide a proxyReqPathResolver function if you'd like to
 operate on the path before issuing the proxy request.  Use a Promise for async
 operations.
 
 ```js
-  app.use(proxy('localhost:12345', {
-    proxyReqPathResolver: function (req) {
-      var parts = req.url.split('?');
-      var queryString = parts[1];
-      var updatedPath = parts[0].replace(/test/, 'tent');
-      return updatedPath + (queryString ? '?' + queryString : '');
-    }
-  }));
+app.use('/proxy', proxy('localhost:12345', {
+  proxyReqPathResolver: function(req) {
+    return require('url').parse(req.url).path;
+  }
+}));
 ```
+
 Promise form
 
 ```js
@@ -103,10 +101,8 @@ app.use('/proxy', proxy('localhost:12345', {
   proxyReqPathResolver: function(req) {
     return new Promise(function (resolve, reject) {
       setTimeout(function () {   // simulate async
-        var parts = req.url.split('?');
-        var queryString = parts[1];
-        var updatedPath = parts[0].replace(/test/, 'tent');
-        var resolvedPathValue = updatedPath + (queryString ? '?' + queryString : '');
+        // in this case I expect a request to /proxy => localhost:12345/a/different/path
+        var resolvedPathValue = "/a/different/path";
         resolve(resolvedPathValue);
       }, 200);
     });
