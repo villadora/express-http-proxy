@@ -7,7 +7,7 @@ var request = require('supertest');
 var proxy = require('../');
 var proxyTarget = require('../test/support/proxyTarget');
 
-describe.only('decorateRequest', function () {
+describe('proxyReqOptDecorator', function () {
   var server;
 
   this.timeout(10000);
@@ -17,7 +17,7 @@ describe.only('decorateRequest', function () {
       method: 'get',
       path: '/working',
       fn: function (req, res) {
-        res.send(req.headers);
+        res.send({ headers: req.headers });
       }
     }];
 
@@ -27,6 +27,7 @@ describe.only('decorateRequest', function () {
   after(function () {
     server.close();
   });
+
   this.timeout(10000);
 
   var app;
@@ -36,15 +37,34 @@ describe.only('decorateRequest', function () {
     app.use(proxy('localhost:12345'));
   });
 
-  describe('Supports Promise and non-Promise forms', function () {
+  describe('allows authors to modify a number of request parameters', function () {
+    it('modify headers', function (done) {
+      app = express();
+      app.use(proxy('localhost:12345', {
+        proxyReqOptDecorator: function (reqOpt) {
+          reqOpt.headers['user-agent'] = 'test user agent';
+          reqOpt.headers.mmmmmmmmmm = 'misty mountain hop';
+          return reqOpt;
+        }
+      }));
+
+      request(app)
+        .get('/working')
+        .end(function (err, res) {
+          if (err) { return done(err); }
+
+          assert.equal(res.body.headers['user-agent'], 'test user agent');
+          assert.equal(res.body.headers.mmmmmmmmmm, 'misty mountain hop');
+          done();
+        });
+    });
 
     describe('when proxyReqOptDecorator is a simple function (non Promise)', function () {
-      it('should mutate the proxied request', function (done) {
+      it('can modify headers', function (done) {
         var app = express();
         app.use(proxy('localhost:12345', {
           proxyReqOptDecorator: function (reqOpt, req) {
             reqOpt.headers['user-agent'] = 'test user agent';
-            reqOpt.user = 1234;
             assert(req instanceof http.IncomingMessage);
             return reqOpt;
           }
@@ -54,7 +74,7 @@ describe.only('decorateRequest', function () {
           .get('/working')
           .end(function (err, res) {
             if (err) { return done(err); }
-            assert.equal(res.body['user-agent'], 'test user agent');
+            assert.equal(res.body.headers['user-agent'], 'test user agent');
             done();
           });
       });
@@ -77,7 +97,7 @@ describe.only('decorateRequest', function () {
           .get('/working')
           .end(function (err, res) {
             if (err) { return done(err); }
-            assert.equal(res.body['user-agent'], 'test user agent');
+            assert.equal(res.body.headers['user-agent'], 'test user agent');
             done();
           });
       });
