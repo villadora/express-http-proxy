@@ -3,7 +3,7 @@
 function continueToExpressAtEnd(container) {
 
   return Promise
-      .resolve()
+    .resolve()
     .then(function () {
       if (container.options.continueToExpressAtEnd) {
         container.user.next();
