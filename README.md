@@ -223,6 +223,11 @@ Conversely, When ```memoizeHost:true```,  the coinToss would occur on the first
 request, and all additional requests would return the value resolved on the
 first request.
 
+#### Pass the control back to express at end is sucess 
+
+Defaults to ```false```
+
+When ```true```, the execution will be passed back to express by calling express's next() after successful response 
 
 ### userResHeaderDecorator
 
