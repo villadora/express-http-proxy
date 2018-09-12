@@ -34,13 +34,13 @@
     "eslint": "^4.19.1",
     "express": "^4.15.4",
     "jscs": "^3.0.7",
-    "jshint": "^2.9.5",
+    "jshint": "^2.9.6",
     "mocha": "^3.5.0",
-    "supertest": "^3.0.0"
+    "supertest": "^3.3.0"
   },
   "dependencies": {
-    "debug": "^3.0.1",
-    "es6-promise": "^4.1.1",
+    "debug": "^3.2.5",
+    "es6-promise": "^4.2.5",
     "raw-body": "^2.3.0"
   },
   "contributors": [
