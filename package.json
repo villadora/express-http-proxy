@@ -14,18 +14,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/villadora/express-http-proxy.git"
+    "url": "git://github.com/nkrimm/express-http-proxy.git"
   },
   "keywords": [
     "express-http-proxy"
   ],
   "author": {
-    "name": "villadora",
-    "email": "jky239@gmail.com"
+    "name": "Nik Krimm",
+    "url": "https://github.com/monkpow"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/villadora/express-http-proxy/issues"
+    "url": "https://github.com/nkrimm/express-http-proxy/issues"
   },
   "devDependencies": {
     "body-parser": "^1.17.2",
@@ -60,12 +60,12 @@
       "email": "kapouer@melix.org"
     },
     {
-      "name": "Wei Gao",
-      "email": "jky239@gmail.com"
+    "name": "villadora",
+    "email": "jky239@gmail.com"
     },
     {
-      "name": "Nik Krimm",
-      "url": "https://github.com/monkpow"
+      "name": "Wei Gao",
+      "email": "jky239@gmail.com"
     }
   ]
 }
