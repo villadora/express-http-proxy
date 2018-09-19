@@ -8,8 +8,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint",
-    "test:debug": "mocha debug -R spec test --recursive",
-    "mocha": "mocha -R spec test --recursive",
+    "test:debug": "mocha debug -R spec test --recursive --exit",
+    "mocha": "mocha -R spec test --recursive --exit",
     "lint": "eslint index.js **/*js"
   },
   "repository": {
@@ -33,7 +33,7 @@
     "cookie-parser": "^1.4.3",
     "eslint": "^4.19.1",
     "express": "^4.15.4",
-    "mocha": "^3.5.0",
+    "mocha": "^5.2.0",
     "supertest": "^3.0.0"
   },
   "dependencies": {
