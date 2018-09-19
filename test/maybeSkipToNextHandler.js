@@ -3,6 +3,8 @@
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var http = require('http');
+var assert = require('assert');
 
 describe('when skipToNextHandlerFilter is defined', function () {
 
@@ -39,6 +41,9 @@ describe('when skipToNextHandlerFilter is defined', function () {
         }));
 
         app.use(function (req, res) {
+          assert(res.expressHttpProxy instanceof Object);
+          assert(res.expressHttpProxy.res instanceof http.IncomingMessage);
+          assert(res.expressHttpProxy.req instanceof Object);
           res.sendStatus(200);
         });
 

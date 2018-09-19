@@ -9,10 +9,14 @@ function maybeSkipToNextHandler(container) {
 
   return Promise
     .resolve(resolverFn(container.proxy.res))
-    .then(function(shouldSkipToNext) {
-      return (shouldSkipToNext) ? container.user.next() : Promise.resolve(container);
+    .then(function (shouldSkipToNext) {
+      if (shouldSkipToNext) {
+        container.user.res.expressHttpProxy = container.proxy;
+        return Promise.reject(container.user.next());
+      } else {
+        return Promise.resolve(container);
+      }
     })
-    .catch(Promise.reject);
 }
 
 module.exports = maybeSkipToNextHandler;
