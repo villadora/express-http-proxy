@@ -350,8 +350,8 @@ app.use('/proxy', proxy('www.google.com', {
 
 #### https
 
-Normally, your proxy request will be made on the same protocol as the original
-request.  If you'd like to force the proxy request to be https, use this
+Normally, your proxy request will be made on the same protocol as the `host`
+parameter.  If you'd like to force the proxy request to be https, use this
 option.
 
 ```js
