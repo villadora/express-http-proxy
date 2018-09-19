@@ -49,3 +49,22 @@ describe('host can be a dynamic function', function () {
     });
   });
 });
+
+describe('host can be an ip address', function () {
+  it('with a port', function (done) {
+    var app = express();
+    app.use('/proxy/', proxy('127.0.0.1:3020'));
+
+    var targetApp = express();
+    targetApp
+      .get('/', function (req, res) { res.sendStatus(211); })
+      .listen(3020);
+
+
+    request(app)
+      .get('/proxy/')
+      .expect(211)
+      .end(done);
+  });
+});
+
