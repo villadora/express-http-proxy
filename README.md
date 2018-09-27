@@ -70,7 +70,7 @@ function selectProxyHost() {
   return (new Date() % 2) ? 'http://google.com' : 'http://altavista.com';
 }
 
-app.use('/', proxy(selectProxyHost);
+app.use('/', proxy(selectProxyHost));
 ```
 
 ### Options
