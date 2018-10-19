@@ -10,7 +10,7 @@ function sendProxyRequest(Container) {
 
   return new Promise(function(resolve, reject) {
     var protocol = Container.proxy.requestModule;
-    var proxyReq = protocol.request(reqOpt, function(rsp) {
+    var proxyReq = Container.proxy.req = protocol.request(reqOpt, function(rsp) {
       if (options.stream) {
         Container.proxy.res = rsp;
         return resolve(Container);
