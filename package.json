@@ -39,7 +39,9 @@
   "dependencies": {
     "debug": "^3.0.1",
     "es6-promise": "^4.1.1",
-    "raw-body": "^2.3.0"
+    "raw-body": "^2.3.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
   },
   "contributors": [
     {

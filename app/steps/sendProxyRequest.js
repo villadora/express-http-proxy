@@ -1,5 +1,6 @@
 'use strict';
 
+var request = require('request-promise');
 var chunkLength = require('../../lib/chunkLength');
 
 function sendProxyRequest(Container) {
@@ -8,9 +9,37 @@ function sendProxyRequest(Container) {
   var reqOpt = Container.proxy.reqBuilder;
   var options = Container.options;
 
+
+  // right now just see if you can build a bridge to request formulation
+/*
+ * { headers: Object,
+  method: 'POST',
+  path: '/post',
+  host: 'localhost',
+  port: '8109' }
+  */
+
+  const roptions = {
+    method: 'POST',
+    uri: 'http://' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,
+    headers: reqOpt.headers,
+    resolveWithFullResponse: true
+//    json: true // Automatically tringifies the body to JSON
+  }
+
+  return request(roptions)
+    .then((x) => {
+      Container.proxy.res = x;
+      Container.proxy.resData = x.body;
+      return Container;
+    })
+    .catch(err => { debugger; });
+
+
   return new Promise(function(resolve, reject) {
     var protocol = Container.proxy.requestModule;
     var proxyReq = Container.proxy.req = protocol.request(reqOpt, function(rsp) {
+      // TODO: Need to get this streaming functionality back in place
       if (options.stream) {
         Container.proxy.res = rsp;
         return resolve(Container);
@@ -26,6 +55,7 @@ function sendProxyRequest(Container) {
       rsp.on('error', reject);
     });
 
+    // TODO: need to get this socket timeout working as well
     proxyReq.on('socket', function(socket) {
       if (options.timeout) {
         socket.setTimeout(options.timeout, function() {
@@ -36,17 +66,7 @@ function sendProxyRequest(Container) {
 
     proxyReq.on('error', reject);
 
-    // this guy should go elsewhere, down the chain
     if (options.parseReqBody) {
-    // We are parsing the body ourselves so we need to write the body content
-    // and then manually end the request.
-
-      //if (bodyContent instanceof Object) {
-        //throw new Error
-        //debugger;
-        //bodyContent = JSON.stringify(bodyContent);
-      //}
-
       if (bodyContent.length) {
         var body = bodyContent;
         var contentType = proxyReq.getHeader('Content-Type');
@@ -67,6 +87,8 @@ function sendProxyRequest(Container) {
       req.pipe(proxyReq);
     }
 
+
+    // TODO: need to get this guy too
     req.on('aborted', function() {
     // reject?
       proxyReq.abort();
