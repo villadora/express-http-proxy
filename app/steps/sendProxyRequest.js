@@ -1,5 +1,8 @@
 'use strict';
 
+
+// I don't think that request-promise is going to work because pipe is a performance issue.
+// Go ahead and go back to `request` here
 var request = require('request-promise');
 var chunkLength = require('../../lib/chunkLength');
 
@@ -19,6 +22,7 @@ function sendProxyRequest(Container) {
   port: '8109' }
   */
 
+  debugger;
   const roptions = {
     method: 'POST',
     uri: 'http://' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,
@@ -33,7 +37,7 @@ function sendProxyRequest(Container) {
       Container.proxy.resData = x.body;
       return Container;
     })
-    .catch(err => { debugger; });
+    .catch(err => { console.log(roptions); debugger; });
 
 
   return new Promise(function(resolve, reject) {
