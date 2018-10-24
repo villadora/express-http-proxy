@@ -39,7 +39,7 @@ If any Promise is rejected, ```next(x)``` is called in the hosting application, 
 
 
 e.g.
-```
+```js
   app.use(proxy('/reject-promise', {
     proxyReqOptDecorator: function() {
       return Promise.reject('An arbitrary rejection message.');
@@ -49,7 +49,7 @@ e.g.
 
 eventually calls
 
-```
+```js
 next('An arbitrary rejection messasage');
 ```
 
@@ -57,7 +57,7 @@ next('An arbitrary rejection messasage');
 
 The first positional argument is for the proxy host;  in many cases you will use a static string here, eg.
 
-```
+```js
 app.use('/', proxy('http://google.com'))
 ```
 
@@ -65,7 +65,7 @@ However, this argument can also be a function, and that function can be
 memoized or computed on each request, based on the setting of
 ```memoizeHost```.
 
-```
+```js
 function selectProxyHost() {
   return (new Date() % 2) ? 'http://google.com' : 'http://altavista.com';
 }
