@@ -3,7 +3,7 @@
 
 // I don't think that request-promise is going to work because pipe is a performance issue.
 // Go ahead and go back to `request` here
-var request = require('request-promise');
+var request = require('request');
 var chunkLength = require('../../lib/chunkLength');
 
 function sendProxyRequest(Container) {
@@ -24,20 +24,21 @@ function sendProxyRequest(Container) {
 
   debugger;
   const roptions = {
-    method: 'POST',
+    method: req.method,
     uri: 'http://' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,
     headers: reqOpt.headers,
     resolveWithFullResponse: true
 //    json: true // Automatically tringifies the body to JSON
   }
 
-  return request(roptions)
-    .then((x) => {
-      Container.proxy.res = x;
-      Container.proxy.resData = x.body;
-      return Container;
-    })
-    .catch(err => { console.log(roptions); debugger; });
+  return new Promise((resolve, reject) => {
+    request(roptions, (error, response, body) => {
+      if (error) { reject(error); }
+      Container.proxy.res = response;
+      Container.proxy.resData = body;
+      resolve(Container);
+    });
+  });
 
 
   return new Promise(function(resolve, reject) {
