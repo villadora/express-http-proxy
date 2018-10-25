@@ -141,16 +141,16 @@ describe('body encoding', function () {
 
 
   describe('when user sets reqBodyEncoding', function () {
-    it('should set the accepts-charset header', function (done) {
+    it.only('should set the accepts-charset header', function (done) {
       var app = express();
-      app.use(proxy('httpbin.org', {
+      app.use(proxy('localhost:8109', {
         reqBodyEncoding: 'utf-16'
       }));
       request(app)
         .get('/headers')
         .end(function (err, res) {
           if (err) { throw err; }
-          assert.equal(res.body.headers['Accept-Charset'], 'utf-16');
+          assert.equal(res.body.headers['accept-charset'], 'utf-16');
           done(err);
         });
     });

@@ -32,6 +32,10 @@ function proxyTarget(port, timeout, handlers) {
     req.pipe(res);
   });
 
+  target.use('/headers', function(req, res) {
+    res.json({ headers: req.headers });
+  });
+
   target.use(function(err, req, res, next) {
     res.send(err);
     next();
