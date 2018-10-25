@@ -22,7 +22,6 @@ function sendProxyRequest(Container) {
   port: '8109' }
   */
 
-  debugger;
   const roptions = {
     method: req.method,
     uri: 'http://' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,

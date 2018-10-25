@@ -12,7 +12,7 @@ describe('body encoding', function () {
   var server;
 
   before(function () {
-    server = startProxyTarget(8109, 1000);
+    server = startProxyTarget(8109);
   });
 
   after(function () {
