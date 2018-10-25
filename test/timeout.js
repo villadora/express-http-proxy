@@ -39,7 +39,7 @@ describe('honors timeout option', function () {
   }
 
   describe('when timeout option is set lower than server response time', function () {
-    it('should fail with CONNECTION TIMEOUT', function (done) {
+    it('should fail with ESOCKETTIMEDOUT', function (done) {
 
       http.use(proxy('http://localhost:56001', {
         timeout: 100,

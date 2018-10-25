@@ -20,7 +20,6 @@ function prepareProxyReq(container) {
     var reqOpt = container.proxy.reqBuilder;
 
     if (bodyContent) {
-    debugger;
       bodyContent = container.options.reqAsBuffer ?
         as.buffer(bodyContent, container.options) :
         as.bufferOrString(bodyContent);

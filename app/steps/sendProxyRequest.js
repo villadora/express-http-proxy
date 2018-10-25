@@ -1,6 +1,5 @@
 'use strict';
 
-
 // I don't think that request-promise is going to work because pipe is a performance issue.
 // Go ahead and go back to `request` here
 var request = require('request');
@@ -29,7 +28,6 @@ function sendProxyRequest(Container) {
   };
 
   if (options.timeout) {
-    debugger;
     roptions.timeout = options.timeout;
   }
 

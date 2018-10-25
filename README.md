@@ -560,6 +560,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 2.0.0 | Use `request/request` module rather than native node request. |
 | 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. | 
 | 1.1.0 | Add step to allow response headers to be modified.
 | 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
