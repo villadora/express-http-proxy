@@ -12,7 +12,6 @@ function sendProxyRequest(Container) {
   var reqOpt = Container.proxy.reqBuilder;
   var options = Container.options;
 
-
   // right now just see if you can build a bridge to request formulation
 /*
  * { headers: Object,
@@ -24,10 +23,14 @@ function sendProxyRequest(Container) {
 
   const roptions = {
     method: req.method,
-    uri: 'http://' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,
+    uri: reqOpt.protocol + '//' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,
     headers: reqOpt.headers,
     resolveWithFullResponse: true
-//    json: true // Automatically tringifies the body to JSON
+  };
+
+  if (options.timeout) {
+    debugger;
+    roptions.timeout = options.timeout;
   }
 
   return new Promise((resolve, reject) => {

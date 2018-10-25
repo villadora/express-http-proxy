@@ -1,5 +1,6 @@
 'use strict';
 var assert = require('assert');
+var bodyParser = require('body-parser');
 var express = require('express');
 var request = require('supertest');
 var fs = require('fs');
