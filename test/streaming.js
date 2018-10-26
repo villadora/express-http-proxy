@@ -94,7 +94,7 @@ describe('streams / piped requests', function () {
     });
   });
 
-  describe('when streaming options are falsey', function () {
+  describe.skip('when streaming options are falsey', function () {
     var TEST_CASES = [{
       name: 'skipToNextHandler is defined',
       options: { skipToNextHandlerFilter: function () { return false; } }

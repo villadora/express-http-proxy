@@ -6,7 +6,7 @@ var proxy = require('../');
 var http = require('http');
 var assert = require('assert');
 
-describe('when skipToNextHandlerFilter is defined', function () {
+describe.only('when skipToNextHandlerFilter is defined', function () {
 
   this.timeout(10000);
 
