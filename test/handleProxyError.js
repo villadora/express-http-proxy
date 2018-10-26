@@ -84,7 +84,7 @@ describe('error handling can be over-ridden by user', function () {
         }));
 
         app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
-          if (err.code === 'ECONNRESET') {
+          if (err.code === 'ESOCKETTIMEDOUT' || err.code === 'ETIMEDOUT') {
             res.status(intentionallyWeirdStatusCode).send(intentionallyQuirkyStatusMessage);
           }
         });
@@ -105,7 +105,8 @@ describe('error handling can be over-ridden by user', function () {
         timeout: 1,
         proxyErrorHandler: function (err, res, next) {
           switch (err && err.code) {
-            case 'ECONNRESET':    { return res.status(405).send('504 became 405'); }
+            case 'ETIMEDOUT':
+            case 'ESOCKETTIMEDOUT':    { return res.status(405).send('504 became 405'); }
             case 'ECONNREFUSED':  { return res.status(200).send('gotcher back'); }
             default:              { next(err); }
           }

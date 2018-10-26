@@ -274,10 +274,12 @@ app.use('/proxy', proxy('www.google.com', {
 
 ### proxyErrorHandler
 
-By default, ```express-http-proxy``` will pass any errors except ECONNRESET to
+By default, ```express-http-proxy``` will pass any errors except `ETIMEDOUT` or `ESOCKETTIMEDOUT` to
 next, so that your application can handle or react to them, or just drop
-through to your default error handling.   ECONNRESET errors are immediately
-returned to the user for historical reasons.
+through to your default error handling.   `ETIMEDOUT` and `ESOCKETTIMEDOUT` errors are immediately
+returned to the user for historical reasons.  These error types (generally)
+only appear when the author has passed a `timeout` limit to
+`express-http-proxy`.
 
 If you would like to modify this behavior, you can provide your own ```proxyErrorHandler```.
 
@@ -297,14 +299,12 @@ app.use(proxy('localhost:12346', {
 app.use(proxy('localhost:12346', {
   proxyErrorHandler: function(err, res, next) {
     switch (err && err.code) {
-      case 'ECONNRESET':    { return res.status(405).send('504 became 405'); }
-      case 'ECONNREFUSED':  { return res.status(200).send('gotcher back'); }
-      default:              { next(err); }
+      case 'ETIMEDOUT': { return res.status(405).send('504 became 405'); }
+      case 'ECONNREFUSED':    { return res.status(200).send('gotcher back'); }
+      default:                { next(err); }
     }
 }}));
 ```
-
-
 
 #### proxyReqOptDecorator  (supports Promise form)
 
