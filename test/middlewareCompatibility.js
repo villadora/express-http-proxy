@@ -47,11 +47,11 @@ describe('middleware compatibility', function () {
     });
 
     app.use(proxy('localhost:12346', {
-      intercept: function (rsp, data, req) {
+      userResDecorator: function (proxyRes, proxyResData, req) {
         assert(req.body);
         assert.equal(req.body.foo, 1);
         assert.equal(req.body.mypost, 'hello');
-        return data;
+        return proxyResData;
       }
     }));
 

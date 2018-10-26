@@ -12,15 +12,8 @@ function sendProxyRequest(Container) {
   var reqOpt = Container.proxy.reqBuilder;
   var options = Container.options;
 
-  // right now just see if you can build a bridge to request formulation
-  /*
- * { headers: Object,
-  method: 'POST',
-  path: '/post',
-  host: 'localhost',
-  port: '8109' }
-  */
 
+  // TODO: this should go out of here to the reqOptBuilder, but at the moment I'm letting it ride here.
   const roptions = {
     method: req.method,
     uri: reqOpt.protocol + '//' + reqOpt.host + ':' + reqOpt.port + reqOpt.path,
@@ -30,6 +23,10 @@ function sendProxyRequest(Container) {
 
   if (options.timeout) {
     roptions.timeout = options.timeout;
+  }
+
+  if (req.body) {
+    roptions.body = JSON.stringify(req.body);
   }
 
   return new Promise((resolve, reject) => {
@@ -43,69 +40,69 @@ function sendProxyRequest(Container) {
   });
 
 
-  return new Promise(function (resolve, reject) {
-    var protocol = Container.proxy.requestModule;
-    var proxyReq = Container.proxy.req = protocol.request(reqOpt, function (rsp) {
-      // TODO: Need to get this streaming functionality back in place
+  //return new Promise(function (resolve, reject) {
+    //var protocol = Container.proxy.requestModule;
+    //var proxyReq = Container.proxy.req = protocol.request(reqOpt, function (rsp) {
+      //// TODO: Need to get this streaming functionality back in place
 
-      if (options.stream) {
-        Container.proxy.res = rsp;
-        return resolve(Container);
-      }
+      //if (options.stream) {
+        //Container.proxy.res = rsp;
+        //return resolve(Container);
+      //}
 
-      var chunks = [];
-      rsp.on('data', function (chunk) { chunks.push(chunk); });
-      rsp.on('end', function () {
-        Container.proxy.res = rsp;
-        Container.proxy.resData = Buffer.concat(chunks, chunkLength(chunks));
-        resolve(Container);
-      });
-      rsp.on('error', reject);
-    });
+      //var chunks = [];
+      //rsp.on('data', function (chunk) { chunks.push(chunk); });
+      //rsp.on('end', function () {
+        //Container.proxy.res = rsp;
+        //Container.proxy.resData = Buffer.concat(chunks, chunkLength(chunks));
+        //resolve(Container);
+      //});
+      //rsp.on('error', reject);
+    //});
 
-    // TODO: need to get this socket timeout working as well
+    //// TODO: need to get this socket timeout working as well
 
-    proxyReq.on('socket', function (socket) {
-      if (options.timeout) {
-        socket.setTimeout(options.timeout, function () {
-          proxyReq.abort();
-        });
-      }
-    });
+    //proxyReq.on('socket', function (socket) {
+      //if (options.timeout) {
+        //socket.setTimeout(options.timeout, function () {
+          //proxyReq.abort();
+        //});
+      //}
+    //});
 
-    proxyReq.on('error', reject);
+    //proxyReq.on('error', reject);
 
-    if (options.parseReqBody) {
-      if (bodyContent.length) {
-        var body = bodyContent;
-        var contentType = proxyReq.getHeader('Content-Type');
-        if (contentType === 'x-www-form-urlencoded' || contentType === 'application/x-www-form-urlencoded') {
-          try {
-            var params = JSON.parse(body);
-            body = Object.keys(params).map(function (k) { return k + '=' + params[k]; }).join('&');
-          } catch (e) {
-            // bodyContent is not json-format
-          }
-        }
-        proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
-        proxyReq.write(body);
-      }
-      proxyReq.end();
-    } else {
-    // Pipe will call end when it has completely read from the request.
+    //if (options.parseReqBody) {
+      //if (bodyContent.length) {
+        //var body = bodyContent;
+        //var contentType = proxyReq.getHeader('Content-Type');
+        //if (contentType === 'x-www-form-urlencoded' || contentType === 'application/x-www-form-urlencoded') {
+          //try {
+            //var params = JSON.parse(body);
+            //body = Object.keys(params).map(function (k) { return k + '=' + params[k]; }).join('&');
+          //} catch (e) {
+            //// bodyContent is not json-format
+          //}
+        //}
+        //proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
+        //proxyReq.write(body);
+      //}
+      //proxyReq.end();
+    //} else {
+    //// Pipe will call end when it has completely read from the request.
 
-      req.pipe(proxyReq);
-    }
+      //req.pipe(proxyReq);
+    //}
 
 
-    // TODO: need to get this guy too
+    //// TODO: need to get this guy too
 
-    req.on('aborted', function () {
-    // reject?
+    //req.on('aborted', function () {
+    //// reject?
 
-      proxyReq.abort();
-    });
-  });
+      //proxyReq.abort();
+    //});
+  //});
 }
 
 
