@@ -25,8 +25,12 @@ function sendProxyRequest(Container) {
     roptions.timeout = options.timeout;
   }
 
+  // SHOULD this be bodyContent instead?
   if (req.body) {
-    roptions.body = JSON.stringify(req.body);
+    roptions.body = req.body;
+    if (typeof req.body === 'object') {
+      roptions.json = true;
+    }
   }
 
   return new Promise((resolve, reject) => {
