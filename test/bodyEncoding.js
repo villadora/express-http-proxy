@@ -141,7 +141,7 @@ describe('body encoding', function () {
 
 
   describe('when user sets reqBodyEncoding', function () {
-    it.only('should set the accepts-charset header', function (done) {
+    it('should set the accepts-charset header', function (done) {
       var app = express();
       app.use(proxy('localhost:8109', {
         reqBodyEncoding: 'utf-16'
