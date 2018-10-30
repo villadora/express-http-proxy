@@ -17,13 +17,14 @@ function createProxyApplicationServer() {
   pTarget.use(bodyParser.json());
   pTarget.use(bodyParser.urlencoded({ extended: true }));
   pTarget.use(function (req, res) {
+    debugger;
     assert(req.body.name === 'tobi'); //, 'Assert that the value posted to the local server is passed to the proxy');
     res.json(req.body);
   });
   return pTarget.listen(12345);
 }
 
-describe('when proxy request is a POST', function () {
+describe.only('when proxy request is a POST', function () {
 
   this.timeout(10000);
 
@@ -47,6 +48,8 @@ describe('when proxy request is a POST', function () {
   testCases.forEach(function (test) {
     it('should deliver the post body when ' + test.name, function (done) {
 
+      localServer.use(bodyParser.json());
+      localServer.use(bodyParser.urlencoded({ extended: true }));
       localServer.use('/proxy', proxy('http://127.0.0.1:12345'));
       localServer.use(function (req, res) { res.sendStatus(200); });
       localServer.use(function (err, req, res, next) { throw new Error(err, req, res, next); });
@@ -56,6 +59,7 @@ describe('when proxy request is a POST', function () {
         .send({ name: 'tobi' })
         .set('Content-Type', test.encoding)
         .expect(function (res) {
+          debugger;
           assert(res.body.name === 'tobi');
         })
         .end(done);

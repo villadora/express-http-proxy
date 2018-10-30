@@ -6,6 +6,10 @@
 var request = require('request');
 var chunkLength = require('../../lib/chunkLength');
 
+function isFormEncoded(req) {
+  return req.headers['content-type'] === 'application/x-www-form-urlencoded';
+}
+
 function sendProxyRequest(Container) {
   var req = Container.user.req;
   var bodyContent = Container.proxy.bodyContent;
@@ -24,12 +28,18 @@ function sendProxyRequest(Container) {
   if (options.timeout) {
     roptions.timeout = options.timeout;
   }
-
+debugger;
   // SHOULD this be bodyContent instead?
   if (req.body) {
-    roptions.body = req.body;
-    if (typeof req.body === 'object') {
-      roptions.json = true;
+    if (isFormEncoded(req)) {
+      // Here's where I am.    Can't figure out why formEncoded dudes are working poorly.  4 tests left before cleaning.
+      debugger;
+      roptions.formData = req.body;
+    } else {
+      roptions.body = req.body;
+      if (typeof req.body === 'object') {
+        roptions.json = true;
+      }
     }
   }
 
