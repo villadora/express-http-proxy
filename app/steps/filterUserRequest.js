@@ -10,7 +10,7 @@ function filterUserRequest(container) {
   var resolverFn = container.options.filter || defaultFilter;
 
   return Promise
-    .resolve(resolverFn(container.proxy.reqBuilder, container.user.req))
+    .resolve(resolverFn(container.user.req, container.user.res))
     .then(function (shouldIContinue) {
       if (shouldIContinue) {
         return Promise.resolve(container);
