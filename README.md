@@ -122,9 +122,11 @@ DEPRECATED.  See proxyReqPathResolver
 
 DEPRECATED. See proxyReqPathResolver
 
-#### filter
+#### filter (supports Promises)
 
-The ```filter``` option can be used to limit what requests are proxied.  Return ```true``` to execute proxy.
+The ```filter``` option can be used to limit what requests are proxied.  Return
+```true``` to continue to execute proxy; return false-y to skip proxy for this
+request.
 
 For example, if you only want to proxy get request:
 
@@ -135,6 +137,22 @@ app.use('/proxy', proxy('www.google.com', {
   }
 }));
 ```
+
+Promise form:
+
+```js
+  app.use(proxy('localhost:12346', {
+    filter: function (req, res) { 
+      return new Promise(function (resolve) { 
+        resolve(req.method === 'GET');
+      }); 
+    }
+  }));
+```
+
+Note that in the previous example, `resolve(false)` will execute the happy path
+for filter here (skipping the rest of the proxy, and calling `next()`).
+`reject()` will also skip the rest of proxy and call `next()`. 
 
 #### userResDecorator (was: intercept) (supports Promise)
 
