@@ -560,6 +560,9 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.5.0 | Fixes bug in `filter` signature.  Fix bug in skipToNextHandler, add expressHttpProxy value to user res when skipped.  Add tests for host as ip address. |
+| 1.4.0 | DEPRECATED. Critical bug in the `filter` api.| 
+| 1.3.0 | DEPRECATED. Critical bug in the `filter` api. `filter` now supports Promises.  Update linter to eslint.  |
 | 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. | 
 | 1.1.0 | Add step to allow response headers to be modified.
 | 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
