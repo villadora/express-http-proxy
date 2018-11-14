@@ -1,4 +1,6 @@
-'use strict';
+'use strict'
+
+var inspect = require('util').inspect;
 
 var debug = require('debug')('express-http-proxy');
 
@@ -14,7 +16,7 @@ function decorateProxyReqOpt(container) {
     .then(function (processedReqOpts) {
       delete processedReqOpts.params;
       container.proxy.reqBuilder = processedReqOpts;
-      debug('Request options (after processing):', JSON.stringify(processedReqOpts));
+      debug('Request options (after processing):', inspect(processedReqOpts));
       return Promise.resolve(container);
     });
 }
