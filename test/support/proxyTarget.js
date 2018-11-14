@@ -28,6 +28,10 @@ function proxyTarget(port, timeout, handlers) {
     });
   }
 
+  target.get('/get', function (req, res) {
+    res.send('OK');
+  });
+
   target.post('/post', function(req, res) {
     req.pipe(res);
   });
