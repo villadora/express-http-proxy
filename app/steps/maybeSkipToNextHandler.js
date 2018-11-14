@@ -12,11 +12,11 @@ function maybeSkipToNextHandler(container) {
     .then(function (shouldSkipToNext) {
       if (shouldSkipToNext) {
         container.user.res.expressHttpProxy = container.proxy;
-        return Promise.reject(container.user.next());
+        return Promise.reject();
       } else {
         return Promise.resolve(container);
       }
-    })
+    });
 }
 
 module.exports = maybeSkipToNextHandler;
