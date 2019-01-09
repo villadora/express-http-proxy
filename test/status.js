@@ -21,7 +21,7 @@ describe('proxies status code', function () {
     server.close();
   });
 
-  [304, 404, 200, 401, 500].forEach(function (status) {
+  [301, 302, 304, 404, 200, 401, 500].forEach(function (status) {
     it('on ' + status, function (done) {
       request(proxyServer)
         .get('/status/' + status)

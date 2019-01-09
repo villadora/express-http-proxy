@@ -4,38 +4,46 @@ var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var http = require('http');
 
 describe('userResDecorator', function () {
 
-  describe('when handling a 304', function () {
+  describe('when handling no body', function () {
     this.timeout(10000);
 
     var app;
-    var  slowTarget;
-    var  serverReference;
+    var noBodyTarget;
+    var serverReference;
+    var responseCode;
 
     beforeEach(function () {
       app = express();
-      slowTarget = express();
-      slowTarget.use(function (req, res) { res.sendStatus(304); });
-      serverReference = slowTarget.listen(12345);
+      noBodyTarget = new http.Server();
+      noBodyTarget.on('request', function (req, res) {
+        res.writeHead(responseCode, { 'Content-Length': '0' });
+        res.end();
+      });
+      serverReference = noBodyTarget.listen(12345);
     });
 
     afterEach(function () {
       serverReference.close();
     });
+    [200, 201, 204, 205, 301, 302, 304, 400, 500].forEach(function (status) {
+      it('skips any handling for ' + status, function (done) {
+        responseCode = status;
+        app.use('/proxy', proxy('http://127.0.0.1:12345', {
+          userResDecorator: function (/*res*/) {
+            throw new Error('expected to never get here because this step should be skipped for ' +
+                status + ' with no body');
+          }
+        }));
 
-    it('skips any handling', function (done) {
-      app.use('/proxy', proxy('http://127.0.0.1:12345', {
-        userResDecorator: function (/*res*/) {
-          throw new Error('expected to never get here because this step should be skipped for 304');
-        }
-      }));
-
-      request(app)
-        .get('/proxy')
-        .expect(304)
-        .end(done);
+        request(app)
+          .get('/proxy')
+          .expect(status)
+          .end(done);
+      });
     });
   });
 

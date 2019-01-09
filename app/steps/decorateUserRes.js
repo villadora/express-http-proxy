@@ -45,8 +45,8 @@ function decorateProxyResBody(container) {
   var req = container.user.req;
   var res = container.user.res;
 
-  if (res.statusCode === 304) {
-    debug('Skipping userResDecorator on response 304');
+  if (proxyResData.length === 0) {
+    debug('Skipping userResDecorator on response with empty proxyResData');
     return Promise.resolve(container);
   }
 
