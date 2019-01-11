@@ -14,7 +14,7 @@ function decorateProxyReqOpt(container) {
     .then(function (processedReqOpts) {
       delete processedReqOpts.params;
       container.proxy.reqBuilder = processedReqOpts;
-      debug('Request options (after processing):', JSON.stringify(processedReqOpts));
+      debug('Request options (after processing): %o', processedReqOpts);
       return Promise.resolve(container);
     });
 }
