@@ -47,7 +47,7 @@ describe('middleware compatibility', function () {
     });
 
     app.use(proxy('localhost:12346', {
-      decorateUseRes: function (rsp, data, req) {
+      userResDecorator: function (rsp, data, req) {
         assert(req.body);
         assert.equal(req.body.foo, 1);
         assert.equal(req.body.mypost, 'hello');
