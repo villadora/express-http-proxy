@@ -7,7 +7,7 @@ var proxy = require('../');
 var proxyTarget = require('../test/support/proxyTarget');
 
 /*  This test is specifically written because of critical errors thrown while debug logging. */
-describe.only('trace debugging does not cause the application to fail', function () {
+describe('trace debugging does not cause the application to fail', function () {
   var proxyServer;
 
   beforeEach(function () { debug.enable('express-http-proxy'); proxyServer = proxyTarget(3000); });
