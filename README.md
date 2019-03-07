@@ -142,25 +142,32 @@ Promise form:
 
 ```js
   app.use(proxy('localhost:12346', {
-    filter: function (req, res) { 
-      return new Promise(function (resolve) { 
+    filter: function (req, res) {
+      return new Promise(function (resolve) {
         resolve(req.method === 'GET');
-      }); 
+      });
     }
   }));
 ```
 
 Note that in the previous example, `resolve(false)` will execute the happy path
 for filter here (skipping the rest of the proxy, and calling `next()`).
-`reject()` will also skip the rest of proxy and call `next()`. 
+`reject()` will also skip the rest of proxy and call `next()`.
 
 #### userResDecorator (was: intercept) (supports Promise)
 
 You can modify the proxy's response before sending it to the client.
 
+Note: `proxyResData` will be an empty buffer when the proxied response is empty.
+
 ```js
 app.use('/proxy', proxy('www.google.com', {
   userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    if (proxyResData.length == 0) {
+      // body is empty, don't try to parse it
+      // return alternate document instead.
+      return JSON.stringify({});
+    }
     data = JSON.parse(proxyResData.toString('utf8'));
     data.newProperty = 'exciting data';
     return JSON.stringify(data);
@@ -562,9 +569,9 @@ app.use('/', proxy('internalhost.example.com', {
 | --- | --- |
 | 1.5.1 | Fixes bug in stringifying debug messages. |
 | 1.5.0 | Fixes bug in `filter` signature.  Fix bug in skipToNextHandler, add expressHttpProxy value to user res when skipped.  Add tests for host as ip address. |
-| 1.4.0 | DEPRECATED. Critical bug in the `filter` api.| 
+| 1.4.0 | DEPRECATED. Critical bug in the `filter` api.|
 | 1.3.0 | DEPRECATED. Critical bug in the `filter` api. `filter` now supports Promises.  Update linter to eslint.  |
-| 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. | 
+| 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. |
 | 1.1.0 | Add step to allow response headers to be modified.
 | 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
 | 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
