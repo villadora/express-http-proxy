@@ -24,7 +24,7 @@ describe('http verbs', function () {
       .end(function (err, res) {
         if (err) { return done(err); }
         assert(/node-superagent/.test(res.body.headers['User-Agent']));
-        assert.equal(res.body.url, 'http://httpbin.org/get');
+        assert.equal(res.body.url, 'https://httpbin.org/get');
         done(err);
       });
   });
