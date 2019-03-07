@@ -10,12 +10,24 @@ function isResGzipped(res) {
 
 function zipOrUnzip(method) {
   return function(rspData, res) {
-    return (isResGzipped(res) && rspData.length) ? zlib[method](rspData) : rspData;
+    return new Promise(function (resolve, reject) {
+      if (isResGzipped(res) && rspData.length) {
+        zlib[method](rspData, function(err, buffer) {
+          if(err) {
+            reject(err);
+          } else {
+            resolve(buffer);
+          }
+        });
+      } else {
+        resolve(rspData);
+      }
+    });
   };
 }
 
-var maybeUnzipResponse = zipOrUnzip('gunzipSync');
-var maybeZipResponse = zipOrUnzip('gzipSync');
+var maybeUnzipPromise = zipOrUnzip('gunzip');
+var maybeZipPromise = zipOrUnzip('gzip');
 
 function verifyBuffer(rspd, reject) {
   if (!Buffer.isBuffer(rspd)) {
@@ -40,25 +52,33 @@ function decorateProxyResBody(container) {
     return Promise.resolve(container);
   }
 
-  var proxyResData = maybeUnzipResponse(container.proxy.resData, container.proxy.res);
+  var proxyResDataPromise = maybeUnzipPromise(container.proxy.resData, container.proxy.res);
   var proxyRes = container.proxy.res;
   var req = container.user.req;
   var res = container.user.res;
+  var originalResData; 
 
   if (res.statusCode === 304) {
     debug('Skipping userResDecorator on response 304');
     return Promise.resolve(container);
   }
 
-  return Promise
-    .resolve(resolverFn(proxyRes, proxyResData, req, res))
+  return proxyResDataPromise
+    .then(function(proxyResData){
+      originalResData = proxyResData;
+      return resolverFn(proxyRes, proxyResData, req, res);
+    })
     .then(function(modifiedResData) {
       return new Promise(function(resolve, reject) {
         var rspd = as.buffer(modifiedResData, container.options);
         verifyBuffer(rspd, reject);
-        updateHeaders(res, proxyResData, rspd, reject);
-        container.proxy.resData = maybeZipResponse(rspd, container.proxy.res);
-        resolve(container);
+        updateHeaders(res, originalResData, rspd, reject);
+        maybeZipPromise(rspd, container.proxy.res).then(function(buffer) {
+          container.proxy.resData = buffer;
+          resolve(container);
+        }).catch(function(error){
+          reject(error);
+        });
       });
     });
 }
