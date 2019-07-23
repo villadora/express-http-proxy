@@ -2,9 +2,9 @@
 
 var assert = require('assert');
 var express = require('express');
+var nock = require('nock');
 var request = require('supertest');
 var proxy = require('../');
-var bodyParser = require('body-parser');
 
 
 function createLocalApplicationServer() {
@@ -12,31 +12,18 @@ function createLocalApplicationServer() {
   return app;
 }
 
-function createProxyApplicationServer() {
-  var pTarget = express();
-  pTarget.use(bodyParser.json());
-  pTarget.use(bodyParser.urlencoded({ extended: true }));
-  pTarget.use(function (req, res) {
-    assert(req.body.name === 'tobi'); //, 'Assert that the value posted to the local server is passed to the proxy');
-    res.json(req.body);
-  });
-  return pTarget.listen(12345);
-}
-
 describe('when proxy request is a POST', function () {
 
   this.timeout(10000);
 
   var localServer;
-  var  proxyServer;
 
   beforeEach(function () {
     localServer = createLocalApplicationServer();
-    proxyServer = createProxyApplicationServer();
   });
 
   afterEach(function () {
-    proxyServer.close();
+    nock.cleanAll();
   });
 
   var testCases = [
@@ -46,6 +33,12 @@ describe('when proxy request is a POST', function () {
 
   testCases.forEach(function (test) {
     it('should deliver the post body when ' + test.name, function (done) {
+      var nockedPostWithEncoding = nock('http://127.0.0.1:12345')
+        .post('/', { name: 'tobi' })
+        .matchHeader('Content-Type', test.encoding)
+        .reply(200, {
+          name: 'tobi'
+        });
 
       localServer.use('/proxy', proxy('http://127.0.0.1:12345'));
       localServer.use(function (req, res) { res.sendStatus(200); });
@@ -57,9 +50,56 @@ describe('when proxy request is a POST', function () {
         .set('Content-Type', test.encoding)
         .expect(function (res) {
           assert(res.body.name === 'tobi');
+          nockedPostWithEncoding.done();
         })
         .end(done);
     });
+  });
+
+  it('should deliver empty string post body', function (done) {
+    var nockedPostWithoutBody = nock('http://127.0.0.1:12345')
+      .post('/', '')
+      .matchHeader('Content-Type', 'application/json')
+      .reply(200, {
+        name: 'tobi'
+      });
+
+    localServer.use('/proxy', proxy('http://127.0.0.1:12345'));
+    localServer.use(function (req, res) { res.sendStatus(200); });
+    localServer.use(function (err, req, res, next) { throw new Error(err, req, res, next); });
+
+    request(localServer)
+      .post('/proxy')
+      .send()
+      .set('Content-Type', 'application/json')
+      .expect(function (res) {
+        assert(res.body.name === 'tobi');
+        nockedPostWithoutBody.done();
+      })
+      .end(done);
+  });
+
+  it('should deliver empty object post body', function (done) {
+    var nockedPostWithoutBody = nock('http://127.0.0.1:12345')
+      .post('/', {})
+      .matchHeader('Content-Type', 'application/json')
+      .reply(200, {
+        name: 'tobi'
+      });
+
+    localServer.use('/proxy', proxy('http://127.0.0.1:12345'));
+    localServer.use(function (req, res) { res.sendStatus(200); });
+    localServer.use(function (err, req, res, next) { throw new Error(err, req, res, next); });
+
+    request(localServer)
+      .post('/proxy')
+      .send({})
+      .set('Content-Type', 'application/json')
+      .expect(function (res) {
+        assert(res.body.name === 'tobi');
+        nockedPostWithoutBody.done();
+      })
+      .end(done);
   });
 
 });
