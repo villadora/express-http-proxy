@@ -1,6 +1,7 @@
 'use strict';
 
 var assert = require('assert');
+var bodyParser = require('body-parser');
 var express = require('express');
 var nock = require('nock');
 var request = require('supertest');
@@ -20,6 +21,7 @@ describe('when proxy request is a POST', function () {
 
   beforeEach(function () {
     localServer = createLocalApplicationServer();
+    localServer.use(bodyParser.json());
   });
 
   afterEach(function () {
@@ -32,9 +34,33 @@ describe('when proxy request is a POST', function () {
   ];
 
   testCases.forEach(function (test) {
+    it('should deliver the post query when ' + test.name, function (done) {
+      var nockedPostWithEncoding = nock('http://127.0.0.1:12345')
+        .post('/')
+        .query({ name: 'tobi' })
+        .matchHeader('Content-Type', test.encoding)
+        .reply(200, {
+          name: 'tobi'
+        });
+
+      localServer.use('/proxy', proxy('http://127.0.0.1:12345'));
+      localServer.use(function (req, res) { res.sendStatus(200); });
+      localServer.use(function (err, req, res, next) { throw new Error(err, req, res, next); });
+
+      request(localServer)
+        .post('/proxy')
+        .query({ name: 'tobi' })
+        .set('Content-Type', test.encoding)
+        .expect(function (res) {
+          assert(res.body.name === 'tobi');
+          nockedPostWithEncoding.done();
+        })
+        .end(done);
+    });
+
     it('should deliver the post body when ' + test.name, function (done) {
       var nockedPostWithEncoding = nock('http://127.0.0.1:12345')
-        .post('/', { name: 'tobi' })
+        .post('/', test.encoding.includes('json') ? { name: 'tobi' } : {})
         .matchHeader('Content-Type', test.encoding)
         .reply(200, {
           name: 'tobi'
@@ -58,7 +84,7 @@ describe('when proxy request is a POST', function () {
 
   it('should deliver empty string post body', function (done) {
     var nockedPostWithoutBody = nock('http://127.0.0.1:12345')
-      .post('/', '')
+      .post('/', {})
       .matchHeader('Content-Type', 'application/json')
       .reply(200, {
         name: 'tobi'
