@@ -34,7 +34,8 @@
     "eslint": "^4.19.1",
     "express": "^4.15.4",
     "mocha": "^5.2.0",
-    "supertest": "^3.0.0"
+    "nock": "^10.0.6",
+    "supertest": "^3.4.2"
   },
   "dependencies": {
     "debug": "^3.0.1",
