@@ -1,13 +1,13 @@
 'use strict';
 var requestOptions = require('../../lib/requestOptions');
 
-function resolveProxyHost(container) {
+async function resolveProxyHost(container) {
   var parsedHost;
 
   if (container.options.memoizeHost && container.options.memoizedHost) {
     parsedHost = container.options.memoizedHost;
   } else {
-    parsedHost = requestOptions.parseHost(container);
+    parsedHost = await requestOptions.parseHost(container);
   }
 
   container.proxy.reqBuilder.host = parsedHost.host;
