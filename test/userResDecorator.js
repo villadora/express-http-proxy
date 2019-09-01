@@ -160,7 +160,7 @@ describe('userResDecorator', function () {
 
     proxyApp.use(proxy(redirectingServerOrigin, {
       userResDecorator: function (rsp, data, req, res) {
-        var proxyReturnedLocation = res._headers.location;
+        var proxyReturnedLocation = res.getHeaders ? res.getHeaders().location : res._headers.location;
         res.location(proxyReturnedLocation.replace(redirectingServerPort, preferredPort));
         return data;
       }
