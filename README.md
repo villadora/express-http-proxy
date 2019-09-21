@@ -552,7 +552,7 @@ app.use('/', proxy('internalhost.example.com', {
     proxyReqOpts.rejectUnauthorized = false
     return proxyReqOpts;
   }
-})
+}))
 ```
 
 
