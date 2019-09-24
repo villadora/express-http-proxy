@@ -10,12 +10,26 @@ var proxyTarget = require('../test/support/proxyTarget');
 describe('trace debugging does not cause the application to fail', function () {
   var proxyServer;
 
-  beforeEach(function () { debug.enable('express-http-proxy'); proxyServer = proxyTarget(3000); });
-  afterEach(function () { debug.disable('express-http-proxy'); proxyServer.close(); });
+  before(function () {
+    proxyServer = proxyTarget(8109, 1000);
+  });
+
+  after(function () {
+    proxyServer.close();
+  });
+
+  beforeEach(function () {
+    debug.enable('express-http-proxy');
+  });
+
+  afterEach(function () {
+    debug.disable('express-http-proxy');
+  });
 
   it('happy path', function (done) {
+    debugger;
     var app = express();
-    app.use(proxy('localhost:3000'));
+    app.use(proxy('localhost:8109'));
     request(app)
       .get('/get')
       .expect(200)
@@ -26,7 +40,7 @@ describe('trace debugging does not cause the application to fail', function () {
     var app = express();
     var HttpAgent = require('http').Agent;
     var httpAgent = new HttpAgent({ keepAlive: true, keepAliveMsecs: 60e3 });
-    app.use(proxy('localhost:3000', {
+    app.use(proxy('localhost:8109', {
       proxyReqOptDecorator: function (proxyReqOpts) {
         proxyReqOpts.agent = httpAgent;
         return proxyReqOpts;
