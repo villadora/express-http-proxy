@@ -82,7 +82,7 @@ describe('when proxy request is a POST', function () {
     });
   });
 
-  it.only('should deliver empty string post body', function (done) {
+  it('should deliver empty string post body', function (done) {
     var nockedPostWithoutBody = nock('http://127.0.0.1:12345')
       .post('/')
       .matchHeader('Content-Type', 'application/json')
