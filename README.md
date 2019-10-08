@@ -72,6 +72,18 @@ function selectProxyHost() {
 
 app.use('/', proxy(selectProxyHost));
 ```
+### Middleware mixing
+
+If you use 'https://www.npmjs.com/package/body-parser' you should declare it AFTER the proxy configuration, otherwise  original 'POST' body could be modified and not proxied correctly.
+
+```
+
+app.use('/proxy', 'http://foo.bar.com')
+
+// Declare use of body-parser AFTER the use of proxy
+app.use(bodyParser.foo(bar))
+app.use('/api', ...)
+```
 
 ### Options
 
