@@ -6,6 +6,7 @@
     "node": ">=6.0.0"
   },
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint",
     "test:debug": "mocha debug -R spec test --recursive --exit",
