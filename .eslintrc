@@ -7,7 +7,9 @@
     "mocha": true,
   },
   "globals": {},
-  "parserOptions": { "ecmaVersion": 8 },
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
   "rules": {
     "camelcase": [
       2,
@@ -21,8 +23,13 @@
       2,
       {
         "ArrayExpression": 1,
-        "CallExpression": {"arguments": 1},
-        "FunctionDeclaration": {"body": 1, "parameters": 2},
+        "CallExpression": {
+          "arguments": 1
+        },
+        "FunctionDeclaration": {
+          "body": 1,
+          "parameters": 2
+        },
         "MemberExpression": 1,
         "ObjectExpression": 1,
         "SwitchCase": 1
@@ -61,10 +68,13 @@
     "no-undef": 2,
     "no-unused-vars": 2,
     "no-eq-null": 2,
-    "space-before-function-paren": ["error", {
+    "space-before-function-paren": [
+      "error",
+      {
         "anonymous": "always",
         "named": "never"
-    }],
+      }
+    ],
     "no-empty": [
       2,
       {
@@ -150,7 +160,10 @@
     ],
     "lines-around-comment": [
       2,
-      { "afterLineComment": true, "allowBlockEnd": true }
+      {
+        "afterLineComment": false,
+        "allowBlockEnd": true
+      }
     ],
     "semi": [
       2,
