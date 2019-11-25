@@ -21,15 +21,17 @@ describe('body encoding', function () {
 
   this.timeout(10000);
 
-  var pngHex = '89504e470d0a1a0a0' +
-               '000000d4948445200' +
-               '00000100000001080' +
-               '60000001f15c48900' +
-               '00000a49444154789' +
-               'c6300010000050001' +
-               '0d0a2db4000000004' +
-               '9454e44ae426082';
-  var pngData = new Buffer(pngHex, 'hex');
+  var pngHex = [
+    '89504e470d0a1a0a0',
+    '000000d4948445200',
+    '00000100000001080',
+    '60000001f15c48900',
+    '00000a49444154789',
+    'c6300010000050001',
+    '0d0a2db4000000004',
+    '9454e44ae426082'
+  ].join('');
+  var pngData = Buffer.from(pngHex, 'hex');
 
   it('allow raw data', function (done) {
     var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
@@ -38,7 +40,7 @@ describe('body encoding', function () {
     app.use(proxy('localhost:8109', {
       reqBodyEncoding: null,
       proxyReqBodyDecorator: function (bodyContent) {
-        assert((new Buffer(bodyContent).toString('hex')).indexOf(pngData.toString('hex')) >= 0,
+        assert((Buffer.from(bodyContent).toString('hex')).indexOf(pngData.toString('hex')) >= 0,
           'body should contain same data');
         return bodyContent;
       }

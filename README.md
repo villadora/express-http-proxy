@@ -195,11 +195,12 @@ instance, but this is not a reliable interface. I expect to close this
 exploit in a future release, while providing an additional hook for mutating
 the userRes before sending.
 
-##### gzip responses
+##### gzip or Brotli responses
 
-If your proxy response is gzipped, this program will automatically unzip
-it before passing to your function, then zip it back up before piping it to the
-user response.  There is currently no way to short-circuit this behavior.
+If your proxy response is gzipped or Brotli-encoded, this program will
+automatically unzip it before passing to your function, then zip it back up
+before piping it to the user response. There is currently no way to
+short-circuit this behavior.
 
 #### limit
 
