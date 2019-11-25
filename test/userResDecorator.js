@@ -3,11 +3,14 @@
 var assert = require('assert');
 var express = require('express');
 var compression = require('compression');
+var shrinkRay = require('shrink-ray-current');
 var request = require('supertest');
 // superagent/supertest don't support `br` encoding
+// and fail to parse JSON
 var rp = require('request-promise');
-var proxy = require('../');
 var brotli = require('iltorb');
+
+var proxy = require('../');
 
 describe('userResDecorator', function () {
 
@@ -228,29 +231,39 @@ describe('userResDecorator', function () {
 
     var app;
     var appServerReference;
+    var target;
+    var targetServerReference;
 
     beforeEach(function () {
       app = express();
       appServerReference = app.listen(12346);
+      target = express();
+      target.use(shrinkRay({ threshold: 0, useZopfliForGzip: false }));
+      target.get('/test', function (req, res) {
+        res.json({ x: 100 });
+      });
+      targetServerReference = target.listen(12345);
     });
 
     afterEach(function () {
       appServerReference.close();
+      targetServerReference.close();
     });
 
     it('properly handles decoding and reencoding', function (done) {
-      app.use('/proxy', proxy('reqres.in', {
-        https: true,
+      app.use('/proxy', proxy('localhost:12345', {
         userResDecorator: function (_res, resData) {
-          const data = JSON.parse(resData.toString('utf8')).data;
-          data.x = data.id + 100;
+          const data = JSON.parse(resData.toString('utf8'));
+          data.x = data.x + 1;
           return JSON.stringify(data);
         }
       }));
 
       rp({
-        uri: 'http://127.0.0.1:12346/proxy/api/products/3',
+        uri: 'http://127.0.0.1:12346/proxy/test',
         resolveWithFullResponse: true,
+        // this ensures the body is returned as a buffer
+        // with the original binary data
         encoding: null,
         headers: {
           'Accept-Encoding': 'br'
@@ -262,7 +275,7 @@ describe('userResDecorator', function () {
         })
         .then(function (body) {
           body = JSON.parse(body);
-          assert.equal(body.x, 103);
+          assert.equal(body.x, 101);
           done();
         })
         .catch(done);
