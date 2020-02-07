@@ -241,6 +241,23 @@ Conversely, When ```memoizeHost:true```,  the coinToss would occur on the first
 request, and all additional requests would return the value resolved on the
 first request.
 
+#### optionalNext
+
+Defaults to ```false```.
+
+When ```true```, the ```next``` middleware function will be executed on the final step returning control to the host application.
+
+```
+const options = {
+    optionalNext: true
+}
+
+app.use(middleware.onBefore);
+app.use('/api', proxy('http://yahoo.com', options));
+app.use(middleware.onAfter);
+```
+
+In the above example, ```middleware.onAfter``` will be called if ```optionalNext``` is ```true```.
 
 ### userResHeaderDecorator
 
