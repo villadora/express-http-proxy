@@ -2,7 +2,7 @@
 'use strict';
 
 function optionalNext(container, next) {
-    if (container.params.userOptions.optionalNext) {
+    if (container.params && container.params.userOptions && container.params.userOptions.optionalNext) {
         next();
         return Promise.resolve();
     }
