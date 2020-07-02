@@ -9,7 +9,8 @@ function buildProxyReq(Container) {
   var options = Container.options;
   var host = Container.proxy.host;
 
-  var parseBody = (!options.parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
+  var parseReqBody = (typeof options.parseReqBody === 'function') ? options.parseReqBody(req) : options.parseReqBody;
+  var parseBody = (!parseReqBody) ? Promise.resolve(null) : requestOptions.bodyContent(req, res, options);
   var createReqOptions = requestOptions.create(req, res, options, host);
 
   return Promise

@@ -407,6 +407,19 @@ app.use('/proxy', proxy('www.google.com', {
   parseReqBody: false
 }));
 ```
+You can use function instead of boolean value for dynamic value generation based on request
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  parseReqBody: function (proxyReq) {
+    if (proxyReq.headers["content-type"] === "application/json") {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}));
+``` 
 
 #### reqAsBuffer
 
