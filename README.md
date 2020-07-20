@@ -572,6 +572,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.6.1 | Minor bug fixes and documentation. |
 | 1.6.0 | Do gzip and gunzip aysyncronously.   Test and documentation improvements, dependency updates. |
 | 1.5.1 | Fixes bug in stringifying debug messages. |
 | 1.5.0 | Fixes bug in `filter` signature.  Fix bug in skipToNextHandler, add expressHttpProxy value to user res when skipped.  Add tests for host as ip address. |
