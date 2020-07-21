@@ -256,6 +256,8 @@ first request.
 
 ### userResHeaderDecorator
 
+When a `userResHeaderDecorator` is defined, the return of this method will replace (rather than be merged on to) the headers for `userRes`.
+
 ```js
 app.use('/proxy', proxy('www.google.com', {
   userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
