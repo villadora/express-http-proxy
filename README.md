@@ -572,6 +572,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.6.2 | Update node.js versions used by ci. |
 | 1.6.1 | Minor bug fixes and documentation. |
 | 1.6.0 | Do gzip and gunzip aysyncronously.   Test and documentation improvements, dependency updates. |
 | 1.5.1 | Fixes bug in stringifying debug messages. |
