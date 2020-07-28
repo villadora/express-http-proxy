@@ -113,7 +113,6 @@ describe('userResDecorator', function () {
 
     request(app)
       .get('/etag/fakeEtag')
-      .set('if-none-matches', 'fakeEtag')
       .end(function (err, res) {
         if (err) { return done(err); }
 
