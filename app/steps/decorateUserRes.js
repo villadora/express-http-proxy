@@ -38,6 +38,11 @@ function verifyBuffer(rspd, reject) {
 function updateHeaders(res, rspdBefore, rspdAfter, reject) {
   if (!res.headersSent) {
       res.set('content-length', rspdAfter.length);
+      /**
+       * Force Express to regenerate the etag as body may have changed.
+       * Prevents 304 Not Modified when rspdBefore is unchanged but rspdAfter has.
+       */
+      res.set('etag', '');
   } else if (rspdAfter.length !== rspdBefore.length) {
       var error = '"Content-Length" is already sent,' +
           'the length of response data can not be changed';

@@ -98,6 +98,30 @@ describe('userResDecorator', function () {
       });
   });
 
+  it('should remove downstream etag when body has changed', function (done) {
+    var app = express();
+
+    app.use(proxy('httpbin.org', {
+      userResDecorator: function (proxyRes, proxyResData) {
+        // Confirm httpbin.org returned the expected etag
+        assert.equal(proxyRes.headers.etag, 'fakeEtag');
+
+        return JSON.stringify({ origin: '127.0.0.1' });
+      }
+    }));
+
+    request(app)
+        .get('/etag/fakeEtag')
+        .set('if-none-matches', 'fakeEtag')
+        .end(function (err, res) {
+          if (err) { return done(err); }
+
+          // Expected SHA1 of decorated body { origin: '127.0.0.1' }
+          assert.equal(res.header.etag, 'W/"16-uXy9BGroO9vX02Z2Pu7mYgig2Qo"');
+          done();
+        });
+  });
+
 
   it('can modify the response headers, [deviant case, supported by pass-by-reference atm]', function (done) {
     var app = express();
