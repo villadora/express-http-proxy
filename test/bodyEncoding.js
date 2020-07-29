@@ -173,7 +173,7 @@ describe('body encoding', function () {
           return bodyContent;
         }
       }));
-      
+
       request(app)
         .post('/post')
         .send({ some: 'json' })
