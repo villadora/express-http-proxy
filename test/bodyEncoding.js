@@ -64,7 +64,7 @@ describe('body encoding', function () {
 
   });
 
-  describe('when user sets parseReqBody', function () {
+  describe('when user sets parseReqBody as bool', function () {
     it('should not parse body', function (done) {
       var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
       var app = express();
@@ -135,6 +135,50 @@ describe('body encoding', function () {
         .end(function (err, response) {
           assert(response.body.message === 'request entity too large');
           done();
+        });
+    });
+  });
+
+
+  describe('when user sets parseReqBody as function', function () {
+    it('should not parse body with form-data content', function (done) {
+      var filename = os.tmpdir() + '/express-http-proxy-test-' + (new Date()).getTime() + '-png-transparent.png';
+      var app = express();
+      app.use(proxy('localhost:8109', {
+        parseReqBody: (proxyReq) => proxyReq.headers['content-type'].includes('application/json'),
+        proxyReqBodyDecorator: function (bodyContent) {
+          assert(!bodyContent, 'body content should not be parsed.');
+          return bodyContent;
+        }
+      }));
+
+      fs.writeFile(filename, pngData, function (err) {
+        if (err) { throw err; }
+        request(app)
+          .post('/post')
+          .attach('image', filename)
+          .end(function (err) {
+            fs.unlinkSync(filename);
+
+            done(err);
+          });
+      });
+    });
+    it('should parse body with json content', function (done) {
+      var app = express();
+      app.use(proxy('localhost:8109', {
+        parseReqBody: (proxyReq) => proxyReq.headers['content-type'].includes('application/json'),
+        proxyReqBodyDecorator: function (bodyContent) {
+          assert(bodyContent, 'body content should be parsed.');
+          return bodyContent;
+        }
+      }));
+      
+      request(app)
+        .post('/post')
+        .send({ some: 'json' })
+        .end(function (err) {
+          done(err);
         });
     });
   });
