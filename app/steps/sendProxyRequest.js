@@ -62,6 +62,9 @@ function sendProxyRequest(Container) {
         proxyReq.write(body);
       }
       proxyReq.end();
+    } else if (bodyContent) {
+      proxyReq.write(bodyContent);
+      proxyReq.end();
     } else {
     // Pipe will call end when it has completely read from the request.
       req.pipe(proxyReq);
