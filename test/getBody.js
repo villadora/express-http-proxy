@@ -155,4 +155,30 @@ describe('when proxy request is a GET', function () {
       .end(done);
   });
 
+  it('should use proxyReqBodyDecorator with parseReqBody=false', function (done) {
+    var scope = nock('http://127.0.0.1:12345')
+      .get('/', {})
+      .matchHeader('Content-Type', 'application/json')
+      .reply(200, {
+        name: 'proxyReqBodyDecorator + parseReqBody=false works'
+      });
+
+    var payload = {};
+
+    localServer.use('/proxy', proxy('http://127.0.0.1:12345', {
+      parseReqBody: false,
+      proxyReqBodyDecorator: () => JSON.stringify(payload),
+    }));
+
+    request(localServer)
+      .get('/proxy')
+      .send(payload)
+      .set('Content-Type', 'application/json')
+      .expect(function (res) {
+        assert(res.body.name === 'proxyReqBodyDecorator + parseReqBody=false works');
+        scope.done();
+      })
+      .end(done);
+  });
+
 });
