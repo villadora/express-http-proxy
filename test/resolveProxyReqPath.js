@@ -82,6 +82,30 @@ describe('resolveProxyReqPath', function () {
   });
 
   describe('testing example code in docs', function () {
+    it('allows modification of get params', function (done) {
+      var proxyTarget = require('../test/support/proxyTarget');
+      var proxyServer = proxyTarget(12346, 100);
+
+      var app = express();
+      app.use(proxy('localhost:12346', {
+        proxyReqPathResolver: function (req) {
+          var parts = req.url.split('?');
+          var queryString = 'newaddedparam=abcde';
+          var updatedPath = parts[0].replace(/test/, 'tent');
+          return updatedPath + (queryString ? '?' + queryString : '');
+        }
+      }));
+
+      request(app)
+        .get('/returnRequestParams')
+        .end(function (err, res) {
+          if (err) { return done(err); }
+          assert(res.body.newaddedparam === 'abcde', 'author can add query params');A
+          proxyServer.close();
+          done();
+        });
+    });
+
     it('works as advertised', function (done) {
       var proxyTarget = require('../test/support/proxyTarget');
       var proxyRouteFn = [{
