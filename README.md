@@ -77,13 +77,25 @@ app.use('/', proxy(selectProxyHost));
 
 If you use 'https://www.npmjs.com/package/body-parser' you should declare it AFTER the proxy configuration, otherwise  original 'POST' body could be modified and not proxied correctly.
 
-```
-
-app.use('/proxy', 'http://foo.bar.com')
+```js
+app.use('/proxy', proxy('http://foo.bar.com'))
 
 // Declare use of body-parser AFTER the use of proxy
 app.use(bodyParser.foo(bar))
 app.use('/api', ...)
+```
+
+If this cannot be avoided and you MUST proxy after `body-parser` has been registered, set `parseReqBody` to `false` and explicitly specify the body you wish to send in `proxyReqBodyDecorator`.
+
+```js
+app.use(bodyParser.foo(bar))
+
+app.use('/proxy', proxy('http://foo.bar.com', {
+  parseReqBody: false,
+  proxyReqBodyDecorator: function () {
+
+  },
+}))
 ```
 
 ### Options
