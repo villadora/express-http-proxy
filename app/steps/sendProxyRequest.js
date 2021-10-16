@@ -50,6 +50,12 @@ function sendProxyRequest(Container) {
       if (bodyContent.length) {
         var body = bodyContent;
         var contentType = proxyReq.getHeader('Content-Type');
+        var scIndex = contentType ? contentType.indexOf(';') : -1;
+        if (scIndex >= 0) {
+          // contentTypes may contain semi-colon
+          // example: "application/x-www-form-urlencoded; charset=UTF-8"
+          contentType = contentType.substring(0, scIndex);
+        }
         if (contentType === 'x-www-form-urlencoded' || contentType === 'application/x-www-form-urlencoded') {
           try {
             var params = JSON.parse(body);
