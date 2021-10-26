@@ -10,7 +10,7 @@ function decorateUserResHeaders(container) {
   }
 
   const clearAllHeaders = (res) => {
-    for (const header in res._headers) {
+    for (const header in res.getHeaders ? res.getHeaders() : res._headers) {
       res.removeHeader(header)
     }
   }
