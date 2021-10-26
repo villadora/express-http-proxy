@@ -281,7 +281,7 @@ Allows you to inspect the proxy response, and decide if you want to continue pro
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
-  skipToNextHandlerFilter: function(proxyRes) {
+  skipToNextHandlerFilter: function(proxyRes, userReq, userRes) {
     return proxyRes.statusCode === 404;
   }
 }));

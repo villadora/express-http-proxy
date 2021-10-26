@@ -27,16 +27,29 @@ describe('when skipToNextHandlerFilter is defined', function () {
 
   var OUTCOMES = [
     { shouldSkip: true, expectedStatus: 200 },
-    { shouldSkip: false, expectedStatus: 404 }
+    { shouldSkip: false, expectedStatus: 404 },
+    { shouldSkip: true, expectedStatus: 200, delayedSkipProxyDecision: true },
+    { shouldSkip: false, expectedStatus: 404, delayedSkipProxyDecision: false }
   ];
 
   OUTCOMES.forEach(function (outcome) {
     describe('and returns ' + outcome.shouldSkip, function () {
       it('express-http-proxy' + (outcome.shouldSkip ? ' skips ' : ' doesnt skip ') + 'to next()', function (done) {
 
+        if (outcome.delayedSkipProxyDecision !== undefined) {
+          app.use(function (req, res, next) {
+            res.locals.skipProxyDecisionPromise = new Promise(function (resolve) {
+              setTimeout(function () {
+                resolve(outcome.delayedSkipProxyDecision);
+              }, 50);
+            });
+            next();
+          });
+        }
+
         app.use('/proxy', proxy('http://127.0.0.1:12345', {
-          skipToNextHandlerFilter: function (/*res*/) {
-            return outcome.shouldSkip;
+          skipToNextHandlerFilter: function (proxyRes, userReq, userRes) {
+            return userRes.locals.skipProxyDecisionPromise || outcome.shouldSkip;
           }
         }));
 
