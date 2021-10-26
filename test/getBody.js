@@ -30,6 +30,7 @@ describe('when proxy request is a GET', function () {
 
   var testCases = [
     { name: 'form encoded', encoding: 'application/x-www-form-urlencoded' },
+    { name: 'form encoded with charset', encoding: 'application/x-www-form-urlencoded; charset=UTF-8' }, // #488
     { name: 'JSON encoded', encoding: 'application/json' }
   ];
 
