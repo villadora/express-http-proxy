@@ -73,6 +73,10 @@ function selectProxyHost() {
 
 app.use('/', proxy(selectProxyHost));
 ```
+
+Host is only the host name. Any params after in url will be ignored. For ``http://google.com/myPath`, ``myPath`` will be ignored because the host name is ``google.com``. Use ``proxyReqPathResolver``.
+
+
 ### Middleware mixing
 
 If you use 'https://www.npmjs.com/package/body-parser' you should declare it AFTER the proxy configuration, otherwise  original 'POST' body could be modified and not proxied correctly.
