@@ -1,6 +1,6 @@
 {
   "name": "express-http-proxy",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "description": "http proxy middleware for express",
   "engines": {
     "node": ">=6.0.0"
