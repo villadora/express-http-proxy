@@ -55,6 +55,9 @@ module.exports = function proxy(host, userOptions) {
         } else {
           next();
         }
+      })
+      .then(function () {
+        next();
       });
   };
 };
