@@ -16,7 +16,11 @@ function decorateUserResHeaders(container) {
   }
 
   return Promise
-    .resolve(resolverFn(headers, container.user.req, container.user.res, container.proxy.req, container.proxy.res))
+    .resolve(
+      resolverFn.length === 1
+        ? resolverFn(headers)
+        : resolverFn(headers, container.user.req, container.user.res, container.proxy.req, container.proxy.res)
+    )
     .then(function(headers) {
       return new Promise(function(resolve) {
         clearAllHeaders(container.user.res);

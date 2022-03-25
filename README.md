@@ -1,4 +1,4 @@
-# express-http-proxy [![NPM version](https://badge.fury.io/js/express-http-proxy.svg)](http://badge.fury.io/js/express-http-proxy) [![Build Status](https://travis-ci.org/villadora/express-http-proxy.svg?branch=master)](https://travis-ci.org/villadora/express-http-proxy) 
+# express-http-proxy [![NPM version](https://badge.fury.io/js/express-http-proxy.svg)](http://badge.fury.io/js/express-http-proxy) [![Build Status](https://travis-ci.org/villadora/express-http-proxy.svg?branch=master)](https://travis-ci.org/villadora/express-http-proxy)
 
 
 Express middleware to proxy request to another host and pass response back to original caller.
@@ -28,9 +28,11 @@ app.use('/proxy', proxy('www.google.com'));
 
 Proxy requests and user responses are piped/streamed/chunked by default.
 
-If you define a response modifier (userResDecorator, userResHeaderDecorator),
-or need to inspect the response before continuing (maybeSkipToNext), streaming
-is disabled, and the request and response are buffered.
+Under certain scenarios, streaming is automatically disabled and the request and response are buffered into memory:
+- a `userResDecorator` response modifier is defined
+- a `userResHeaderDecorator` response modifier is defined with greater than 1 argument (ie: `userResHeaderDecorator: function (headers, userReq, userRes, proxyReq, proxyRes)` vs `userResHeaderDecorator: function (headers)`)
+- we need to inspect the response before continuing (`maybeSkipToNext`)
+
 This can cause performance issues with large payloads.
 
 ### Promises
@@ -155,17 +157,17 @@ Promise form:
 
 ```js
   app.use(proxy('localhost:12346', {
-    filter: function (req, res) { 
-      return new Promise(function (resolve) { 
+    filter: function (req, res) {
+      return new Promise(function (resolve) {
         resolve(req.method === 'GET');
-      }); 
+      });
     }
   }));
 ```
 
 Note that in the previous example, `resolve(false)` will execute the happy path
 for filter here (skipping the rest of the proxy, and calling `next()`).
-`reject()` will also skip the rest of proxy and call `next()`. 
+`reject()` will also skip the rest of proxy and call `next()`.
 
 #### userResDecorator (was: intercept) (supports Promise)
 
@@ -262,12 +264,23 @@ When a `userResHeaderDecorator` is defined, the return of this method will repla
 ```js
 app.use('/proxy', proxy('www.google.com', {
   userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
-    // recieves an Object of headers, returns an Object of headers.
+    // receives an Object of headers, returns an Object of headers.
     return headers;
   }
 }));
 ```
 
+If this method is defined with only a single argument, it allows for response streaming (see streaming) since we don't require access to the response body.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  userResHeaderDecorator(headers) {
+    // receives an Object of headers, returns an Object of headers.
+    // we don't access the response body so streaming is allowed.
+    return headers;
+  }
+}));
+```
 
 #### decorateRequest
 
@@ -581,9 +594,9 @@ app.use('/', proxy('internalhost.example.com', {
 | 1.6.0 | Do gzip and gunzip aysyncronously.   Test and documentation improvements, dependency updates. |
 | 1.5.1 | Fixes bug in stringifying debug messages. |
 | 1.5.0 | Fixes bug in `filter` signature.  Fix bug in skipToNextHandler, add expressHttpProxy value to user res when skipped.  Add tests for host as ip address. |
-| 1.4.0 | DEPRECATED. Critical bug in the `filter` api.| 
+| 1.4.0 | DEPRECATED. Critical bug in the `filter` api.|
 | 1.3.0 | DEPRECATED. Critical bug in the `filter` api. `filter` now supports Promises.  Update linter to eslint.  |
-| 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. | 
+| 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. |
 | 1.1.0 | Add step to allow response headers to be modified.
 | 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
 | 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |

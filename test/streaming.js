@@ -27,7 +27,7 @@ function simulateUserRequest() {
     var req = http.request({ hostname: 'localhost', port: 8308, path: '/stream' }, function (res) {
       var chunks = [];
       res.on('data', function (chunk) { chunks.push(chunk.toString()); });
-      res.on('end', function () { resolve(chunks); });
+      res.on('end', function () { resolve([chunks, res]); });
     });
 
     req.on('error', function (e) {
@@ -74,6 +74,14 @@ describe('streams / piped requests', function () {
 
       name: 'proxyReqOptDecorator is a Promise',
       options: { proxyReqOptDecorator: function (reqBuilder) { return Promise.resolve(reqBuilder); } }
+    }, {
+      name: 'userResHeaderDecorator is defined with a single argument',
+      options: {
+        userResHeaderDecorator: function (headers) {
+          return Object.assign({}, headers, { 'x-my-new-header': 'special-header' });
+        }
+      },
+      expectedHeaders: {}
     }];
 
     TEST_CASES.forEach(function (testCase) {
@@ -81,11 +89,18 @@ describe('streams / piped requests', function () {
         it('chunks are received without any buffering, e.g. before request end', function (done) {
           server = startLocalServer(testCase.options);
           simulateUserRequest()
-            .then(function (res) {
+            .then(function ([chunks, res]) {
               // Assume that if I'm getting a chunked response, it will be an array of length > 1;
 
-              assert(res instanceof Array, 'res is an Array');
-              assert.equal(res.length, 4);
+              assert(chunks instanceof Array, 'res is an Array');
+              assert.equal(chunks.length, 4);
+
+              if (testCase.expectedHeaders) {
+                Object.keys(testCase.expectedHeaders).forEach((header) => {
+                  assert.equal(res.headers[header], testCase.expectedHeaders[header]);
+                });
+              }
+
               done();
             })
             .catch(done);
@@ -98,6 +113,25 @@ describe('streams / piped requests', function () {
     var TEST_CASES = [{
       name: 'skipToNextHandler is defined',
       options: { skipToNextHandlerFilter: function () { return false; } }
+    }, {
+      name: 'userResDecorator is defined',
+      options: {
+        // eslint-disable-next-line
+        userResDecorator: async (proxyRes, proxyResData, _userReq, _userRes) => {
+          return proxyResData;
+        }
+      }
+    }, {
+      name: 'userResHeaderDecorator is defined',
+      options: {
+        // eslint-disable-next-line
+        userResHeaderDecorator: function (headers, userReq, userRes, proxyReq, proxyRes) {
+          return Object.assign({}, headers, { 'x-my-new-header': 'special-header' });
+        }
+      },
+      expectedHeaders: {
+        'x-my-new-header': 'special-header'
+      }
     }];
 
     TEST_CASES.forEach(function (testCase) {
@@ -106,11 +140,18 @@ describe('streams / piped requests', function () {
           server = startLocalServer(testCase.options);
 
           simulateUserRequest()
-            .then(function (res) {
-              // Assume that if I'm getting a un-chunked response, it will be an array of length = 1;
+            .then(function ([chunks, res]) {
+              // Assume that if I'm getting a unbuffered response, it will be an array of length = 1;
 
-              assert(res instanceof Array);
-              assert.equal(res.length, 1);
+              assert(chunks instanceof Array);
+              assert.equal(chunks.length, 1);
+
+              if (testCase.expectedHeaders) {
+                Object.keys(testCase.expectedHeaders).forEach((header) => {
+                  assert.equal(res.headers[header], testCase.expectedHeaders[header]);
+                });
+              }
+
               done();
             })
             .catch(done);
