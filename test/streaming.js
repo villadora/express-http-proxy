@@ -81,7 +81,9 @@ describe('streams / piped requests', function () {
           return Object.assign({}, headers, { 'x-my-new-header': 'special-header' });
         }
       },
-      expectedHeaders: {}
+      expectedHeaders: {
+        'x-my-new-header': 'special-header'
+      }
     }];
 
     TEST_CASES.forEach(function (testCase) {
