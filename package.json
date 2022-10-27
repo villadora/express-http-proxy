@@ -28,6 +28,7 @@
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
   "devDependencies": {
+    "@types/express": "^4.15.4",
     "body-parser": "^1.17.2",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
