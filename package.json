@@ -1,6 +1,6 @@
 {
-  "name": "express-http-proxy",
-  "version": "1.6.3",
+  "name": "express-http-proxy-2",
+  "version": "1.0.0",
   "description": "http proxy middleware for express",
   "engines": {
     "node": ">=6.0.0"
@@ -14,18 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/villadora/express-http-proxy.git"
+    "url": "git://github.com/leonheess/express-http-proxy-2.git"
   },
   "keywords": [
-    "express-http-proxy"
+    "express-http-proxy-2"
   ],
-  "author": {
-    "name": "villadora",
-    "email": "jky239@gmail.com"
-  },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/villadora/express-http-proxy/issues"
+    "url": "https://github.com/leonheess/express-http-proxy-2/issues"
   },
   "devDependencies": {
     "body-parser": "^1.17.2",
@@ -41,30 +37,5 @@
     "debug": "^3.0.1",
     "es6-promise": "^4.1.1",
     "raw-body": "^2.3.0"
-  },
-  "contributors": [
-    {
-      "name": "Liam Bennett"
-    },
-    {
-      "name": "eldereal",
-      "url": "https://github.com/eldereal"
-    },
-    {
-      "name": "Saulius Menkevičius",
-      "url": "https://github.com/razzmatazz"
-    },
-    {
-      "name": "Jérémy Lal",
-      "email": "kapouer@melix.org"
-    },
-    {
-      "name": "Wei Gao",
-      "email": "jky239@gmail.com"
-    },
-    {
-      "name": "Nik Krimm",
-      "url": "https://github.com/monkpow"
-    }
-  ]
+  }
 }

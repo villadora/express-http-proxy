@@ -1,12 +1,14 @@
-# express-http-proxy [![NPM version](https://badge.fury.io/js/express-http-proxy.svg)](http://badge.fury.io/js/express-http-proxy) [![Build Status](https://travis-ci.org/villadora/express-http-proxy.svg?branch=master)](https://travis-ci.org/villadora/express-http-proxy) 
+# express-http-proxy-2 [![NPM version](https://badge.fury.io/js/express-http-proxy-2.svg)](http://badge.fury.io/js/express-http-proxy-2)
 
+Fork of [express-http-proxy]() including a fix for 
+- https://github.com/villadora/express-http-proxy/issues/509
 
 Express middleware to proxy request to another host and pass response back to original caller.
 
 ## Install
 
 ```bash
-$ npm install express-http-proxy --save
+$ npm install express-http-proxy-2 --save
 ```
 
 ## Usage
@@ -18,7 +20,7 @@ proxy(host, options);
 To proxy URLS starting with '/proxy' to the host 'www.google.com':
 
 ```js
-var proxy = require('express-http-proxy');
+var proxy = require('express-http-proxy-2');
 var app = require('express')();
 
 app.use('/proxy', proxy('www.google.com'));
@@ -575,34 +577,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
-| 1.6.3 | [#453] Author should be able to delete headers in userResHeaderDecorator.
-| 1.6.2 | Update node.js versions used by ci. |
-| 1.6.1 | Minor bug fixes and documentation. |
-| 1.6.0 | Do gzip and gunzip aysyncronously.   Test and documentation improvements, dependency updates. |
-| 1.5.1 | Fixes bug in stringifying debug messages. |
-| 1.5.0 | Fixes bug in `filter` signature.  Fix bug in skipToNextHandler, add expressHttpProxy value to user res when skipped.  Add tests for host as ip address. |
-| 1.4.0 | DEPRECATED. Critical bug in the `filter` api.| 
-| 1.3.0 | DEPRECATED. Critical bug in the `filter` api. `filter` now supports Promises.  Update linter to eslint.  |
-| 1.2.0 | Auto-stream when no decorations are made to req/res. Improved docs, fixes issues in maybeSkipToNexthandler,  allow authors to manage error handling. | 
-| 1.1.0 | Add step to allow response headers to be modified.
-| 1.0.7 | Update dependencies.  Improve docs on promise rejection.   Fix promise rejection on body limit.   Improve debug output. |
-| 1.0.6 | Fixes preserveHostHdr not working, skip userResDecorator on 304, add maybeSkipToNext, test improvements and cleanup. |
-| 1.0.5 | Minor documentation and  test patches |
-| 1.0.4 | Minor documentation, test, and package fixes |
-| 1.0.3 | Fixes 'limit option is not taken into account |
-| 1.0.2 | Minor docs corrections. |
-| 1.0.1 | Minor docs adjustments. |
-| 1.0.0 | Major revision.  <br > REMOVE decorateRequest, ADD proxyReqOptDecorator and proxyReqBodyDecorator. <br />  REMOVE intercept, ADD userResDecorator <br />  userResDecorator supports a Promise form for async operations.  <br /> General cleanup of structure and application of hooks.  Documentation improvements.   Update all dependencies.  Re-organize code as a series of workflow steps, each (potentially) supporting a promise, and creating a reusable pattern for future development. |
-| 0.11.0 | Allow author to prevent host from being memoized between requests.   General program cleanup. |
-| 0.10.1| Fixed issue where 'body encoding' was being incorrectly set to the character encoding. <br />  Dropped explicit support for node 0.10. <br />   Intercept can now deal with gziped responses. <br />   Author can now 'force https', even if the original request is over http. <br />  Do not call next after ECONNRESET catch. |
-| 0.10.0 | Fix regression in forwardPath implementation. |
-| 0.9.1 | Documentation updates.  Set 'Accept-Encoding' header to match bodyEncoding. |
-| 0.9.0 | Better handling for request body when body is JSON. |
-| 0.8.0 | Features:  add forwardPathAsync option <br />Updates:  modernize dependencies <br />Fixes: Exceptions parsing proxied response causes error: Can't set headers after they are sent. (#111) <br />If client request aborts, proxied request is aborted too (#107) |
-| 0.7.4 | Move jscs to devDependencies to avoid conflict with nsp. |
-| 0.7.3 | Adds a timeout option.   Code organization and small bug fixes. |
-| 0.7.2 | Collecting many minor documentation and test improvements. |
-| 0.4.0 | Signature of `intercept` callback changed from `function(data, req, res, callback)` to `function(rsp, data, req, res, callback)` where `rsp` is the original response from the target |
+| 1.0.0 | Initial release
 
 ## Licence
 
