@@ -41,7 +41,7 @@ describe('userResDecorator', function () {
 
   it('has access to original response', function (done) {
     var app = express();
-    app.use(proxy('httpbin.org', {
+    app.use(proxy('https://httpbin.org', {
       userResDecorator: function (proxyRes, proxyResData) {
         assert(proxyRes.connection);
         assert(proxyRes.socket);
@@ -56,7 +56,7 @@ describe('userResDecorator', function () {
 
   it('works with promises', function (done) {
     var app = express();
-    app.use(proxy('httpbin.org', {
+    app.use(proxy('https://httpbin.org', {
       userResDecorator: function (proxyRes, proxyResData) {
         return new Promise(function (resolve) {
           proxyResData.funkyMessage = 'oi io oo ii';
@@ -80,7 +80,7 @@ describe('userResDecorator', function () {
 
   it('can modify the response data', function (done) {
     var app = express();
-    app.use(proxy('httpbin.org', {
+    app.use(proxy('https://httpbin.org', {
       userResDecorator: function (proxyRes, proxyResData) {
         proxyResData = JSON.parse(proxyResData.toString('utf8'));
         proxyResData.intercepted = true;
@@ -101,7 +101,7 @@ describe('userResDecorator', function () {
 
   it('can modify the response headers, [deviant case, supported by pass-by-reference atm]', function (done) {
     var app = express();
-    app.use(proxy('httpbin.org', {
+    app.use(proxy('https://httpbin.org', {
       userResDecorator: function (rsp, data, req, res) {
         res.set('x-wombat-alliance', 'mammels');
         res.set('content-type', 'wiki/wiki');

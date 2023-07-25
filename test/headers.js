@@ -12,7 +12,7 @@ describe('proxies headers', function () {
 
   beforeEach(function () {
     http = express();
-    http.use(proxy('http://httpbin.org', {
+    http.use(proxy('https://httpbin.org', {
       headers: {
         'X-Current-president': 'taft'
       }
