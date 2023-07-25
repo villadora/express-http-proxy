@@ -16,7 +16,7 @@ function decorateProxyReqBody(container) {
 
   return Promise
     .resolve(resolverFn(container.proxy.bodyContent, container.user.req))
-    .then(function(bodyContent) {
+    .then(function (bodyContent) {
       container.proxy.bodyContent = bodyContent;
       return Promise.resolve(container);
     });
