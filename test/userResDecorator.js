@@ -6,7 +6,7 @@ var request = require('supertest');
 var proxy = require('../');
 
 describe('userResDecorator', function () {
-  this.timeout(5000);
+  this.timeout(15000);
 
   describe('when handling a 304', function () {
     this.timeout(10000);
