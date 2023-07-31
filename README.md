@@ -471,6 +471,24 @@ app.use('/', proxy('httpbin.org', {
 }));
 ```
 
+#### requestModules
+
+There are times when you may want the proxy to use a custom request module to make the requests on behalf of the proxy. A good example of this is to use the `follow-redirects` library to have the proxy automatically follow redirects.
+
+```js
+var { http, https } = require('follow-redirects');
+
+app.use('/', proxy('httpbin.org', {
+  requestModules: { http, https },
+  proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+    return {
+      ...proxyReqOpts,
+      maxRedirects: 10,
+    };
+  }
+}));
+```
+
 ##  Trace debugging
 
 The node-debug module is used to provide a trace debugging capability.
@@ -575,6 +593,7 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 1.7.0 | Support alternate request modules, such as from `follow-redirects`.
 | 1.6.3 | [#453] Author should be able to delete headers in userResHeaderDecorator.
 | 1.6.2 | Update node.js versions used by ci. |
 | 1.6.1 | Minor bug fixes and documentation. |
