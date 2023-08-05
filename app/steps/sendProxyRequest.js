@@ -36,8 +36,9 @@ function sendProxyRequest(Container) {
 
     proxyReq.on('error', reject);
 
+    var parseReqBody = (typeof options.parseReqBody === 'function') ? options.parseReqBody(req) : options.parseReqBody;
     // this guy should go elsewhere, down the chain
-    if (options.parseReqBody) {
+    if (parseReqBody) {
     // We are parsing the body ourselves so we need to write the body content
     // and then manually end the request.
 
