@@ -10,7 +10,7 @@
     "test": "npm -s run mocha && npm run -s lint",
     "test:debug": "mocha debug -R spec test --recursive --exit",
     "mocha": "mocha -R spec test --recursive --exit",
-    "lint": "eslint index.js **/*js"
+    "lint": "eslint index.js app/**/*js lib/*js"
   },
   "repository": {
     "type": "git",

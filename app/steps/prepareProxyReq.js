@@ -15,7 +15,7 @@ function getContentLength(body) {
 
 
 function prepareProxyReq(container) {
-  return new Promise(function(resolve) {
+  return new Promise(function (resolve) {
     var bodyContent = container.proxy.bodyContent;
     var reqOpt = container.proxy.reqBuilder;
 

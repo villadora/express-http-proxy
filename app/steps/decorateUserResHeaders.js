@@ -11,14 +11,14 @@ function decorateUserResHeaders(container) {
 
   const clearAllHeaders = (res) => {
     for (const header in getHeaders(res)) {
-      res.removeHeader(header)
+      res.removeHeader(header);
     }
-  }
+  };
 
   return Promise
     .resolve(resolverFn(headers, container.user.req, container.user.res, container.proxy.req, container.proxy.res))
-    .then(function(headers) {
-      return new Promise(function(resolve) {
+    .then(function (headers) {
+      return new Promise(function (resolve) {
         clearAllHeaders(container.user.res);
         container.user.res.set(headers);
         resolve(container);
