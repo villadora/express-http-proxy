@@ -31,11 +31,11 @@
     "body-parser": "^1.17.2",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
-    "eslint": "^4.19.1",
+    "eslint": "^8.48.0",
     "express": "^4.15.4",
-    "mocha": "^8.0.1",
-    "nock": "^10.0.6",
-    "supertest": "^3.4.2"
+    "mocha": "^10.2.0",
+    "nock": "^13.3.3",
+    "supertest": "^6.3.3"
   },
   "dependencies": {
     "debug": "^3.0.1",
