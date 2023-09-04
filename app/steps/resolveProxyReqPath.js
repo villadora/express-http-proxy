@@ -12,7 +12,7 @@ function resolveProxyReqPath(container) {
 
   return Promise
     .resolve(resolverFn(container.user.req))
-    .then(function(resolvedPath) {
+    .then(function (resolvedPath) {
       container.proxy.reqBuilder.path = resolvedPath;
       debug('resolved proxy path:', resolvedPath);
       return Promise.resolve(container);

@@ -16,7 +16,7 @@ function maybeSkipToNextHandler(container) {
       } else {
         return Promise.resolve(container);
       }
-    })
+    });
 }
 
 module.exports = maybeSkipToNextHandler;
