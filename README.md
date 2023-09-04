@@ -575,6 +575,8 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
+| 2.0.0 | Update all dependencies; set stage for next iteration. `express-http-proxy` interface has not changed, but the underlying libraries are not guaranteed to be backward compatible. Versions beyond this point are expected to be run in node verions >= 16. |
+| ----- | ----------------------------------------------------------------------- |
 | 1.6.3 | [#453] Author should be able to delete headers in userResHeaderDecorator.
 | 1.6.2 | Update node.js versions used by ci. |
 | 1.6.1 | Minor bug fixes and documentation. |
