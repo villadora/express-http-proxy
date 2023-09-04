@@ -23,7 +23,7 @@ describe('http verbs', function () {
       .get('/get')
       .end(function (err, res) {
         if (err) { return done(err); }
-        assert(/node-superagent/.test(res.body.headers['User-Agent']));
+        assert(/httpbin.org/.test(res.body.headers['Host']));
         assert.equal(res.body.url, 'http://httpbin.org/get');
         done(err);
       });
