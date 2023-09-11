@@ -36,22 +36,17 @@ function sendProxyRequest(Container) {
 
     proxyReq.on('error', reject);
 
-    // this guy should go elsewhere, down the chain
-
     if (options.parseReqBody) {
-    // We are parsing the body ourselves so we need to write the body content
-    // and then manually end the request.
-
-      //if (bodyContent instanceof Object) {
-      //throw new Error
-      //debugger;
-      //bodyContent = JSON.stringify(bodyContent);
-      //}
+      // We are parsing the body ourselves so we need to write the body content
+      // and then manually end the request.
 
       if (bodyContent.length) {
         var body = bodyContent;
         var contentType = proxyReq.getHeader('Content-Type');
-        if (contentType === 'x-www-form-urlencoded' || contentType === 'application/x-www-form-urlencoded') {
+        // contentTypes may contain semi-colon
+        // example: "application/x-www-form-urlencoded; charset=UTF-8"
+
+        if (contentType && contentType.match('x-www-form-urlencoded')) {
           try {
             var params = JSON.parse(body);
             body = Object.keys(params).map(function (k) { return k + '=' + params[k]; }).join('&');
