@@ -74,7 +74,8 @@ function selectProxyHost() {
 app.use('/', proxy(selectProxyHost));
 ```
 
-Host is only the host name. Any params after in url will be ignored. For ``http://google.com/myPath`, ``myPath`` will be ignored because the host name is ``google.com``. Use ``proxyReqPathResolver``.
+Notie: Host is only the host name. Any params after in url will be ignored. For ``http://google.com/myPath`, ``myPath`` will be ignored because the host name is ``google.com``. 
+See ``proxyReqPathResolver`` for more detailed path information.
 
 
 ### Middleware mixing
