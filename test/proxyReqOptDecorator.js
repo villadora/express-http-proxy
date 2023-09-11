@@ -65,6 +65,7 @@ describe('proxyReqOptDecorator', function () {
         app.use(proxy('localhost:12345', {
           proxyReqOptDecorator: function (reqOpt, req) {
             reqOpt.headers['user-agent'] = 'test user agent';
+            reqOpt.headers['content-type'] = 'multipart/form-data';
             assert(req instanceof http.IncomingMessage);
             return reqOpt;
           }
@@ -75,6 +76,7 @@ describe('proxyReqOptDecorator', function () {
           .end(function (err, res) {
             if (err) { return done(err); }
             assert.equal(res.body.headers['user-agent'], 'test user agent');
+            assert.equal(res.body.headers['content-type'], 'multipart/form-data');
             done();
           });
       });
