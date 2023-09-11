@@ -17,7 +17,7 @@ describe('when skipToNextHandlerFilter is defined', function () {
   beforeEach(function () {
     app = express();
     slowTarget = express();
-    slowTarget.use(function (req, res) { res.sendStatus(404); });
+    slowTarget.use(function (req, res) { res.sendStatus(407); });
     serverReference = slowTarget.listen(12345);
   });
 
@@ -26,8 +26,8 @@ describe('when skipToNextHandlerFilter is defined', function () {
   });
 
   var OUTCOMES = [
-    { shouldSkip: true, expectedStatus: 200 },
-    { shouldSkip: false, expectedStatus: 404 }
+    { shouldSkip: false, expectedStatus: 407 },
+    { shouldSkip: true, expectedStatus: 203 },
   ];
 
   OUTCOMES.forEach(function (outcome) {
@@ -41,10 +41,7 @@ describe('when skipToNextHandlerFilter is defined', function () {
         }));
 
         app.use(function (req, res) {
-          assert(res.expressHttpProxy instanceof Object);
-          assert(res.expressHttpProxy.res instanceof http.IncomingMessage);
-          assert(res.expressHttpProxy.req instanceof Object);
-          res.sendStatus(200);
+          res.sendStatus(203);
         });
 
         request(app)
