@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "test": "npm -s run mocha && npm run -s lint",
-    "test:debug": "mocha debug -R spec test --recursive --exit",
+    "test:debug": "mocha inspect --debug-brk -R spec test --recursive --exit",
     "mocha": "mocha -R spec test --recursive --exit",
     "lint": "eslint index.js app/**/*js lib/*js"
   },

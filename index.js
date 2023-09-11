@@ -44,16 +44,17 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateUserRes)
       .then(sendUserRes)
       .catch(function (err) {
-        // I sometimes reject without an error to shortcircuit the remaining
-        // steps and return control to the host application.
-
         if (err) {
           var resolver = (container.options.proxyErrorHandler) ?
             container.options.proxyErrorHandler :
             handleProxyErrors;
           resolver(err, res, next);
         } else {
-          next();
+          // I sometimes reject without an error to shortcircuit the remaining
+          // steps -- e.g. in maybeSkipToNextHandler -- and return control to
+          // the host application for continuing on without raising an error.
+
+          return next();
         }
       });
   };
