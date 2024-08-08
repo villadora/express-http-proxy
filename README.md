@@ -592,10 +592,8 @@ app.use('/', proxy('internalhost.example.com', {
 
 | Release | Notes |
 | --- | --- |
-| 2.1.0 | * Fixes => content-types can have semi-colons, and we need to parse around this.<br />
-* Improves => using proxyReqBodyDecorator with parseReqBody=false. <br />
-* Repairs => Can't use proxy() twice in Express middleware stack. <br />
-* Fixes => Instead of new Buffer using Buffer.from as per https://nodejs.org/api/buffer.html\#buffer_new_buffer_string_encoding. <br />
+| 2.1.1 | (trivial) Fixes formatting in README.|
+| 2.1.0 | Fixes parsing error in content-types. Improves behavior of proxyReqBodyDecorator when parseReqBody=false. Repairs issue where authors can't use proxy() twice in Express middleware stack.  Fix `new Buffer` deprecation warning. |
 | 2.0.0 | Update all dependencies; set stage for next iteration. `express-http-proxy` interface has not changed, but the underlying libraries are not guaranteed to be backward compatible. Versions beyond this point are expected to be run in node verions >= 16. |
 | ----- | ----------------------------------------------------------------------- |
 | 1.6.3 | [#453] Author should be able to delete headers in userResHeaderDecorator.
