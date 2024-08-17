@@ -285,6 +285,8 @@ app.use('/proxy', proxy('www.google.com', {
 }));
 ```
 
+Note that by default, headers from the proxy response override headers that have previously been set on the user response. With the `userResHeaderDecorator` this can be worked around by combining the headers from `userRes` and `proxyRes` manually.
+
 
 #### decorateRequest
 
