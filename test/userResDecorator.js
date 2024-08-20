@@ -4,6 +4,7 @@ var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var http = require('http');
 
 describe('userResDecorator', function () {
 
@@ -35,6 +36,44 @@ describe('userResDecorator', function () {
       request(app)
         .get('/proxy')
         .expect(304)
+        .end(done);
+    });
+  });
+
+  describe('when handling a response with no body', function () {
+    this.timeout(10000);
+
+    var app;
+    var noBodyTarget;
+    var serverReference;
+    var responseCode = 200;
+
+    beforeEach(function () {
+      app = express();
+      noBodyTarget = new http.Server();
+      noBodyTarget.on('request', function (req, res) {
+        res.writeHead(responseCode, { 'Content-Length': '0' });
+        res.end();
+      });
+      serverReference = noBodyTarget.listen(12346);
+    });
+
+    afterEach(function () {
+      serverReference.close();
+    });
+
+
+    it('returns an empty Buffer for the proxyResData', function (done) {
+      app.use('/proxy', proxy('http://127.0.0.1:12346', {
+        userResDecorator: function (proxyRes, proxyResData /*, userReq, userRes */) {
+          assert(Buffer.isBuffer(proxyResData));
+          assert(proxyResData.length === 0);
+        }
+      }));
+
+      request(app)
+        .get('/proxy')
+        .expect(200)
         .end(done);
     });
   });
