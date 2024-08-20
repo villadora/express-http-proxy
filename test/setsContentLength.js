@@ -32,7 +32,7 @@ describe('headers: [content-length]', function () {
           const contentLength = res.body.headers['content-length'];
           assert(Number(contentLength) === 0);
           done(err);
-        });
+        })
     });
 
     describe('a `POST` request should have a content-length header, and it should be accurate', function () {
@@ -77,8 +77,31 @@ describe('headers: [content-length]', function () {
             done(err);
           });
       });
+
+      it('when the author uses a proxyReqDecorator', function (done) {
+        var app = express();
+        app.use(proxy('localhost:8109', {
+          proxyReqBodyDecorator: function(buffer) {
+            return { d:5 };
+          }
+        }));
+
+        request(app)
+          .post('/headers')
+          .send({
+            data: 'random string of words'
+          })
+          .set('Content-Type', 'application/json')
+          .set('Accept', 'application/json')
+          .end(function (err, res) {
+            if (err) { throw err; }
+            assert(res.body.headers['content-length']);
+            const contentLength = res.body.headers['content-length'];
+            assert.equal(contentLength, 7);
+            done(err);
+          })
+      });
     });
   });
-
-
 });
+
