@@ -9,7 +9,6 @@ var assert = require('assert');
 var debug = require('debug')('express-http-proxy');
 
 var buildProxyReq                = require('./app/steps/buildProxyReq');
-var copyProxyResHeadersToUserRes = require('./app/steps/copyProxyResHeadersToUserRes');
 var decorateProxyReqBody         = require('./app/steps/decorateProxyReqBody');
 var decorateProxyReqOpts         = require('./app/steps/decorateProxyReqOpts');
 var decorateUserRes              = require('./app/steps/decorateUserRes');
@@ -39,7 +38,6 @@ module.exports = function proxy(host, userOptions) {
       .then(prepareProxyReq)
       .then(sendProxyRequest)
       .then(maybeSkipToNextHandler)
-      .then(copyProxyResHeadersToUserRes)
       .then(decorateUserResHeaders)
       .then(decorateUserRes)
       .then(sendUserRes)
