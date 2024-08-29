@@ -4,3 +4,4 @@ node_modules
 
 # no Webstorm info at all
 .idea/*
+*.iml
