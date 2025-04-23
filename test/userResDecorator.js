@@ -4,21 +4,31 @@ var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var proxyTarget = require('./support/proxyTarget');
 
 describe('userResDecorator', function () {
+  var proxyServer;
+
+  beforeEach(function () {
+    proxyServer = proxyTarget(12345);
+  });
+
+  afterEach(async function () {
+    await proxyServer.close();
+  });
 
   describe('when handling a 304', function () {
     this.timeout(10000);
 
     var app;
-    var  slowTarget;
-    var  serverReference;
+    var slowTarget;
+    var serverReference;
 
     beforeEach(function () {
       app = express();
       slowTarget = express();
       slowTarget.use(function (req, res) { res.sendStatus(304); });
-      serverReference = slowTarget.listen(12345);
+      serverReference = slowTarget.listen(12346);
     });
 
     afterEach(function () {
@@ -26,7 +36,7 @@ describe('userResDecorator', function () {
     });
 
     it('skips any handling', function (done) {
-      app.use('/proxy', proxy('http://127.0.0.1:12345', {
+      app.use('/proxy', proxy('http://127.0.0.1:12346', {
         userResDecorator: function (/*res*/) {
           throw new Error('expected to never get here because this step should be skipped for 304');
         }
@@ -41,7 +51,7 @@ describe('userResDecorator', function () {
 
   it('has access to original response', function (done) {
     var app = express();
-    app.use(proxy('https://httpbin.org', {
+    app.use(proxy('localhost:12345', {
       userResDecorator: function (proxyRes, proxyResData) {
         assert(proxyRes.connection);
         assert(proxyRes.socket);
@@ -51,57 +61,74 @@ describe('userResDecorator', function () {
       }
     }));
 
-    request(app).get('/').end(done);
+    request(app).get('/get').end(done);
   });
 
   it('works with promises', function (done) {
     var app = express();
-    app.use(proxy('https://httpbin.org', {
+    var handler = {
+      method: 'get',
+      path: '/promise',
+      fn: function(req, res) {
+        res.json({ origin: '127.0.0.1' });
+      }
+    };
+    proxyServer.close();
+    proxyServer = proxyTarget(12345, 100, [handler]);
+
+    app.use(proxy('localhost:12345', {
       userResDecorator: function (proxyRes, proxyResData) {
         return new Promise(function (resolve) {
-          proxyResData.funkyMessage = 'oi io oo ii';
+          var data = JSON.parse(proxyResData.toString('utf8'));
+          data.funkyMessage = 'oi io oo ii';
           setTimeout(function () {
-            resolve(proxyResData);
+            resolve(JSON.stringify(data));
           }, 200);
         });
       }
     }));
 
     request(app)
-      .get('/ip')
+      .get('/promise')
       .end(function (err, res) {
         if (err) { return done(err); }
-
-        assert(res.body.funkyMessage = 'oi io oo ii');
+        assert.equal(res.body.funkyMessage, 'oi io oo ii');
         done();
       });
-
   });
 
   it('can modify the response data', function (done) {
     var app = express();
-    app.use(proxy('https://httpbin.org', {
+    var handler = {
+      method: 'get',
+      path: '/data',
+      fn: function(req, res) {
+        res.json({ origin: '127.0.0.1' });
+      }
+    };
+    proxyServer.close();
+    proxyServer = proxyTarget(12345, 100, [handler]);
+
+    app.use(proxy('localhost:12345', {
       userResDecorator: function (proxyRes, proxyResData) {
-        proxyResData = JSON.parse(proxyResData.toString('utf8'));
-        proxyResData.intercepted = true;
-        return JSON.stringify(proxyResData);
+        var data = JSON.parse(proxyResData.toString('utf8'));
+        data.intercepted = true;
+        return JSON.stringify(data);
       }
     }));
 
     request(app)
-      .get('/ip')
+      .get('/data')
       .end(function (err, res) {
         if (err) { return done(err); }
-
         assert(res.body.intercepted);
         done();
       });
   });
 
-
   it('can modify the response headers, [deviant case, supported by pass-by-reference atm]', function (done) {
     var app = express();
-    app.use(proxy('https://httpbin.org', {
+    app.use(proxy('localhost:12345', {
       userResDecorator: function (rsp, data, req, res) {
         res.set('x-wombat-alliance', 'mammels');
         res.set('content-type', 'wiki/wiki');
@@ -110,21 +137,30 @@ describe('userResDecorator', function () {
     }));
 
     request(app)
-      .get('/ip')
+      .get('/get')
       .end(function (err, res) {
         if (err) { return done(err); }
-        assert(res.headers['content-type'] === 'wiki/wiki');
-        assert(res.headers['x-wombat-alliance'] === 'mammels');
+        assert.equal(res.headers['content-type'], 'wiki/wiki');
+        assert.equal(res.headers['x-wombat-alliance'], 'mammels');
         done();
       });
   });
 
   it('can mutuate an html response', function (done) {
     var app = express();
-    app.use(proxy('httpbin.org', {
+    var handler = {
+      method: 'get',
+      path: '/html',
+      fn: function(req, res) {
+        res.send('<html><body>Oh, hey there</body></html>');
+      }
+    };
+    proxyServer.close();
+    proxyServer = proxyTarget(12345, 100, [handler]);
+
+    app.use(proxy('localhost:12345', {
       userResDecorator: function (rsp, data) {
         data = data.toString().replace('Oh', '<strong>Hey</strong>');
-        assert(data !== '');
         return data;
       }
     }));
@@ -133,13 +169,15 @@ describe('userResDecorator', function () {
       .get('/html')
       .end(function (err, res) {
         if (err) { return done(err); }
-        assert(res.text.indexOf('<strong>Hey</strong>') > -1);
+        assert.equal(res.status, 200, 'Response should have 200 status code');
+        assert.equal(res.type, 'text/html', 'Response should be HTML content type');
+        assert(res.text.includes('<strong>Hey</strong>'), 'Response should contain the modified text');
+        assert(!res.text.includes('Oh, hey there'), 'Response should not contain the original text');
         done();
       });
   });
 
   it('can change the location of a redirect', function (done) {
-
     function redirectingServer(port, origin) {
       var app = express();
       app.get('/', function (req, res) {
@@ -178,6 +216,42 @@ describe('userResDecorator', function () {
   });
 });
 
+describe('test userResDecorator on html response from mock server', function () {
+  var proxyServer;
+
+  beforeEach(function () {
+    var handler = {
+      method: 'get',
+      path: '/html',
+      fn: function(req, res) {
+        res.send('<!DOCTYPE html><html><body>Test page</body></html>');
+      }
+    };
+    proxyServer = proxyTarget(12345, 100, [handler]);
+  });
+
+  afterEach(function () {
+    proxyServer.close();
+  });
+
+  it('is able to read and manipulate the response', function (done) {
+    var app = express();
+    app.use(proxy('localhost:12345', {
+      userResDecorator: function (targetResponse, data) {
+        data = data.toString().replace('DOCTYPE', 'WINNING');
+        return data;
+      }
+    }));
+
+    request(app)
+      .get('/html')
+      .end(function (err, res) {
+        if (err) { return done(err); }
+        assert(res.text.indexOf('WINNING') > -1);
+        done();
+      });
+  });
+});
 
 describe('test userResDecorator on html response from github', function () {
 
@@ -207,7 +281,6 @@ describe('test userResDecorator on html response from github', function () {
         assert(res.text.indexOf('WINNING') > -1);
         done();
       });
-
   });
 });
 

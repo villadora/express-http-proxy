@@ -27,7 +27,6 @@ describe('trace debugging does not cause the application to fail', function () {
   });
 
   it('happy path', function (done) {
-    debugger;
     var app = express();
     app.use(proxy('localhost:8109'));
     request(app)

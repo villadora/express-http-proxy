@@ -2,7 +2,7 @@
 
 var chunkLength = require('../../lib/chunkLength');
 
-function sendProxyRequest(Container) {
+function defaultSendProxyRequest(Container) {
   var req = Container.user.req;
   var bodyContent = Container.proxy.bodyContent;
   var reqOpt = Container.proxy.reqBuilder;
@@ -75,5 +75,11 @@ function sendProxyRequest(Container) {
   });
 }
 
+function sendProxyRequest(Container) {
+  if (Container.options.sendProxyRequest) {
+    return Promise.resolve(Container.options.sendProxyRequest(Container));
+  }
+  return defaultSendProxyRequest(Container);
+}
 
 module.exports = sendProxyRequest;
