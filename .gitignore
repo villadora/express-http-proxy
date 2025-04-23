@@ -4,3 +4,7 @@ node_modules
 
 # no Webstorm info at all
 .idea/*
+
+coverage/
+coverage.lcov
+.nyc_output/
