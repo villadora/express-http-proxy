@@ -10,7 +10,10 @@
     "test": "npm -s run mocha && npm run -s lint",
     "test:debug": "mocha inspect --debug-brk -R spec test --recursive --exit",
     "mocha": "mocha -R spec test --recursive --exit",
-    "lint": "eslint index.js app/**/*js lib/*js"
+    "lint": "eslint index.js app/**/*js lib/*js",
+    "coverage": "nyc npm run mocha",
+    "coverage:report": "nyc report --reporter=text-lcov > coverage.lcov",
+    "coverage:html": "nyc report --reporter=html"
   },
   "repository": {
     "type": "git",
@@ -28,6 +31,7 @@
     "url": "https://github.com/villadora/express-http-proxy/issues"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-babel": "^3.0.0",
     "body-parser": "^1.17.2",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
@@ -35,6 +39,7 @@
     "express": "^4.15.4",
     "mocha": "^10.2.0",
     "nock": "^13.3.3",
+    "nyc": "^17.1.0",
     "supertest": "^6.3.3"
   },
   "dependencies": {
