@@ -2,6 +2,7 @@
   "name": "express-http-proxy",
   "version": "2.1.1",
   "description": "http proxy middleware for express",
+  "type": "commonjs",
   "engines": {
     "node": ">=6.0.0"
   },
