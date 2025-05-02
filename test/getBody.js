@@ -16,7 +16,7 @@ function createLocalApplicationServer() {
 }
 
 describe('when proxy request is a GET', function () {
-  this.timeout(TIMEOUT.STANDARD);
+  this.timeout(TIMEOUT.QUICK);
 
   var localServer;
 

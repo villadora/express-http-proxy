@@ -8,7 +8,7 @@ var proxyTarget = require('./support/proxyTarget');
 var TIMEOUT = require('./constants');
 
 describe('proxies https', function () {
-  this.timeout(TIMEOUT.STANDARD);
+  this.timeout(TIMEOUT.QUICK);
 
   var app;
   var proxyServer;
