@@ -6,6 +6,8 @@ var express = require('express');
 var nock = require('nock');
 var request = require('supertest');
 var proxy = require('../');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 
 function createLocalApplicationServer() {
@@ -14,8 +16,7 @@ function createLocalApplicationServer() {
 }
 
 describe('when proxy request is a GET', function () {
-
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   var localServer;
 

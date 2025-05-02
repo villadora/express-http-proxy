@@ -5,10 +5,12 @@ var request = require('supertest');
 var proxy = require('../');
 var http = require('http');
 var assert = require('assert');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 describe('when skipToNextHandlerFilter is defined', function () {
 
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   var app;
   var  slowTarget;

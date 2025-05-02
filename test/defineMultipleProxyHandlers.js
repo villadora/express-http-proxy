@@ -5,6 +5,8 @@ var express = require('express');
 var http = require('http');
 var startProxyTarget = require('./support/proxyTarget');
 var proxy = require('../');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 function fakeProxyServer({path, port, response}) {
   var proxyRouteFn = [{
@@ -37,7 +39,7 @@ function simulateUserRequest() {
 }
 
 describe('handle multiple proxies in the same runtime', function () {
-  this.timeout(3000);
+  this.timeout(TIMEOUT.MEDIUM);
 
   var server;
   var  targetServer, targetServer2;

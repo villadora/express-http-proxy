@@ -1,14 +1,16 @@
 'use strict';
 
+var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 var startProxyTarget = require('./support/proxyTarget');
 var expect = require('chai').expect;
 
 describe('uses remote path', function () {
-
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   var app = express();
   var proxyRoutes = ['/somePath/', '/somePath/longer/path', '/somePath/long/path/with/many/tokens'];
@@ -52,10 +54,9 @@ describe('uses remote path', function () {
   });
 });
 
-
 describe('host can be a dynamic function', function () {
 
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   var app = express();
   var firstProxyApp = express();

@@ -5,14 +5,15 @@ var express = require('express');
 var http = require('http');
 var request = require('supertest');
 var proxy = require('../');
-var proxyTarget = require('../test/support/proxyTarget');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 var aliases = ['forwardPath', 'forwardPathAsync', 'proxyReqPathResolver'];
 
 describe('resolveProxyReqPath', function () {
   var server;
 
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   before(function () {
     var handlers = [{

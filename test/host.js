@@ -1,12 +1,14 @@
 'use strict';
 
+var assert = require('assert');
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 describe('host can be a dynamic function', function () {
-
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   var app = express();
   describe('and memoization can be disabled', function () {
