@@ -6,6 +6,7 @@ var fs = require('fs');
 var os = require('os');
 var proxy = require('../');
 var startProxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 
 describe('body encoding', function () {
@@ -19,7 +20,7 @@ describe('body encoding', function () {
     server.close();
   });
 
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   var pngHex = '89504e470d0a1a0a0' +
                '000000d4948445200' +

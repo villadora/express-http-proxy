@@ -5,6 +5,8 @@ var express = require('express');
 var http = require('http');
 var startProxyTarget = require('./support/proxyTarget');
 var proxy = require('../');
+var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 function chunkingProxyServer() {
   var proxyRouteFn = [{
@@ -45,7 +47,7 @@ function startLocalServer(proxyOptions) {
 }
 
 describe('streams / piped requests', function () {
-  this.timeout(3000);
+  this.timeout(TIMEOUT.MEDIUM);
 
   var server;
   var  targetServer;

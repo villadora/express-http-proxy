@@ -6,6 +6,7 @@ var fs = require('fs');
 var os = require('os');
 var proxy = require('../');
 var startProxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 describe('headers: [content-length]', function () {
   var server;
@@ -18,7 +19,7 @@ describe('headers: [content-length]', function () {
     server.close();
   });
 
-  this.timeout(10000);
+  this.timeout(TIMEOUT.STANDARD);
 
   describe('on proxy request', function () {
     it('a `GET` request should have a content-length header, and it should be 0', function (done) {

@@ -5,9 +5,10 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 describe('proxies headers', function () {
-  this.timeout(2000);
+  this.timeout(TIMEOUT.QUICK);
 
   var http;
   var proxyServer;

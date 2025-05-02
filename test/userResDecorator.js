@@ -5,8 +5,10 @@ var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
 var proxyTarget = require('./support/proxyTarget');
+var TIMEOUT = require('./constants');
 
 describe('userResDecorator', function () {
+  this.timeout(TIMEOUT.STANDARD);
   var proxyServer;
 
   beforeEach(function () {
@@ -214,6 +216,29 @@ describe('userResDecorator', function () {
         server.close();
         done();
       });
+  });
+
+  describe('when userResDecorator returns a Promise', function () {
+    this.timeout(TIMEOUT.EXTENDED);  // give it some extra time to get response
+
+    it('is able to read and manipulate the response', function (done) {
+      var app = express();
+      app.use(proxy('https://github.com/villadora/express-http-proxy', {
+        userResDecorator: function (targetResponse, data) {
+          data = data.toString().replace('DOCTYPE', 'WINNING');
+          assert(data !== '');
+          return data;
+        }
+      }));
+
+      request(app)
+        .get('/html')
+        .end(function (err, res) {
+          if (err) { return done(err); }
+          assert(res.text.indexOf('WINNING') > -1);
+          done();
+        });
+    });
   });
 });
 
