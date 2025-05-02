@@ -79,10 +79,10 @@ describe('userResDecorator', function () {
     app.use(proxy('localhost:12345', {
       userResDecorator: function (proxyRes, proxyResData) {
         return new Promise(function (resolve) {
-          var data = JSON.parse(proxyResData.toString('utf8'));
-          data.funkyMessage = 'oi io oo ii';
+          const decoratedResponse = JSON.parse(proxyResData.toString());
+          decoratedResponse.funkyMessage = 'oi io oo ii';
           setTimeout(function () {
-            resolve(JSON.stringify(data));
+            resolve(JSON.stringify(decoratedResponse));
           }, 200);
         });
       }
