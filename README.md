@@ -276,6 +276,11 @@ first request.
 
 When a `userResHeaderDecorator` is defined, the return of this method will replace (rather than be merged on to) the headers for `userRes`.
 
+> Note that by default, headers from the PROXY response CLOBBER all headers that may have previously been set on the userResponse. 
+> Authors have the option of constructing any combination of proxyRes and userRes headers in the `userResHeaderDecorator`. 
+> Check the tests for this method for examples.
+
+
 ```js
 app.use('/proxy', proxy('www.google.com', {
   userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
