@@ -5,10 +5,9 @@ var express = require('express');
 var http = require('http');
 var startProxyTarget = require('./support/proxyTarget');
 var proxy = require('../');
-var proxyTarget = require('./support/proxyTarget');
 var TIMEOUT = require('./constants');
 
-function fakeProxyServer({path, port, response}) {
+function createProxyServer({ path, port, response }) {
   var proxyRouteFn = [{
     method: 'get',
     path: path,
@@ -23,11 +22,18 @@ function fakeProxyServer({path, port, response}) {
 
 function simulateUserRequest() {
   return new Promise(function (resolve, reject) {
-
-    var req = http.request({ hostname: 'localhost', port: 8308, path: '/' }, function (res) {
+    var req = http.request({
+      hostname: 'localhost',
+      port: 8308,
+      path: '/'
+    }, function (res) {
       var chunks = [];
-      res.on('data', function (chunk) { chunks.push(chunk.toString()); });
-      res.on('end', function () { resolve(chunks); });
+      res.on('data', function (chunk) {
+        chunks.push(chunk.toString());
+      });
+      res.on('end', function () {
+        resolve(chunks);
+      });
     });
 
     req.on('error', function (e) {
@@ -35,56 +41,66 @@ function simulateUserRequest() {
     });
 
     req.end();
-  })
+  });
 }
 
-describe('handle multiple proxies in the same runtime', function () {
+describe('multiple proxy handlers', function () {
   this.timeout(TIMEOUT.MEDIUM);
 
   var server;
-  var  targetServer, targetServer2;
+  var primaryProxyServer;
+  var fallbackProxyServer;
 
   beforeEach(function () {
-    targetServer = fakeProxyServer({path:'/', port: '8309', response: '8309_response'});
-    targetServer2 = fakeProxyServer({path: '/', port: '8310', response: '8310_response'});
+    primaryProxyServer = createProxyServer({
+      path: '/',
+      port: '8309',
+      response: 'primary_response'
+    });
+    fallbackProxyServer = createProxyServer({
+      path: '/',
+      port: '8310',
+      response: 'fallback_response'
+    });
   });
 
   afterEach(function () {
     server.close();
-    targetServer.close();
-    targetServer2.close();
+    primaryProxyServer.close();
+    fallbackProxyServer.close();
   });
 
+  describe('when multiple proxies are defined for the same route', function () {
+    describe('proxy selection behavior', function () {
+      it('should use the first proxy when it succeeds', function (done) {
+        var app = express();
+        app.use(proxy('http://localhost:8309', {}));
+        app.use(proxy('http://localhost:8310', {}));
+        server = app.listen(8308);
 
-  describe("When two distinct proxies are defined for the global route", () => {
-    afterEach(() => server.close())
+        simulateUserRequest()
+          .then(function (res) {
+            assert.equal(res[0], 'primary_response', 'Should use primary proxy response');
+            done();
+          })
+          .catch(done);
+      });
 
-    it('the first proxy definition should be used if it succeeds', function (done) {
-      var app = express();
-      app.use(proxy('http://localhost:8309', {}));
-      app.use(proxy('http://localhost:8310', {}));
-      server = app.listen(8308)
-      simulateUserRequest()
-        .then(function (res) {
-          assert.equal(res[0], '8309_response');
-          done();
-        })
-        .catch(done);
+      it('should use the fallback proxy when primary skips to next', function (done) {
+        var app = express();
+        app.use(proxy('http://localhost:8309', {
+          skipToNextHandlerFilter: () => true // Force skip to next handler
+        }));
+        app.use(proxy('http://localhost:8310', {}));
+        server = app.listen(8308);
+
+        simulateUserRequest()
+          .then(function (res) {
+            assert.equal(res[0], 'fallback_response', 'Should use fallback proxy response');
+            done();
+          })
+          .catch(done);
+      });
     });
-
-    it('the fall through definition should be used if the prior skipsToNext', function (done) {
-      var app = express();
-      app.use(proxy('http://localhost:8309', {
-        skipToNextHandlerFilter: () => { return true } // no matter what, reject this proxy request, and call next()
-      }));
-      app.use(proxy('http://localhost:8310'))
-      server = app.listen(8308)
-      simulateUserRequest()
-        .then(function (res) {
-          assert.equal(res[0], '8310_response');
-          done();
-        })
-        .catch(done);
-    });
-  })
+  });
 });
