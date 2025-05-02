@@ -92,6 +92,7 @@ describe('userResDecorator', function () {
       .get('/promise')
       .end(function (err, res) {
         if (err) { return done(err); }
+        assert.equal(res.body.origin, '127.0.0.1');
         assert.equal(res.body.funkyMessage, 'oi io oo ii');
         done();
       });
