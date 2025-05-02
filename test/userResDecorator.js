@@ -8,7 +8,7 @@ var proxyTarget = require('./support/proxyTarget');
 var TIMEOUT = require('./constants');
 
 describe('userResDecorator', function () {
-  this.timeout(TIMEOUT.STANDARD);
+  this.timeout(TIMEOUT.QUICK);
   var proxyServer;
 
   beforeEach(function () {

@@ -9,7 +9,7 @@ var TIMEOUT = require('./constants');
 
 describe('when server responds with an error', function () {
 
-  this.timeout(TIMEOUT.STANDARD);
+  this.timeout(TIMEOUT.QUICK);
 
   var app;
   var slowTarget;
