@@ -151,7 +151,7 @@
     ],
     "lines-around-comment": [
       2,
-      { "afterLineComment": true, "allowBlockEnd": true }
+      { "afterLineComment": false, "allowBlockEnd": true }
     ],
     "semi": [
       2,
