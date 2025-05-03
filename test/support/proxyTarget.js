@@ -70,6 +70,10 @@ function proxyTarget(port, timeout, handlers) {
     res.json({ headers: req.headers });
   });
 
+  target.use('/returnRequestParams', function(req, res) {
+    res.json(req.query);
+  });
+
   target.use(function(err, req, res, next) {
     res.send(err);
     next();
