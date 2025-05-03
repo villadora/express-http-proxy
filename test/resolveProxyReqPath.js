@@ -7,92 +7,84 @@ var expect = require('chai').expect;
 var express = require('express');
 var request = require('supertest');
 var proxy = require('../');
+var TIMEOUT = require('./constants');
 
+describe('proxy path resolution', function () {
+  this.timeout(TIMEOUT.STANDARD);
 
-describe('resolveProxyReqPath', function () {
   var container;
 
   beforeEach(function () {
     container = new ScopeContainer();
   });
 
-  var tests = [
-    {
-      resolverType: 'undefined',
-      resolverFn: undefined,
-      data: [
-        { url: 'http://localhost:12345', parsed: '/' },
-        { url: 'http://g.com/123?45=67', parsed: '/123?45=67' }
-      ]
-    },
-    {
-      resolverType: 'a syncronous function',
-      resolverFn: function () { return 'the craziest thing'; },
-      data: [
-        { url: 'http://localhost:12345', parsed: 'the craziest thing' },
-        { url: 'http://g.com/123?45=67', parsed: 'the craziest thing' }
-      ]
-    },
-    {
-      resolverType: 'a Promise',
-      resolverFn: function () {
-        return new Promise(function (resolve) {
-          resolve('the craziest think');
-        });
+  describe('path resolver types', function () {
+    var testCases = [
+      {
+        name: 'default resolver',
+        resolverFn: undefined,
+        testData: [
+          { url: 'http://localhost:12345', expected: '/' },
+          { url: 'http://g.com/123?45=67', expected: '/123?45=67' }
+        ]
       },
-      data: [
-        { url: 'http://localhost:12345', parsed: 'the craziest think' },
-        { url: 'http://g.com/123?45=67', parsed: 'the craziest think' }
-      ]
-    }
-  ];
+      {
+        name: 'synchronous resolver',
+        resolverFn: function () { return 'custom/path'; },
+        testData: [
+          { url: 'http://localhost:12345', expected: 'custom/path' },
+          { url: 'http://g.com/123?45=67', expected: 'custom/path' }
+        ]
+      },
+      {
+        name: 'asynchronous resolver',
+        resolverFn: function () {
+          return new Promise(function (resolve) {
+            resolve('async/path');
+          });
+        },
+        testData: [
+          { url: 'http://localhost:12345', expected: 'async/path' },
+          { url: 'http://g.com/123?45=67', expected: 'async/path' }
+        ]
+      }
+    ];
 
-  describe('when proxyReqPathResolver', function () {
+    testCases.forEach(function (testCase) {
+      describe('when using ' + testCase.name, function () {
+        testCase.testData.forEach(function (data) {
+          it('should resolve ' + data.url + ' to ' + data.expected, function (done) {
+            container.user.req = { url: data.url };
+            container.options.proxyReqPathResolver = testCase.resolverFn;
+            var result = resolveProxyReqPath(container);
 
-    tests.forEach(function (test) {
-      describe('is ' + test.resolverType, function () {
-        describe('it returns a promise which resolves a container with expected url', function () {
-          test.data.forEach(function (data) {
-            it(data.url, function (done) {
-              container.user.req = { url: data.url };
-              container.options.proxyReqPathResolver = test.resolverFn;
-              var r = resolveProxyReqPath(container);
+            assert(result instanceof Promise, 'Resolver should return a Promise');
 
-              assert(r instanceof Promise, 'Expect resolver to return a thennable');
-
-              r.then(function (container) {
-                var response;
-                try {
-                  response = container.proxy.reqBuilder.path;
-                  if (!response) {
-                    throw new Error('reqBuilder.url is undefined');
-                  }
-                } catch (e) {
-                  done(e);
-                }
-                expect(response).to.equal(data.parsed);
-                done();
-              });
-            });
+            result.then(function (container) {
+              var resolvedPath = container.proxy.reqBuilder.path;
+              if (!resolvedPath) {
+                return done(new Error('reqBuilder.path is undefined'));
+              }
+              expect(resolvedPath).to.equal(data.expected);
+              done();
+            }).catch(done);
           });
         });
       });
     });
-
   });
 
-  describe('testing example code in docs', function () {
-    it('works as advertised', function (done) {
+  describe('path transformation examples', function () {
+    it('should transform paths as shown in documentation', function (done) {
       var proxyTarget = require('../test/support/proxyTarget');
-      var proxyRouteFn = [{
+      var proxyServer = proxyTarget(12345, 100, [{
         method: 'get',
         path: '/tent',
         fn: function (req, res) {
           res.send(req.url);
         }
-      }];
+      }]);
 
-      var proxyServer = proxyTarget(12345, 100, proxyRouteFn);
       var app = express();
       app.use(proxy('localhost:12345', {
         proxyReqPathResolver: function (req) {
@@ -105,12 +97,11 @@ describe('resolveProxyReqPath', function () {
 
       request(app)
         .get('/test?a=1&b=2&c=3')
-        .end(function (err, res) {
-          assert.equal(res.text, '/tent?a=1&b=2&c=3');
+        .expect('/tent?a=1&b=2&c=3')
+        .end(function (err) {
           proxyServer.close();
           done(err);
         });
     });
   });
-
 });

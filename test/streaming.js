@@ -5,7 +5,6 @@ var express = require('express');
 var http = require('http');
 var startProxyTarget = require('./support/proxyTarget');
 var proxy = require('../');
-var proxyTarget = require('./support/proxyTarget');
 var TIMEOUT = require('./constants');
 
 function chunkingProxyServer() {
@@ -46,11 +45,11 @@ function startLocalServer(proxyOptions) {
   return app.listen(8308);
 }
 
-describe('streams / piped requests', function () {
+describe('streaming behavior / piped requests', function () {
   this.timeout(TIMEOUT.MEDIUM);
 
   var server;
-  var  targetServer;
+  var targetServer;
 
   beforeEach(function () {
     targetServer = chunkingProxyServer();
@@ -61,33 +60,34 @@ describe('streams / piped requests', function () {
     targetServer.close();
   });
 
-  describe('when streaming options are truthy', function () {
+  describe('when streaming is enabled', function () {
     var TEST_CASES = [{
-      name: 'vanilla, no options defined',
+      name: 'with default options',
       options: {}
     }, {
-      name: 'proxyReqOptDecorator is defined',
-      options: { proxyReqOptDecorator: function (reqBuilder) { return reqBuilder; } }
+      name: 'with synchronous proxyReqOptDecorator',
+      options: {
+        proxyReqOptDecorator: function (reqBuilder) {
+          return reqBuilder;
+        }
+      }
     }, {
-      //// Keep around this case for manually testing that this for sure fails for a few cycles.   2018 NMK
-      //name: 'proxyReqOptDecorator never returns',
-      //options: { proxyReqOptDecorator: function () { return new Promise(function () {}); } }
-    //}, {
-
-      name: 'proxyReqOptDecorator is a Promise',
-      options: { proxyReqOptDecorator: function (reqBuilder) { return Promise.resolve(reqBuilder); } }
+      name: 'with asynchronous proxyReqOptDecorator',
+      options: {
+        proxyReqOptDecorator: function (reqBuilder) {
+          return Promise.resolve(reqBuilder);
+        }
+      }
     }];
 
     TEST_CASES.forEach(function (testCase) {
       describe(testCase.name, function () {
-        it('chunks are received without any buffering, e.g. before request end', function (done) {
+        it('should receive response in chunks before request completion', function (done) {
           server = startLocalServer(testCase.options);
           simulateUserRequest()
             .then(function (res) {
-              // Assume that if I'm getting a chunked response, it will be an array of length > 1;
-
-              assert(res instanceof Array, 'res is an Array');
-              assert.equal(res.length, 4);
+              assert(res instanceof Array, 'Response should be an array of chunks');
+              assert.equal(res.length, 4, 'Response should contain exactly 4 chunks');
               done();
             })
             .catch(done);
@@ -96,23 +96,25 @@ describe('streams / piped requests', function () {
     });
   });
 
-  describe('when streaming options are falsey', function () {
+  describe('when streaming is disabled', function () {
     var TEST_CASES = [{
-      name: 'skipToNextHandler is defined',
-      options: { skipToNextHandlerFilter: function () { return false; } }
+      name: 'with skipToNextHandler filter',
+      options: {
+        skipToNextHandlerFilter: function () {
+          return false;
+        }
+      }
     }];
 
     TEST_CASES.forEach(function (testCase) {
       describe(testCase.name, function () {
-        it('response arrives in one large chunk', function (done) {
+        it('should receive response as a single chunk', function (done) {
           server = startLocalServer(testCase.options);
 
           simulateUserRequest()
             .then(function (res) {
-              // Assume that if I'm getting a un-chunked response, it will be an array of length = 1;
-
-              assert(res instanceof Array);
-              assert.equal(res.length, 1);
+              assert(res instanceof Array, 'Response should be an array');
+              assert.equal(res.length, 1, 'Response should be a single chunk');
               done();
             })
             .catch(done);
