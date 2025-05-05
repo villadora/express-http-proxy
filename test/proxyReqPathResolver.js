@@ -15,7 +15,7 @@ describe('resolveProxyReqPath', function () {
 
   this.timeout(TIMEOUT.STANDARD);
 
-  before(function () {
+  beforeEach(function () {
     var handlers = [{
       method: 'get',
       path: '/working',
@@ -27,8 +27,8 @@ describe('resolveProxyReqPath', function () {
     server = proxyTarget(12345, 100, handlers);
   });
 
-  after(function () {
-    server.close();
+  afterEach(async () => {
+    await server.close();
   });
 
   aliases.forEach(function (alias) {

@@ -19,8 +19,8 @@ describe('when server responds with an error', function () {
     app = express();
   });
 
-  afterEach(function () {
-    serverReference.close();
+  afterEach(async function () {
+    await serverReference.close();
   });
 
   var STATUS_CODES = [
