@@ -7,7 +7,7 @@ var proxy = require('../');
 var proxyTarget = require('./support/proxyTarget');
 var TIMEOUT = require('./constants');
 
-describe.only('url parsing', function () {
+describe('url parsing', function () {
   var server;
 
   beforeEach(() => server = proxyTarget(8111, 1000, [
