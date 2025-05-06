@@ -7,29 +7,42 @@ var proxy = require('../');
 var proxyTarget = require('./support/proxyTarget');
 var TIMEOUT = require('./constants');
 
-describe('url parsing', function () {
+describe.only('url parsing', function () {
+  var server;
+
+  beforeEach(() => server = proxyTarget(8111, 1000, [
+     {
+      method: 'get',
+      path: '/verify-port',
+      fn: (req, res, next) => {
+        debugger;
+        res.json({recieved: true});
+      }
+    }
+  ]));
+  afterEach(async ()  => await server.close());
   this.timeout(TIMEOUT.STANDARD);
 
   it('can parse a url with a port', function (done) {
     var app = express();
-    app.use(proxy('http://httpbin.org:80'));
+    app.use(proxy('http://localhost:8111'));
     request(app)
-      .get('/')
-      .end(function (err) {
+      .get('/verify-port')
+      .end(function (err, res) {
         if (err) { return done(err); }
-        assert(true);
+        assert.equal(res.body.recieved, true);
         done();
       });
   });
 
-  it('does not throw `Uncaught RangeError` if you have both a port and a trailing slash', function (done) {
+  it('even with a trailing slash', function (done) {
     var app = express();
-    app.use(proxy('http://httpbin.org:80/'));
+    app.use(proxy('http://localhost:8111'));
     request(app)
-      .get('/')
-      .end(function (err) {
+      .get('/verify-port')
+      .end(function (err, res) {
         if (err) { return done(err); }
-        assert(true);
+        assert.equal(res.body.recieved, true);
         done();
       });
   });

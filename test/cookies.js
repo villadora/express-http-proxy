@@ -11,39 +11,44 @@ var proxyRouteFn = [{
   method: 'get',
   path: '/cookieTest',
   fn: function (req, res) {
-    Object.keys(req.cookies).forEach(function (key) {
+    // This stub proxy server method simply copies the cookies from the inbound
+    // request to the outbound response. This lets us check the proxy reponse
+    // for the cookies on the request.
+    Object.keys(req.cookies).forEach(key => {
       res.cookie(key, req.cookies[key]);
     });
     res.sendStatus(200);
   }
 }];
 
-describe('proxies cookie', function () {
-  this.timeout(TIMEOUT.STANDARD);
+describe("cookies", () => {
+  describe('when cookies are sent on the user request', function () {
+    this.timeout(TIMEOUT.STANDARD);
 
-  var app;
-  var proxyServer;
+    var app;
+    var proxyServer;
 
-  beforeEach(function () {
-    proxyServer = proxyTarget(12346, 100, proxyRouteFn);
-    app = express();
-    app.use(proxy('localhost:12346'));
-  });
+    beforeEach(function () {
+      proxyServer = proxyTarget(12346, 100, proxyRouteFn);
+      app = express();
+      app.use(proxy('localhost:12346'));
+    });
 
-  afterEach(function () {
-    proxyServer.close();
-  });
+    afterEach(function () {
+      proxyServer.close();
+    });
 
-  it('set cookie', function (done) {
-    request(app)
-      .get('/cookieTest')
-      .set('Cookie', 'myApp-token=12345667')
-      .end(function (err, res) {
-        var cookiesMatch = res.headers['set-cookie'].filter(function (item) {
-          return item.match(/myApp-token=12345667/);
+    it('they are copied to the proxy request', function (done) {
+      request(app)
+        .get('/cookieTest')
+        .set('Cookie', 'myApp-token=12345667')
+        .end(function (err, res) {
+          var cookiesMatch = res.headers['set-cookie'].filter(function (item) {
+            return item.match(/myApp-token=12345667/);
+          });
+          assert(cookiesMatch);
+          done(err);
         });
-        assert(cookiesMatch);
-        done(err);
-      });
+    });
   });
 });
