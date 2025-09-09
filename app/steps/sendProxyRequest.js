@@ -4,6 +4,7 @@ var chunkLength = require('../../lib/chunkLength');
 
 function defaultSendProxyRequest(Container) {
   var req = Container.user.req;
+  var res = Container.user.res;
   var bodyContent = Container.proxy.bodyContent;
   var reqOpt = Container.proxy.reqBuilder;
   var options = Container.options;
@@ -67,11 +68,25 @@ function defaultSendProxyRequest(Container) {
       req.pipe(proxyReq);
     }
 
-    req.on('aborted', function () {
-    // reject?
+    // 'aborted' event stopped working reliably on v15.5.0 and was later removed entirely
+    var supportsAbortedEvent = (function () {
+      var ver = process.versions.node.split('.').map(Number);
+      return ver[0] <= 14 || ver[0] === 15 && ver[1] <= 4;
+    }());
 
-      proxyReq.abort();
-    });
+    if (supportsAbortedEvent) {
+      req.on('aborted', function () {
+        // reject?
+        proxyReq.abort();
+      });
+    } else {
+      res.on('close', function () {
+        var aborted = !res.writableFinished;
+        if (aborted) {
+          proxyReq.abort();
+        }
+      });
+    }
   });
 }
 
