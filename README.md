@@ -278,9 +278,14 @@ user response.  There is currently no way to short-circuit this behavior.
 
 #### limit
 
-This sets the body size limit (default: `1mb`). If the body size is larger than the specified (or default) limit,
-a `413 Request Entity Too Large`  error will be returned. See [bytes.js](https://www.npmjs.com/package/bytes) for
-a list of supported formats.
+When `parseReqBody` is true, this is passed to `getRawBody`[https://www.npmjs.com/package/raw-body], and accepts the same arguments.
+
+This limits the request body size when `parseReqBody` is true. (default: `1mb`).
+
+If the body size is larger than the specified (or default) limit, a `413
+Request Entity Too Large`  error will be returned. See
+[bytes.js](https://www.npmjs.com/package/bytes) for a list of supported
+formats.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
@@ -471,18 +476,19 @@ app.use('/proxy', proxy('www.google.com', {
 ```
 
 #### parseReqBody
+[default: true]
 
-The ```parseReqBody``` option allows you to control parsing the request body.
+The `parseReqBody` option allows you to suppress parsing of the request
+body. (The request body is parsed to make it available for modification and
+decoration before being added to the proxy request.)
+
 For example, disabling body parsing is useful for large uploads where it would be inefficient
 to hold the data in memory.
 
-##### Note: this setting is required for binary uploads.   A future version of this library may handle this for you.
+When false, no action will be taken on the body and accordingly `req.body` will no longer be set.
 
-This defaults to true in order to preserve legacy behavior.
-
-When false, no action will be taken on the body and accordingly ```req.body``` will no longer be set.
-
-Note that setting this to false overrides ```reqAsBuffer``` and ```reqBodyEncoding``` below.
+#### Note: set this to false for binary uploads.
+#### Note that setting this to false obviates `reqAsBuffer` and `reqBodyEncoding` settings.
 
 ```js
 app.use('/proxy', proxy('www.google.com', {
