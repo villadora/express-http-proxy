@@ -73,10 +73,28 @@ Client                    Express App                Proxy Middleware           
 
 Proxy requests and user responses are piped/streamed/chunked by default.
 
-If you define a response modifier (userResDecorator, userResHeaderDecorator),
-or need to inspect the response before continuing (maybeSkipToNext), streaming
-is disabled, and the request and response are buffered.
-This can cause performance issues with large payloads.
+If you define a response modifier (`userResDecorator`, `userResHeaderDecorator`),
+or need to inspect the response before continuing (`maybeSkipToNext`), streaming
+is disabled, and the request and response are buffered. This can cause
+performance issues with large payloads.
+
+You can override this auto-detection with the `stream` option (see
+[stream](#stream)). Since `userResHeaderDecorator` only rewrites headers (which
+are finalized before the body is piped), buffering is not required. Setting
+`stream: true` lets you rewrite response headers and stream the response body.
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  stream: true,
+  userResHeaderDecorator: function (headers) {
+    // rewrite headers, body is still piped/streamed
+    return headers;
+  }
+}));
+```
+
+Note that `userResDecorator` modifies the response body so it cannot be combined
+with `stream: true`.
 
 ### Promises
 
@@ -256,6 +274,10 @@ app.use(proxy('httpbin.org', {
 }));
 ```
 
+Because this hook modifies the response body, it requires a buffered (fully
+read) response and therefore disables streaming.  It cannot be combined with
+`stream: true` (see [stream](#stream)).
+
 ##### 304 - Not Modified
 
 When your proxied service returns 304, not modified, this step will be skipped, since there is no body to decorate.
@@ -334,6 +356,46 @@ app.use('/proxy', proxy('www.google.com', {
   }
 }));
 ```
+
+By default, defining `userResHeaderDecorator` disables streaming and buffers the
+entire response in memory. Header decoration does not require buffering, so you
+can set `stream: true` to rewrite headers while still streaming the body.
+See [stream](#stream).
+
+
+#### stream
+
+Controls whether the proxy pipes/streams the response (default) or buffers it
+entirely in memory before sending it to the client.
+
+When unset, the mode is auto-detected: streaming is enabled unless a response
+modifier (`userResDecorator`, `userResHeaderDecorator`) or
+`skipToNextHandlerFilter` is present, in which case the response is buffered.
+
+Set `stream` explicitly to override this:
+
+```js
+app.use('/proxy', proxy('www.google.com', {
+  stream: true,
+  userResHeaderDecorator: function (headers) {
+    // headers are finalized before the body is piped, so they can be
+    // rewritten while the (potentially large) body is still streamed.
+    return headers;
+  }
+}));
+```
+
+Notes and constraints:
+
+* `stream: true` cannot be combined with `userResDecorator`.
+  `userResDecorator` modifies the response body, which requires a buffered
+  response.
+* `stream: true` cannot be combined with `skipToNextHandlerFilter`, which
+  requires inspecting a buffered response before deciding whether to continue.
+* In stream mode, you need to be careful about modifying response headers that
+  describe the body. For example, changing `content-length` or
+  `content-encoding` could result in a mismatch between headers and body,
+  corrupting the body read by a client.
 
 
 #### decorateRequest
