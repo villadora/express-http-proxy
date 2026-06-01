@@ -3,6 +3,7 @@
 var assert = require('assert');
 var express = require('express');
 var http = require('http');
+var request = require('supertest');
 var startProxyTarget = require('./support/proxyTarget');
 var proxy = require('../');
 var TIMEOUT = require('./constants');
@@ -78,6 +79,16 @@ describe('streaming behavior / piped requests', function () {
           return Promise.resolve(reqBuilder);
         }
       }
+    }, {
+      // A header decorator alone would normally force buffering; stream:true
+      // opts back into streaming while still allowing header rewrites.
+      name: 'with stream:true and userResHeaderDecorator',
+      options: {
+        stream: true,
+        userResHeaderDecorator: function (headers) {
+          return headers;
+        }
+      }
     }];
 
     TEST_CASES.forEach(function (testCase) {
@@ -121,5 +132,51 @@ describe('streaming behavior / piped requests', function () {
         });
       });
     });
+  });
+});
+
+describe('response streaming with header modifications', function () {
+  this.timeout(TIMEOUT.MEDIUM);
+  var bodyContent = 'x'.repeat(256);
+
+  var app;
+  var targetServer;
+
+  beforeEach(function () {
+    app = express();
+    var target = express();
+    target.get('/large', function (req, res) {
+      res.header('x-to-retain', 'retain-me');
+      res.header('x-to-remove', 'remove-me');
+      res.type('text/plain');
+      res.send(bodyContent);
+    });
+    targetServer = target.listen(12345);
+  });
+
+  afterEach(function () {
+    targetServer.close();
+  });
+
+  it('applies header changes and streams the body', function (done) {
+    app.use('/proxy', proxy('http://127.0.0.1:12345', {
+      stream: true,
+      userResHeaderDecorator: function (headers) {
+        headers['x-to-add'] = 'add-me';
+        delete headers['x-to-remove'];
+        return headers;
+      }
+    }));
+
+    request(app)
+      .get('/proxy/large')
+      .expect(200)
+      .expect(function (res) {
+        assert.strictEqual(res.headers['x-to-add'], 'add-me');
+        assert.strictEqual(res.headers['x-to-retain'], 'retain-me');
+        assert.strictEqual(res.headers['x-to-remove'], undefined);
+        assert.strictEqual(res.text, bodyContent);
+      })
+      .end(done);
   });
 });
